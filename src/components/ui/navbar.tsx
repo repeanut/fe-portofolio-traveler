@@ -6,7 +6,7 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate()
 
   const handleAIChatbotClick = () => {
-    navigate('/ai-chatbot')
+    navigate('/sign-up')
   }
 
   return (
@@ -33,13 +33,13 @@ const Navbar: React.FC = () => {
               About
             </a>
             <a href="#blog" className="hover:text-gray-900">
-              Blog
+              Shop
             </a>
             <a href="#work" className="hover:text-gray-900">
               Work
             </a>
             <a href="#process" className="hover:text-gray-900">
-              Process
+              FAQ
             </a>
             <a href="#contact" className="hover:text-gray-900">
               Contact
