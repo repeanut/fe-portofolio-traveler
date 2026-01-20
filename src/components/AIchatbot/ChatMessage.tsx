@@ -27,8 +27,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const isAI = role === 'ai';
 
     const defaultUserAvatar = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300';
-    const defaultAdminAvatar = 'https://images.pexels.com/photos/3763188/pexels-photo-3763188.jpeg?auto=compress&cs=tinysrgb&w=300';
-    const defaultAIAvatar = 'https://images.pexels.com/photos/3763188/pexels-photo-3763188.jpeg?auto=compress&cs=tinysrgb&w=300';
+    const defaultAdminAvatar = '/rizwords-nomad.jpg';
+    const defaultAIAvatar = '/rizwords-nomad.jpg';
 
     const computedAvatar = avatar || (isUser ? defaultUserAvatar : isAdmin ? defaultAdminAvatar : defaultAIAvatar);
 
