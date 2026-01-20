@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Button } from './button'
 
 const Navbar: React.FC = () => {
@@ -32,12 +32,12 @@ const Navbar: React.FC = () => {
             <a href="#about" className="hover:text-gray-900">
               About
             </a>
-            <a href="#blog" className="hover:text-gray-900">
+            <Link to="/work/shop" className="hover:text-gray-900">
               Shop
-            </a>
-            <a href="#work" className="hover:text-gray-900">
+            </Link>
+            <Link to="/work" className="hover:text-gray-900">
               Work
-            </a>
+            </Link>
             <a href="#process" className="hover:text-gray-900">
               FAQ
             </a>
