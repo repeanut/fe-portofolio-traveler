@@ -1,14 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Home } from 'lucide-react';
 import NavbarShop from '../../components/ui/navbarShop';
 import FooterSection from '../../components/ui/footer';
-import { ShopCard } from '../../components/ui/shopCards';
-import type { ShopItem } from '../../components/ui/shopCards';
+import SignUpNotification from '../../components/ui/signUpNotification';
+import AuthModal from '../../components/auth/AuthModal';
+import { ShopCard, type ShopItem } from '../../components/ui/shopCards';
 import Pagination from '../../components/ui/pagination';
 import ShopFilters, { type BudgetState } from '../../components/shop/shopFilters';
-import { Home } from 'lucide-react';
-import SignUpNotification from '../../components/ui/signUpNotification';
-import { useNavigate } from 'react-router-dom';
 
 const shopItems: ShopItem[] = [
     {
@@ -169,16 +168,20 @@ const ShopPage: React.FC = () => {
     const startIndex = (currentPage - 1) * pageSize;
     const paginatedItems = filteredItems.slice(startIndex, startIndex + pageSize);
 
-    const navigate = useNavigate();
-
-    const handleSignUpClick = () => {
-        navigate('/work/signup');
-    };
+    const [authOpen, setAuthOpen] = useState(false);
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
-            <SignUpNotification onCtaClick={handleSignUpClick} />
+            <SignUpNotification onCtaClick={() => setAuthOpen(true)} />
             <NavbarShop />
+
+            <AuthModal
+                open={authOpen}
+                mode="signup"
+                closable
+                onClose={() => setAuthOpen(false)}
+                onSuccess={() => setAuthOpen(false)}
+            />
 
             <main className="flex-1">
                 <section className="mx-auto max-w-7xl py-10">

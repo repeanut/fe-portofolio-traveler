@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquareText, Sun, Moon, Home, Plus, Settings } from 'lucide-react';
+import { ArrowLeft, MessageSquareText, Sun, Moon, Home, Plus, Settings, LogOut } from 'lucide-react';
 import ChatContainer, { type ChatContainerHandle, type Message } from '../../../components/AIchatbot/ChatContainer';
 import ChatHistory from '../../../components/AIchatbot/ChatHistory';
+import AuthModal from '../../../components/auth/AuthModal';
 
 const sampleHistoryItems = [
     { id: '1', title: 'How to get fit without doing an...', timestamp: '2m ago' },
@@ -53,7 +53,34 @@ const initialChatMessages: Message[] = [
 ];
 
 const AIChatbotPage: React.FC = () => {
-    const navigate = useNavigate();
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        return typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
+    });
+
+    useEffect(() => {
+        const syncAuthFromStorage = () => {
+            const authed = typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
+            setIsAuthenticated(authed);
+        };
+
+        syncAuthFromStorage();
+
+        window.addEventListener('storage', syncAuthFromStorage);
+        window.addEventListener('focus', syncAuthFromStorage);
+        document.addEventListener('visibilitychange', syncAuthFromStorage);
+
+        return () => {
+            window.removeEventListener('storage', syncAuthFromStorage);
+            window.removeEventListener('focus', syncAuthFromStorage);
+            document.removeEventListener('visibilitychange', syncAuthFromStorage);
+        };
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('userEmail');
+        setIsAuthenticated(false);
+    };
     const [historyItems, setHistoryItems] = useState(() => sampleHistoryItems);
     const [activeHistoryId, setActiveHistoryId] = useState<string | undefined>(() => initialChatId);
     const [messagesByChatId, setMessagesByChatId] = useState<Record<string, Message[]>>(() => {
@@ -189,7 +216,7 @@ const AIChatbotPage: React.FC = () => {
     };
 
     const handleBack = () => {
-        navigate('/');
+        window.location.href = '/';
     };
 
     const handleSwitchMode = (nextMode: 'ai' | 'cs') => {
@@ -218,9 +245,18 @@ const AIChatbotPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const showAuthModal = !isAuthenticated;
+
     return (
         <div className={`fixed inset-0 overflow-hidden ${pageClasses}`}>
-            <div className={`h-full grid overflow-hidden ${chatMode === 'ai' ? 'grid-cols-[72px_320px_1fr]' : 'grid-cols-[72px_1fr]'}`}>
+            <div
+                className={
+                    `h-full grid overflow-hidden ` +
+                    (chatMode === 'ai' ? 'grid-cols-[72px_320px_1fr]' : 'grid-cols-[72px_1fr]') +
+                    (showAuthModal ? ' pointer-events-none select-none blur-[1px]' : '')
+                }
+                aria-hidden={showAuthModal}
+            >
                 {/* Left icon sidebar */}
                 <aside className={`h-full border-r flex flex-col items-center py-5 overflow-hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-gray-100 bg-white'}`}>
                     <button
@@ -260,6 +296,15 @@ const AIChatbotPage: React.FC = () => {
                             aria-label="Settings"
                         >
                             <Settings className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
+                            aria-label="Log out"
+                        >
+                            <LogOut className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
                         </button>
 
                         <div className={`w-10 h-10 rounded-full overflow-hidden border mb-1 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
@@ -374,6 +419,28 @@ const AIChatbotPage: React.FC = () => {
                     </div>
                 </section>
             </div>
+
+            {showAuthModal && (
+                <>
+                    {/* Back button on transparent overlay to return to landing page */}
+                    <button
+                        type="button"
+                        onClick={() => { window.location.href = '/'; }}
+                        className="fixed left-6 top-6 z-[110] inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-800 shadow-md hover:bg-white"
+                        aria-label="Back to home"
+                   >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
+                    </button>
+
+                    <AuthModal
+                        open
+                        mode="signup"
+                        closable={false}
+                        onSuccess={() => setIsAuthenticated(true)}
+                    />
+                </>
+            )}
         </div>
     );
 };

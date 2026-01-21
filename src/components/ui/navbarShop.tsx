@@ -1,10 +1,38 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, Search } from 'lucide-react';
 import { Button } from './button';
 
-const NavbarShop: React.FC = () => {
+type NavbarShopProps = {
+    onSignUpClick?: () => void;
+};
+
+const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
     const navigate = useNavigate();
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    useEffect(() => {
+        const checkAuth = () => {
+            if (typeof window === 'undefined') return;
+            setIsAuthenticated(localStorage.getItem('isAuthenticated') === 'true');
+        };
+
+        checkAuth();
+
+        const handleStorage = (event: StorageEvent) => {
+            if (event.key === 'isAuthenticated') {
+                checkAuth();
+            }
+        };
+
+        window.addEventListener('storage', handleStorage);
+        window.addEventListener('focus', checkAuth);
+
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('focus', checkAuth);
+        };
+    }, []);
 
     return (
         <header className="w-full bg-white">
@@ -37,13 +65,21 @@ const NavbarShop: React.FC = () => {
                         Shop
                         <ChevronRight className="h-4 w-4" />
                     </Link>
-                    <Button
-                        variant="link"
-                        className="px-0 text-gray-700 hover:text-gray-900"
-                        onClick={() => navigate('/sign-up')}
-                    >
-                        Sign Up
-                    </Button>
+                    {!isAuthenticated && (
+                        <Button
+                            variant="link"
+                            className="px-0 text-gray-700 hover:text-gray-900"
+                            onClick={() => {
+                                if (onSignUpClick) {
+                                    onSignUpClick();
+                                } else {
+                                    navigate('/ai-chatbot');
+                                }
+                            }}
+                        >
+                            Sign Up
+                        </Button>
+                    )}
                 </div>
             </nav>
         </header>
