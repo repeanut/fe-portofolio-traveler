@@ -6,7 +6,7 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate()
 
   const handleAIChatbotClick = () => {
-    navigate('/sign-up')
+    navigate('/ai-chatbot')
   }
 
   return (

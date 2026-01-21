@@ -3,13 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import NavbarShop from '../ui/navbarShop';
 import { Button } from '../ui/button';
 
-const HeroSection: React.FC = () => {
+type HeroSectionProps = {
+    shouldAnimateCounts?: boolean;
+    onSignUpClick?: () => void;
+};
+
+const HeroSection: React.FC<HeroSectionProps> = ({ shouldAnimateCounts = true, onSignUpClick }) => {
     const navigate = useNavigate();
     const [brandsCount, setBrandsCount] = useState(0);
     const [productsCount, setProductsCount] = useState(0);
     const [customersCount, setCustomersCount] = useState(0);
+    const hasAnimatedCountsRef = useRef(false);
 
     useEffect(() => {
+        if (!shouldAnimateCounts || hasAnimatedCountsRef.current) return;
+
         const duration = 1200;
 
         const animate = (target: number, setter: (value: number) => void) => {
@@ -34,7 +42,8 @@ const HeroSection: React.FC = () => {
         animate(200, setBrandsCount);
         animate(2000, setProductsCount);
         animate(30000, setCustomersCount);
-    }, []);
+        hasAnimatedCountsRef.current = true;
+    }, [shouldAnimateCounts]);
 
     const heroRef = useRef<HTMLDivElement | null>(null);
     const heroBgRef = useRef<HTMLDivElement | null>(null);
@@ -92,7 +101,7 @@ const HeroSection: React.FC = () => {
 
     return (
         <section className="w-full h-screen flex flex-col">
-            <NavbarShop />
+            <NavbarShop onSignUpClick={onSignUpClick} />
 
             <div
                 ref={heroBgRef}
@@ -141,7 +150,7 @@ const HeroSection: React.FC = () => {
                                     size="sm"
                                     className="h-10 px-5 bg-white text-[#081a4f] hover:bg-white/90"
                                 >
-                                    Work
+                                    View Benefit
                                 </Button>
                                 <Button
                                     size="sm"

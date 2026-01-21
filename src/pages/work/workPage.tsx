@@ -5,8 +5,13 @@ import ServicesSection from '../../components/work/servicesSection';
 import BenefitSection from '../../components/work/benefitSection';
 import ShopSection from '../../components/work/shopSection';
 import FooterSection from '../../components/ui/footer';
+import AuthModal from '../../components/auth/AuthModal';
 
 const WorkPage: React.FC = () => {
+    const [authOpen, setAuthOpen] = useState(() => {
+        return typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') !== 'true';
+    });
+
     const pageRef = useRef<HTMLDivElement | null>(null);
     const [cursorActive, setCursorActive] = useState(false);
 
@@ -95,7 +100,10 @@ const WorkPage: React.FC = () => {
             onMouseLeave={handleMouseLeave}
         >
             <div className="relative z-10">
-                <HeroSection />
+                <HeroSection
+                    shouldAnimateCounts={!authOpen}
+                    onSignUpClick={() => setAuthOpen(true)}
+                />
                 <ServicesSection />
                 <BenefitSection />
                 <ShopSection />
@@ -118,6 +126,14 @@ const WorkPage: React.FC = () => {
                     );
                 })}
             </div>
+
+            <AuthModal
+                open={authOpen}
+                mode="signup"
+                closable
+                onClose={() => setAuthOpen(false)}
+                onSuccess={() => setAuthOpen(false)}
+            />
         </div>
     );
 };

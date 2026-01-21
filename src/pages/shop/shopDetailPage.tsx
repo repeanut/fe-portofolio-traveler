@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import NavbarShop from '../../components/ui/navbarShop';
 import FooterSection from '../../components/ui/footer';
 import SignUpNotification from '../../components/ui/signUpNotification';
+import AuthModal from '../../components/auth/AuthModal';
 import type { ShopItem } from '../../components/ui/shopCards';
 import { Home, Globe2, MapPin, FileCheck2 } from 'lucide-react';
 import ShopPackageCard from '../../components/shop/ShopPackageCard';
@@ -30,11 +31,20 @@ const ShopDetailPage: React.FC = () => {
     const item = state?.item ?? fallbackItem;
     const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
     const [isContactOpen, setIsContactOpen] = useState(false);
+    const [authOpen, setAuthOpen] = useState(false);
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
-            <SignUpNotification />
+            <SignUpNotification onCtaClick={() => setAuthOpen(true)} />
             <NavbarShop />
+
+            <AuthModal
+                open={authOpen}
+                mode="signup"
+                closable
+                onClose={() => setAuthOpen(false)}
+                onSuccess={() => setAuthOpen(false)}
+            />
 
             <main className="flex-1">
                 <section className="mx-auto max-w-7xl py-8 px-4 md:px-0">
