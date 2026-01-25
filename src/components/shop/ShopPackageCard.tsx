@@ -1,14 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Timer } from 'lucide-react';
+import type { OrderPackage } from '../order/sidebarOrder';
 
 export type PackageKey = 'basic' | 'standard' | 'premium';
 
 export type ShopPackageCardProps = {
     basePrice?: number;
     deliveryTime?: string;
+    onOrderClick?: (pkg: OrderPackage) => void;
 };
 
-const ShopPackageCard: React.FC<ShopPackageCardProps> = ({ basePrice = 20, deliveryTime }) => {
+const ShopPackageCard: React.FC<ShopPackageCardProps> = ({ basePrice = 20, deliveryTime, onOrderClick }) => {
     const [selectedPackage, setSelectedPackage] = useState<PackageKey>('standard');
 
     const packagePresets = useMemo(
@@ -50,6 +52,21 @@ const ShopPackageCard: React.FC<ShopPackageCardProps> = ({ basePrice = 20, deliv
 
     const currentPreset = packagePresets[selectedPackage];
     const currentPrice = Math.max(1, Math.round(pricePerWord * currentWords));
+
+    const handleContinue = () => {
+        if (!onOrderClick) return;
+
+        const orderPackage: OrderPackage = {
+            id: selectedPackage,
+            title: currentPreset.label,
+            price: currentPrice,
+            shortDescription: currentPreset.description,
+            packageLabel: `${currentPreset.label} package`,
+            deliveryLabel: deliveryTime,
+        };
+
+        onOrderClick(orderPackage);
+    };
 
     return (
         <aside className="lg:sticky lg:top-24">
@@ -152,6 +169,7 @@ const ShopPackageCard: React.FC<ShopPackageCardProps> = ({ basePrice = 20, deliv
 
                     <button
                         type="button"
+                        onClick={handleContinue}
                         className="mt-7 w-full rounded-2xl bg-white py-3.5 text-sm font-semibold text-sky-600 shadow-md hover:shadow-lg transition-shadow"
                     >
                         Continue
