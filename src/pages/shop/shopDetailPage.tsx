@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import NavbarShop from '../../components/ui/navbarShop';
 import FooterSection from '../../components/ui/footer';
 import SignUpNotification from '../../components/ui/signUpNotification';
@@ -10,6 +10,7 @@ import ShopPackageCard from '../../components/shop/ShopPackageCard';
 import ContactChatModal from '../../components/shop/ContactChatModal';
 import ShopProductDetails from '../../components/shop/ShopProductDetails';
 import ShopReviews from '../../components/shop/ShopReviews';
+import SidebarOrder, { type OrderPackage } from '../../components/order/sidebarOrder';
 
 interface LocationState {
     item?: ShopItem;
@@ -17,6 +18,7 @@ interface LocationState {
 
 const ShopDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const location = useLocation();
     const state = location.state as LocationState | null;
 
@@ -32,6 +34,8 @@ const ShopDetailPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
     const [isContactOpen, setIsContactOpen] = useState(false);
     const [authOpen, setAuthOpen] = useState(false);
+    const [orderOpen, setOrderOpen] = useState(false);
+    const [selectedPackage, setSelectedPackage] = useState<OrderPackage | null>(null);
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
@@ -144,6 +148,10 @@ const ShopDetailPage: React.FC = () => {
                         <ShopPackageCard
                             basePrice={Number(item.price.replace('$', '')) || 20}
                             deliveryTime={item.deliveryTime}
+                            onOrderClick={(pkg) => {
+                                setSelectedPackage(pkg);
+                                setOrderOpen(true);
+                            }}
                         />
                     </div>
                 </section>
@@ -152,6 +160,23 @@ const ShopDetailPage: React.FC = () => {
             <FooterSection />
 
             <ContactChatModal open={isContactOpen} onClose={() => setIsContactOpen(false)} />
+
+            <SidebarOrder
+                open={orderOpen}
+                selectedPackage={selectedPackage}
+                onClose={() => setOrderOpen(false)}
+                onContinue={({ package: orderPackage, quantity }) => {
+                    setOrderOpen(false);
+                    if (!orderPackage) return;
+                    navigate('/shop/payment', {
+                        state: {
+                            item,
+                            orderPackage,
+                            quantity,
+                        },
+                    });
+                }}
+            />
         </div>
     );
 };
