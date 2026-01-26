@@ -9,6 +9,7 @@ interface ChatMessageProps {
     avatar?: string;
     timestamp?: string;
     theme?: 'light' | 'dark';
+    align?: 'left' | 'right';
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -19,12 +20,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     name,
     avatar,
     timestamp,
-    theme = 'light'
+    theme = 'light',
+    align,
 }) => {
     const isDark = theme === 'dark';
     const isUser = role === 'user';
     const isAdmin = role === 'admin';
     const isAI = role === 'ai';
+
+    const isRightAligned = align
+        ? align === 'right'
+        : isUser;
 
     const defaultUserAvatar = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300';
     const defaultAdminAvatar = '/rizwords-nomad.jpg';
@@ -33,7 +39,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const computedAvatar = avatar || (isUser ? defaultUserAvatar : isAdmin ? defaultAdminAvatar : defaultAIAvatar);
 
     return (
-        <div className={`flex items-start gap-3 mb-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`flex items-start gap-3 mb-4 ${isRightAligned ? 'flex-row-reverse' : 'flex-row'}`}>
             <div className={`w-9 h-9 rounded-full overflow-hidden flex-shrink-0 shadow-sm border ${isDark ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'}`}>
                 <img
                     src={computedAvatar}
@@ -42,8 +48,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 />
             </div>
 
-            <div className={`min-w-0 ${isUser ? 'flex flex-col items-end' : 'flex flex-col items-start'} max-w-[78%]`}>
-                <div className={`flex items-center gap-2 mb-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
+            <div className={`min-w-0 ${isRightAligned ? 'flex flex-col items-end' : 'flex flex-col items-start'} max-w-[78%]`}>
+                <div className={`flex items-center gap-2 mb-1 ${isRightAligned ? 'justify-end' : 'justify-start'}`}>
                     <span className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>{name}</span>
                     {isAdmin && (
                         <span className={`text-[10px] leading-none px-2 py-1 rounded-full ${isDark ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-100 text-sky-700'}`}>
@@ -57,7 +63,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
                 <div
                     className={
-                        `w-full rounded-2xl px-4 py-3 shadow-sm border ` +
+                        `inline-block max-w-full rounded-2xl px-4 py-3 shadow-sm border ` +
                         (isDark
                             ? (isUser
                                 ? 'bg-slate-900/70 border-slate-800 text-slate-100 rounded-tr-md'

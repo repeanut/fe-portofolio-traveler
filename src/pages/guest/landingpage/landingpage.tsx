@@ -9,7 +9,7 @@ import CertificationsSection from '../../../components/guest/landingpage/certifi
 import ServicesSection from '../../../components/guest/landingpage/servicesSection'
 import ExperienceSection from '../../../components/guest/landingpage/experienceSection'
 import FAQSection from '../../../components/guest/landingpage/faqSections'
-import FooterSection from '../../../components/guest/landingpage/footerSections'
+import FooterSection from '../../../components/ui/footer'
 
 const LandingPage: React.FC = () => {
   return (
