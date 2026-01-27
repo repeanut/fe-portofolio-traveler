@@ -14,9 +14,8 @@ const Navbar: React.FC = () => {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 overflow-hidden rounded-full bg-gray-200">
-            {/* Ganti src ini dengan foto profilmu */}
             <img
-              src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300"
+              src="/rizwords-nomad.jpg"
               alt="Profile"
               className="h-full w-full object-cover"
             />
@@ -26,7 +25,7 @@ const Navbar: React.FC = () => {
 
         <div className="flex items-center gap-8">
           <div className="hidden items-center gap-8 text-sm font-medium text-gray-600 md:flex">
-            <a href="#home" className="hover:text-gray-900">
+            <a href="/" className="hover:text-gray-900">
               Home
             </a>
             <a href="#about" className="hover:text-gray-900">
@@ -38,7 +37,7 @@ const Navbar: React.FC = () => {
             <Link to="/work" className="hover:text-gray-900">
               Work
             </Link>
-            <a href="#process" className="hover:text-gray-900">
+            <a href="#faq" className="hover:text-gray-900">
               FAQ
             </a>
             <a href="#contact" className="hover:text-gray-900">

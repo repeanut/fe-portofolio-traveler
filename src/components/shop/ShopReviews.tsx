@@ -47,8 +47,8 @@ const ShopReviews: React.FC = () => {
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
                     </p>
                     <p className="mt-3 text-xs leading-relaxed text-slate-600">
-                        &quot;I&apos;m blown away by the quality and style of the clothes I received from Shop.co. From casual wear
-                        to elegant dresses, every piece I&apos;ve bought has exceeded my expectations.&quot;
+                        &quot;I'm blown away by the quality and style of the clothes I received from Shop.co. From casual wear
+                        to elegant dresses, every piece I've bought has exceeded my expectations.&quot;
                     </p>
                 </article>
 

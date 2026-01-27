@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, MessageSquareText, Sun, Moon, Home, Plus, Settings, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ChatContainer, { type ChatContainerHandle, type Message } from '../../../components/AIchatbot/ChatContainer';
 import ChatHistory from '../../../components/AIchatbot/ChatHistory';
 import AuthModal from '../../../components/auth/AuthModal';
@@ -53,6 +54,7 @@ const initialChatMessages: Message[] = [
 ];
 
 const AIChatbotPage: React.FC = () => {
+    const navigate = useNavigate();
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
         return typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
     });
@@ -106,8 +108,17 @@ const AIChatbotPage: React.FC = () => {
     }, [adminMessages]);
 
     useEffect(() => {
+        const prevThemeAttr = document.documentElement.getAttribute('data-theme');
         document.documentElement.setAttribute('data-theme', theme);
         window.localStorage.setItem('theme', theme);
+
+        return () => {
+            if (prevThemeAttr === null) {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', prevThemeAttr);
+            }
+        };
     }, [theme]);
 
     const isDark = theme === 'dark';
@@ -216,7 +227,7 @@ const AIChatbotPage: React.FC = () => {
     };
 
     const handleBack = () => {
-        window.location.href = '/';
+        navigate('/', { replace: true });
     };
 
     const handleSwitchMode = (nextMode: 'ai' | 'cs') => {
@@ -292,6 +303,7 @@ const AIChatbotPage: React.FC = () => {
                     <div className="w-full flex flex-col items-center gap-4">
                         <button
                             type="button"
+                            onClick={() => navigate('/profile')}
                             className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
                             aria-label="Settings"
                         >
@@ -425,7 +437,7 @@ const AIChatbotPage: React.FC = () => {
                     {/* Back button on transparent overlay to return to landing page */}
                     <button
                         type="button"
-                        onClick={() => { window.location.href = '/'; }}
+                        onClick={() => navigate('/')}
                         className="fixed left-6 top-6 z-[110] inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-800 shadow-md hover:bg-white"
                         aria-label="Back to home"
                    >

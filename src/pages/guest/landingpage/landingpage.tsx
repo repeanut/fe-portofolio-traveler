@@ -13,7 +13,7 @@ import FooterSection from '../../../components/ui/footer'
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div id="home" className="min-h-screen bg-white">
       <Navbar />
       <HeroSection />
       <StoriesSection />
