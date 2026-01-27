@@ -22,7 +22,7 @@ const footerColumns = [
 
 const Footer: React.FC = () => {
     return (
-        <footer className="w-full bg-[#e8f3fb]">
+        <footer id="contact" className="w-full bg-[#e8f3fb]">
             <div className="mx-auto max-w-6xl py-12 md:py-16">
                 <div className="grid gap-10 md:grid-cols-[1.4fr_3fr] items-start">
                     {/* Brand + description */}

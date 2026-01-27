@@ -1,8 +1,11 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const AboutSection: React.FC = () => {
+    const navigate = useNavigate()
+
     return (
-        <section className="py-20 bg-white overflow-hidden mt-16">
+        <section id="about" className="py-20 bg-white overflow-hidden mt-16">
             <div className="max-w-7xl mx-auto px-4 md:px-8">
                 <div className="flex flex-col md:flex-row items-center gap-12 md:gap-20">
 
@@ -62,7 +65,10 @@ const AboutSection: React.FC = () => {
 
                         {/* CTA Button */}
                         <div className="mt-8">
-                            <button className="px-8 py-3 rounded-full border-2 border-sky-500 text-sm text-sky-500 font-semibold hover:bg-sky-500 hover:text-white transition-colors duration-300">
+                            <button
+                                onClick={() => navigate('/work/shop')}
+                                className="px-8 py-3 rounded-full border-2 border-sky-500 text-sm text-sky-500 font-semibold hover:bg-sky-500 hover:text-white transition-colors duration-300"
+                            >
                                 Hire Me
                             </button>
                         </div>

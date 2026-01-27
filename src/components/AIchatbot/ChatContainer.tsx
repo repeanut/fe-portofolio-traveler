@@ -56,6 +56,7 @@ const aiResponses: Record<string, string> = {
 
 const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onClearChat, showActions = true, showHeader = true, senderRole = 'user', initialMessages, chatMode: chatModeProp, onChatModeChange, theme = 'light', onMessagesChange }, ref) => {
     const isDark = theme === 'dark';
+    const onMessagesChangeRef = useRef<ChatContainerProps['onMessagesChange']>(onMessagesChange);
     const getCurrentTime = useCallback(() => {
         return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     }, []);
@@ -94,8 +95,12 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
     }, [messages]);
 
     useEffect(() => {
-        onMessagesChange?.(messages);
-    }, [messages, onMessagesChange]);
+        onMessagesChangeRef.current = onMessagesChange;
+    }, [onMessagesChange]);
+
+    useEffect(() => {
+        onMessagesChangeRef.current?.(messages);
+    }, [messages]);
 
     const addAIResponse = (userQuestion: string, customResponse?: string) => {
         setTimeout(() => {

@@ -6,6 +6,7 @@ import ShopPage from "./pages/shop/shopPage";
 import ShopDetailPage from './pages/shop/shopDetailPage';
 import ShopPaymentPage from './pages/shop/shopPaymentPage';
 import SuccessPayment from "./components/payments/SuccessPayment";
+import UserProfilePage from "./pages/users/UserProfilePage";
 import AdminChatPage from "./pages/admin/AdminChatPage";
 import AdminHeroManagementPage from "./pages/admin/AdminHeroManagementPage";
 import AdminTravelJournalPage from "./pages/admin/AdminTravelJournalPage";
@@ -27,6 +28,7 @@ export const Router = () => {
             <Route path="/shop/payment" element={<ShopPaymentPage />} />
             <Route path="/shop/payment/payment-success" element={<SuccessPayment />} />
             <Route path="/ai-chatbot" element={<AIChatbotPage />} />
+            <Route path="/profile" element={<UserProfilePage />} />
             <Route path="/admin/chat" element={<AdminChatPage />} />
             <Route path="/admin/blog" element={<AdminBlogArticlesPage />} />
             <Route path="/admin/users" element={<AdminUserListPage />} />

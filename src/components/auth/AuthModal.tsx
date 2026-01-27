@@ -83,6 +83,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
         const normalizedEmail = (email || '').trim();
         localStorage.setItem('isAuthenticated', 'true');
         if (normalizedEmail) localStorage.setItem('userEmail', normalizedEmail);
+        if (avatarUrl) localStorage.setItem('userAvatarUrl', avatarUrl);
+        window.dispatchEvent(new Event('auth:changed'));
         setOverrideMode(null);
         setSignupStep('account');
         onSuccess?.();

@@ -8,29 +8,35 @@ interface FAQItem {
 
 const faqs: FAQItem[] = [
     {
-        question: 'Apa saja layanan copywriting yang ditawarkan?',
-        answer: 'Saya menawarkan berbagai layanan copywriting termasuk video script, brand storytelling, email campaigns, content marketing, social media copy, product description, landing page copy, ads copy, dan SEO content.'
+        question: 'What copywriting services do you offer?',
+        answer:
+            'I provide a wide range of copywriting services, including video scripts, brand storytelling, email campaigns, content marketing, social media copy, product descriptions, landing page copy, ad copy, and SEO content.',
     },
     {
-        question: 'Berapa lama waktu pengerjaan proyek?',
-        answer: 'Waktu pengerjaan bervariasi tergantung kompleksitas proyek. Untuk proyek kecil seperti social media copy biasanya 2-3 hari kerja, sedangkan untuk proyek besar seperti brand storytelling bisa memakan waktu 1-2 minggu.'
+        question: 'How long does a project usually take?',
+        answer:
+            'Timelines vary depending on project complexity. Smaller tasks like social media copy typically take 2–3 business days, while larger projects such as brand storytelling can take 1–2 weeks.',
     },
     {
-        question: 'Bagaimana cara memesan jasa copywriting?',
-        answer: 'Anda bisa menghubungi saya melalui form kontak di website ini atau langsung melalui email/WhatsApp. Setelah itu kita akan berdiskusi tentang kebutuhan proyek Anda dan saya akan memberikan quotation.'
+        question: 'How can I book your copywriting services?',
+        answer:
+            'You can reach out via the contact form on this website or directly through email/WhatsApp. We will discuss your project needs first, then I will share a tailored quotation.',
     },
     {
-        question: 'Apakah ada revisi untuk setiap proyek?',
-        answer: 'Ya, setiap proyek mendapatkan hingga 2 kali revisi gratis. Revisi tambahan dapat didiskusikan dengan biaya yang disepakati bersama.'
+        question: 'Do you include revisions for each project?',
+        answer:
+            'Yes, every project includes up to 2 rounds of revisions for free. Additional revisions can be discussed with an agreed extra fee.',
     },
     {
-        question: 'Bagaimana sistem pembayaran yang berlaku?',
-        answer: 'Pembayaran dilakukan dengan sistem 50% di awal sebagai DP dan 50% setelah proyek selesai. Untuk proyek besar, pembayaran bisa dibagi menjadi beberapa termin sesuai kesepakatan.'
+        question: 'What payment terms do you use?',
+        answer:
+            'I usually work with a 50% upfront deposit and 50% upon project completion. For larger projects, payments can be split into several milestones based on our agreement.',
     },
     {
-        question: 'Apakah bisa konsultasi dulu sebelum order?',
-        answer: 'Tentu! Saya menyediakan konsultasi gratis untuk membahas kebutuhan proyek Anda. Silakan hubungi saya untuk menjadwalkan sesi konsultasi.'
-    }
+        question: 'Can I have a consultation before placing an order?',
+        answer:
+            'Absolutely. I offer a free consultation session to better understand your needs and goals. Feel free to contact me to schedule a call.',
+    },
 ]
 
 const FAQSection: React.FC = () => {
@@ -52,7 +58,7 @@ const FAQSection: React.FC = () => {
                                 <span className="text-sky-500">questions!</span>
                             </h2>
                             <p className="text-gray-500 mt-4 max-w-md">
-                                Ready to elevate your brand narrative? Drop me a distinct message.
+                                Find quick answers to the most common questions about my services, process, and how we can work together.
                             </p>
                         </div>
 

@@ -10,26 +10,36 @@ type NavbarShopProps = {
 const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
     const navigate = useNavigate();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
     useEffect(() => {
         const checkAuth = () => {
             if (typeof window === 'undefined') return;
             setIsAuthenticated(localStorage.getItem('isAuthenticated') === 'true');
+            setUserEmail(localStorage.getItem('userEmail'));
+            setUserAvatarUrl(localStorage.getItem('userAvatarUrl'));
         };
 
         checkAuth();
 
         const handleStorage = (event: StorageEvent) => {
-            if (event.key === 'isAuthenticated') {
+            if (event.key === 'isAuthenticated' || event.key === 'userEmail' || event.key === 'userAvatarUrl') {
                 checkAuth();
             }
         };
 
+        const handleAuthChanged = () => {
+            checkAuth();
+        };
+
         window.addEventListener('storage', handleStorage);
+        window.addEventListener('auth:changed', handleAuthChanged);
         window.addEventListener('focus', checkAuth);
 
         return () => {
             window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('auth:changed', handleAuthChanged);
             window.removeEventListener('focus', checkAuth);
         };
     }, []);
@@ -65,7 +75,7 @@ const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
                         Shop
                         <ChevronRight className="h-4 w-4" />
                     </Link>
-                    {!isAuthenticated && (
+                    {!isAuthenticated ? (
                         <Button
                             variant="link"
                             className="px-0 text-gray-700 hover:text-gray-900"
@@ -79,6 +89,28 @@ const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
                         >
                             Sign Up
                         </Button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => navigate('/profile')}
+                            className="h-10 w-10 rounded-full overflow-hidden ring-1 ring-gray-200 hover:ring-gray-300 transition-colors"
+                            aria-label="User profile"
+                        >
+                            {userAvatarUrl ? (
+                                <img
+                                    src={userAvatarUrl}
+                                    alt={userEmail ? `Avatar ${userEmail}` : 'User avatar'}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-700 text-sm font-semibold">
+                                    {(() => {
+                                        const base = (userEmail || 'U').trim();
+                                        return base.slice(0, 1).toUpperCase();
+                                    })()}
+                                </div>
+                            )}
+                        </button>
                     )}
                 </div>
             </nav>

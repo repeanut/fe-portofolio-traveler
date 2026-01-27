@@ -44,6 +44,11 @@ body {
   background-color: #0f172a;
 }
 
+html,
+body {
+  scroll-behavior: smooth;
+}
+
 /* Custom scrollbar for AI Chatbot main chat area */
 .chat-scroll-light::-webkit-scrollbar,
 .chat-scroll-dark::-webkit-scrollbar {
