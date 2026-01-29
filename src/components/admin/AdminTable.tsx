@@ -108,8 +108,8 @@ const AdminTable: React.FC<AdminTableProps> = ({
         );
       case "textarea":
         return (
-          <div className="max-w-md text-[11px] text-gray-500">
-            <p>{row[column.accessor] as string}</p>
+          <div className="max-w-md text-[11px] text-slate-600">
+            <p className="line-clamp-2 leading-relaxed">{row[column.accessor] as string}</p>
           </div>
         );
       case "action":
@@ -118,7 +118,7 @@ const AdminTable: React.FC<AdminTableProps> = ({
             {onEdit && (
               <button
                 onClick={() => onEdit(row.id as number)}
-                className="text-gray-400 hover:text-blue-600"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-blue-700"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -139,7 +139,7 @@ const AdminTable: React.FC<AdminTableProps> = ({
             {onDelete && (
               <button
                 onClick={() => onDelete(row.id as number)}
-                className="text-gray-400 hover:text-red-600"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-red-700"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -161,13 +161,13 @@ const AdminTable: React.FC<AdminTableProps> = ({
         );
       case "date":
         return (
-          <div className="text-[11px] text-gray-500">
+          <div className="text-[11px] text-slate-600">
             {row[column.accessor] as string}
           </div>
         );
       default:
         return (
-          <div className="text-[11px] text-gray-500">
+          <div className="text-[11px] text-slate-700">
             {row[column.accessor] as string}
           </div>
         );
@@ -175,14 +175,14 @@ const AdminTable: React.FC<AdminTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow pb-3">
+    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs">
       <div className="max-h-[calc(100vh-225px)] overflow-y-auto md:overflow-x-hidden">
         <div className="min-w-full inline-block align-middle">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-10">
+            <table className="min-w-full divide-y divide-slate-100">
+              <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider bg-gray-50 w-12">
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 w-12">
                     No
                   </th>
                   {columns.map((column, index) => {
@@ -193,7 +193,7 @@ const AdminTable: React.FC<AdminTableProps> = ({
                     return (
                       <th
                         key={index}
-                        className={`px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider bg-gray-50${
+                        className={`px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50${
                           isAction ? " w-24" : ""
                         }${
                           isLongText
@@ -207,17 +207,17 @@ const AdminTable: React.FC<AdminTableProps> = ({
                   })}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-100">
                 {isLoading
                   ? Array.from({ length: itemsPerPage }).map((_, idx) => (
                       <tr key={idx}>
-                        <td className="px-4 py-2 whitespace-nowrap text-[11px] text-gray-300 w-12">
+                        <td className="px-4 py-3 whitespace-nowrap text-[11px] text-slate-300 w-12">
                           <div className="h-4 w-6 bg-gray-200 rounded animate-pulse" />
                         </td>
                         {columns.map((col, cidx) => (
                           <td
                             key={cidx}
-                            className={`px-4 py-2${
+                            className={`px-4 py-3${
                               col.type === "action" ? " w-24" : ""
                             }${
                               ["description", "title"].includes(col.accessor) ||
@@ -231,28 +231,39 @@ const AdminTable: React.FC<AdminTableProps> = ({
                         ))}
                       </tr>
                     ))
-                  : data.map((row, index) => (
-                      <tr key={row.id || index}>
-                        <td className="px-4 py-2 whitespace-nowrap text-[11px] text-gray-500 w-12">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
-                        </td>
-                        {columns.map((column, colIndex) => (
-                          <td
-                            key={colIndex}
-                            className={`px-4 py-2 text-[11px] text-gray-500${
-                              column.type === "action" ? " w-24" : ""
-                            }${
-                              ["description", "title"].includes(column.accessor) ||
-                              column.type === "textarea"
-                                ? " whitespace-normal break-words max-w-md"
-                                : " whitespace-nowrap"
-                            }`}
-                          >
-                            {renderCell(column, row)}
+                  : data.length > 0
+                    ? data.map((row, index) => (
+                        <tr key={row.id || index} className="hover:bg-slate-50/60">
+                          <td className="px-4 py-3 whitespace-nowrap text-[11px] text-slate-500 w-12">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
-                        ))}
-                      </tr>
-                    ))}
+                          {columns.map((column, colIndex) => (
+                            <td
+                              key={colIndex}
+                              className={`px-4 py-3 text-[11px] text-slate-700${
+                                column.type === "action" ? " w-24" : ""
+                              }${
+                                ["description", "title"].includes(column.accessor) ||
+                                column.type === "textarea"
+                                  ? " whitespace-normal break-words max-w-md"
+                                  : " whitespace-nowrap"
+                              }`}
+                            >
+                              {renderCell(column, row)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))
+                    : (
+                        <tr>
+                          <td
+                            colSpan={columns.length + 1}
+                            className="px-4 py-10 text-center text-sm text-slate-500"
+                          >
+                            No data found.
+                          </td>
+                        </tr>
+                      )}
               </tbody>
             </table>
           </div>
@@ -260,11 +271,11 @@ const AdminTable: React.FC<AdminTableProps> = ({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between mt-3 px-3">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-white">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-gray-700">Show result:</span>
+          <span className="text-[11px] text-slate-700">Show result:</span>
           <select
-            className="px-2 py-1.5 border border-slate-200 rounded-md text-[11px]"
+            className="px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] bg-white"
             value={itemsPerPage}
             onChange={(e) => onItemsPerPageChange?.(Number(e.target.value))}
           >
@@ -277,7 +288,7 @@ const AdminTable: React.FC<AdminTableProps> = ({
           <button
             onClick={() => onPageChange?.(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-50"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 disabled:opacity-50"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -301,7 +312,7 @@ const AdminTable: React.FC<AdminTableProps> = ({
               className={`px-2 py-0.5 rounded-lg text-[11px] ${
                 currentPage === page
                   ? "bg-blue-600 text-white"
-                  : "hover:bg-gray-100 text-gray-700"
+                  : "hover:bg-slate-100 text-slate-700"
               }`}
             >
               {page}
@@ -310,7 +321,7 @@ const AdminTable: React.FC<AdminTableProps> = ({
           <button
             onClick={() => onPageChange?.(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-50"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 disabled:opacity-50"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

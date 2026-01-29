@@ -225,11 +225,11 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
                         {!(activeMode === 'signup' && signupStep === 'profile') && (
                             <>
-                                <div className="mt-6 grid grid-cols-2 gap-3">
+                                <div className="mt-6 w-full">
                                     <button
                                         type="button"
                                         onClick={handleProviderClick}
-                                        className="h-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 text-sm font-medium text-slate-700"
+                                        className="w-full h-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 text-sm font-medium text-slate-700"
                                     >
                                         <span className="inline-flex items-center justify-center">
                                             <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -240,19 +240,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                             </svg>
                                         </span>
                                         Google
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleProviderClick}
-                                        className="h-11 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 text-sm font-medium text-slate-700"
-                                    >
-                                        <span className="inline-flex items-center justify-center">
-                                            <svg width="18" height="18" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill="currentColor" d="M8 .198a8 8 0 0 0-2.53 15.592c.4.074.547-.173.547-.385 0-.19-.007-.693-.01-1.36-2.226.484-2.695-1.073-2.695-1.073-.364-.924-.89-1.17-.89-1.17-.727-.497.055-.487.055-.487.803.056 1.226.825 1.226.825.714 1.223 1.873.87 2.33.665.072-.517.28-.87.508-1.07-1.777-.203-3.644-.888-3.644-3.95 0-.872.31-1.585.823-2.144-.083-.203-.357-1.02.078-2.125 0 0 .672-.215 2.2.82A7.63 7.63 0 0 1 8 4.868c.68.003 1.366.092 2.006.27 1.527-1.035 2.198-.82 2.198-.82.436 1.105.162 1.922.08 2.125.513.559.822 1.272.822 2.144 0 3.07-1.87 3.744-3.653 3.943.287.248.543.735.543 1.48 0 1.068-.01 1.93-.01 2.193 0 .214.146.462.55.384A8.001 8.001 0 0 0 8 .198Z"/>
-                                            </svg>
-                                        </span>
-                                        Github
                                     </button>
                                 </div>
 

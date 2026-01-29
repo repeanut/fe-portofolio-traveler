@@ -19,7 +19,7 @@ const AdminTableHeader: React.FC<AdminTableHeaderProps> = ({
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex-1 max-auto w-full">
-        <div className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 shadow-xs border border-slate-100">
+        <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-xs border border-slate-100">
           <Search className="h-4 w-4 text-slate-400" />
           <input
             type="text"
@@ -31,19 +31,21 @@ const AdminTableHeader: React.FC<AdminTableHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onExportClick}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-4 py-2 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Export
-        </button>
+        {onExportClick && (
+          <button
+            type="button"
+            onClick={onExportClick}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-4 py-2 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export
+          </button>
+        )}
         {onAddClick && (
           <button
             type="button"
             onClick={onAddClick}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-xs font-medium text-white shadow-xs hover:bg-blue-600"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-medium text-white shadow-xs hover:bg-blue-700"
           >
             <Plus className="h-3.5 w-3.5" />
             {addLabel}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, Search } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from './button';
 
 type NavbarShopProps = {
@@ -68,13 +68,6 @@ const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
                 <div className="hidden items-center gap-7 text-sm text-gray-700 md:flex">
                     <Link to="/work" className="hover:text-gray-900 transition-colors">Home</Link>
                     <a href="#" className="hover:text-gray-900 transition-colors">Contact</a>
-                    <Link
-                        to="/work/shop"
-                        className="inline-flex items-center gap-1 hover:text-gray-900 transition-colors"
-                    >
-                        Shop
-                        <ChevronRight className="h-4 w-4" />
-                    </Link>
                     {!isAuthenticated ? (
                         <Button
                             variant="link"

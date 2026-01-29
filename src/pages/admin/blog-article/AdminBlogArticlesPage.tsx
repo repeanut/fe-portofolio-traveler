@@ -183,6 +183,8 @@ const AdminBlogArticlesPage: React.FC = () => {
             navigate("/admin/landing/hero");
           } else if (key === "users") {
             navigate("/admin/users");
+          } else if (key === "shop") {
+            navigate("/admin/shop");
           } else if (key === "blog") {
             navigate("/admin/blog");
           }
