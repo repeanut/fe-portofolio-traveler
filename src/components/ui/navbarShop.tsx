@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from './button';
 
@@ -9,6 +9,7 @@ type NavbarShopProps = {
 
 const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
@@ -67,6 +68,12 @@ const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
 
                 <div className="hidden items-center gap-7 text-sm text-gray-700 md:flex">
                     <Link to="/work" className="hover:text-gray-900 transition-colors">Home</Link>
+                    <Link
+                        to="/blog?from=shop"
+                        className={`hover:text-gray-900 transition-colors ${location.pathname === '/blog' ? 'text-gray-900' : ''}`}
+                    >
+                        Blog
+                    </Link>
                     <a href="#" className="hover:text-gray-900 transition-colors">Contact</a>
                     {!isAuthenticated ? (
                         <Button

@@ -1,10 +1,11 @@
 import React from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { Button } from './button'
 import { ChevronRight } from 'lucide-react'
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleAIChatbotClick = () => {
     navigate('/ai-chatbot')
@@ -39,9 +40,12 @@ const Navbar: React.FC = () => {
               Shop
               <ChevronRight className="h-4 w-4" />
             </Link>
-            <a href="#faq" className="hover:text-gray-900">
-              FAQ
-            </a>
+            <Link
+              to="/blog?from=landing"
+              className={`hover:text-gray-900 transition-colors ${location.pathname === '/blog' ? 'text-gray-900' : ''}`}
+            >
+              Blog
+            </Link>
             <a href="#contact" className="hover:text-gray-900">
               Contact
             </a>
