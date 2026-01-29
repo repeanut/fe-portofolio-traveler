@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from './button'
+import { ChevronRight } from 'lucide-react'
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate()
@@ -31,11 +32,12 @@ const Navbar: React.FC = () => {
             <a href="#about" className="hover:text-gray-900">
               About
             </a>
-            <Link to="/work/shop" className="hover:text-gray-900">
+            <Link
+              to="/work"
+              className="inline-flex items-center gap-1 hover:text-gray-900 transition-colors"
+            >
               Shop
-            </Link>
-            <Link to="/work" className="hover:text-gray-900">
-              Work
+              <ChevronRight className="h-4 w-4" />
             </Link>
             <a href="#faq" className="hover:text-gray-900">
               FAQ

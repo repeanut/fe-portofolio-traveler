@@ -17,6 +17,7 @@ import AdminExperiencePage from "./pages/admin/AdminExperiencePage";
 import AdminFaqPage from "./pages/admin/AdminFaqPage";
 import AdminUserListPage from "./pages/admin/userlist/AdminUserListPage";
 import AdminBlogArticlesPage from "./pages/admin/blog-article/AdminBlogArticlesPage";
+import AdminShopPage from "./pages/admin/shop/AdminShopPage";
 
 export const Router = () => {
     return (
@@ -32,6 +33,7 @@ export const Router = () => {
             <Route path="/admin/chat" element={<AdminChatPage />} />
             <Route path="/admin/blog" element={<AdminBlogArticlesPage />} />
             <Route path="/admin/users" element={<AdminUserListPage />} />
+            <Route path="/admin/shop" element={<AdminShopPage />} />
             <Route path="/admin/landing/hero" element={<AdminHeroManagementPage />} />
             <Route
               path="/admin/landing/travel-journal"

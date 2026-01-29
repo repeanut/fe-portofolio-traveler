@@ -3,7 +3,8 @@ import React, { useState } from "react";
 export interface AdminModalField {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear";
+  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select";
+  options?: Array<{ label: string; value: string }>;
   placeholder?: string;
   // Untuk field image: atur apakah boleh memilih banyak file atau hanya satu.
   // Default: true (boleh multiple) supaya tidak mengubah perilaku lama.
@@ -58,9 +59,9 @@ const AdminModal: React.FC<AdminModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 p-4">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
           <button
             type="button"
@@ -85,7 +86,10 @@ const AdminModal: React.FC<AdminModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="max-h-[calc(100vh-140px)] overflow-y-auto px-5 py-4 space-y-4"
+        >
           {fields.map((field) => {
             if (field.type === "monthYear") {
               const months = [
@@ -139,6 +143,27 @@ const AdminModal: React.FC<AdminModalProps> = ({
                       ))}
                     </select>
                   </div>
+                </div>
+              );
+            }
+
+            if (field.type === "select") {
+              return (
+                <div key={field.name} className="space-y-1">
+                  <label className="block text-[11px] font-medium text-slate-700">
+                    {field.label}
+                  </label>
+                  <select
+                    name={field.name}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    defaultValue={(initialData?.[field.name] as string) ?? ""}
+                  >
+                    {(field.options ?? []).map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               );
             }
@@ -304,7 +329,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
             <button
               type="submit"
               disabled={isSaving}
-              className="inline-flex items-center rounded-lg bg-blue-500 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving ? "Menyimpan..." : "Simpan"}
             </button>
