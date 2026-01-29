@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../../components/admin/AdminSidebar";
@@ -19,6 +19,8 @@ interface BlogArticleItem extends Record<string, unknown> {
   status: "publish" | "draft";
   content: string;
 }
+
+const BLOG_ARTICLES_STORAGE_KEY = "admin_blog_articles";
 
 interface EditorModalProps {
   isOpen: boolean;
@@ -106,16 +108,38 @@ const AdminBlogArticlesPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("blog");
   const navigate = useNavigate();
 
-  const [articles, setArticles] = useState<BlogArticleItem[]>([
-    {
-      id: 1,
-      cover: "/placeholder-image.png",
-      title: "Tips Menyiapkan Liburan ke Bali",
-      category: "Travel Tips",
-      status: "publish",
-      content: "Konten artikel contoh tentang liburan ke Bali.",
-    },
-  ]);
+  const [articles, setArticles] = useState<BlogArticleItem[]>(() => {
+    try {
+      const raw = localStorage.getItem(BLOG_ARTICLES_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) {
+          return parsed as BlogArticleItem[];
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return [
+      {
+        id: 1,
+        cover: "/placeholder-image.png",
+        title: "Tips Menyiapkan Liburan ke Bali",
+        category: "Travel Tips",
+        status: "publish",
+        content: "Konten artikel contoh tentang liburan ke Bali.",
+      },
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BLOG_ARTICLES_STORAGE_KEY, JSON.stringify(articles));
+    } catch {
+      // ignore
+    }
+  }, [articles]);
 
   const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
