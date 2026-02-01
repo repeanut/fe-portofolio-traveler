@@ -9,7 +9,7 @@ import type { Column } from "../../../components/admin/AdminTable";
 import AdminModal, {
   type AdminModalField,
 } from "../../../components/admin/AdminModal";
-import { Editor } from "@tinymce/tinymce-react";
+import SummernoteEditor from "../../../components/ui/SummernoteEditor";
 
 interface BlogArticleItem extends Record<string, unknown> {
   id: number;
@@ -39,6 +39,15 @@ const BlogEditorModal: React.FC<EditorModalProps> = ({
 }) => {
   const [content, setContent] = useState(initialContent ?? "");
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const next = initialContent ?? "";
+    const t = window.setTimeout(() => {
+      setContent(next);
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [initialContent, isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -62,24 +71,9 @@ const BlogEditorModal: React.FC<EditorModalProps> = ({
 
         {/* Editor content area */}
         <div className="flex-1 px-6 py-4 overflow-y-auto">
-          <Editor
-            apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
-            value={content}
-            onEditorChange={(value: string) => setContent(value)}
-            init={{
-              height: 420,
-              menubar: true,
-              plugins:
-                "advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount",
-              toolbar:
-                "undo redo | formatselect | " +
-                "bold italic underline strikethrough | forecolor backcolor | " +
-                "alignleft aligncenter alignright alignjustify | " +
-                "bullist numlist outdent indent | " +
-                "link image media table | removeformat | code",
-              branding: false,
-            }}
-          />
+          <div className="rounded-xl border border-slate-200 overflow-hidden">
+            <SummernoteEditor value={content} onChange={setContent} height={420} />
+          </div>
         </div>
 
         {/* Footer buttons inside the card */}
