@@ -92,11 +92,27 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        const normalizedEmail = (email || '').trim();
+        const normalizedPassword = (password || '').trim();
+        const normalizedFirstName = (firstName || '').trim();
+        const normalizedLastName = (lastName || '').trim();
+
         if (activeMode === 'signup') {
             if (signupStep === 'account') {
+                if (!normalizedFirstName) return;
+                if (!normalizedLastName) return;
+                if (!normalizedEmail) return;
+                if (!normalizedPassword) return;
                 setSignupStep('profile');
                 return;
             }
+            if (!normalizedEmail) return;
+        }
+
+        if (activeMode === 'login') {
+            if (!normalizedEmail) return;
+            if (!normalizedPassword) return;
         }
 
         completeAuth();
@@ -259,6 +275,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                             <label className="block text-xs font-medium text-slate-700">First Name</label>
                                             <input
                                                 type="text"
+                                                required
                                                 value={firstName}
                                                 onChange={(e) => setFirstName(e.target.value)}
                                                 className="mt-2 w-full rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none ring-1 ring-transparent focus:ring-sky-300"
@@ -269,6 +286,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                             <label className="block text-xs font-medium text-slate-700">Last Name</label>
                                             <input
                                                 type="text"
+                                                required
                                                 value={lastName}
                                                 onChange={(e) => setLastName(e.target.value)}
                                                 className="mt-2 w-full rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none ring-1 ring-transparent focus:ring-sky-300"

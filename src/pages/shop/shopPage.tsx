@@ -8,6 +8,8 @@ import AuthModal from '../../components/auth/AuthModal';
 import { ShopCard, type ShopItem } from '../../components/ui/shopCards';
 import Pagination from '../../components/ui/pagination';
 import ShopFilters, { type BudgetState } from '../../components/shop/shopFilters';
+import InitialShimmer from '../../components/ui/InitialShimmer';
+import { ShopPageSkeleton } from '../../components/ui/skeletons';
 
 const shopItems: ShopItem[] = [
     {
@@ -171,72 +173,74 @@ const ShopPage: React.FC = () => {
     const [authOpen, setAuthOpen] = useState(false);
 
     return (
-        <div className="min-h-screen flex flex-col bg-white">
-            <SignUpNotification onCtaClick={() => setAuthOpen(true)} />
-            <NavbarShop />
+        <InitialShimmer delayMs={850} skeleton={<ShopPageSkeleton />}>
+            <div className="min-h-screen flex flex-col bg-white">
+                <SignUpNotification onCtaClick={() => setAuthOpen(true)} />
+                <NavbarShop />
 
-            <AuthModal
-                open={authOpen}
-                mode="signup"
-                closable
-                onClose={() => setAuthOpen(false)}
-                onSuccess={() => setAuthOpen(false)}
-            />
+                <AuthModal
+                    open={authOpen}
+                    mode="signup"
+                    closable
+                    onClose={() => setAuthOpen(false)}
+                    onSuccess={() => setAuthOpen(false)}
+                />
 
-            <main className="flex-1">
-                <section className="mx-auto max-w-7xl py-10">
-                    {/* Breadcrumb */}
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <Link to="/" className="hover:text-slate-800 transition-colors">
-                            <Home className="w-4 h-4" />
-                        </Link>
-                        <span>/</span>
-                        <Link to="/work/shop" className="text-slate-800">Shop</Link>
-                    </div>
+                <main className="flex-1">
+                    <section className="mx-auto max-w-7xl py-10">
+                        {/* Breadcrumb */}
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <Link to="/" className="hover:text-slate-800 transition-colors">
+                                <Home className="w-4 h-4" />
+                            </Link>
+                            <span>/</span>
+                            <Link to="/work/shop" className="text-slate-800">Shop</Link>
+                        </div>
 
-                    {/* Filter bar */}
-                    <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <p className="text-xl md:text-2xl font-semibold text-slate-900">
-                            All product for you!
-                        </p>
+                        {/* Filter bar */}
+                        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <p className="text-xl md:text-2xl font-semibold text-slate-900">
+                                All product for you!
+                            </p>
 
-                        <ShopFilters
-                            initialServiceLabel={serviceFilter || 'Service Options'}
-                            onServiceChange={(value) => {
-                                setServiceFilter(value === 'Service Options' ? null : value);
-                                setCurrentPage(1);
-                            }}
-                            onDeliveryChange={(value) => {
-                                setDeliveryFilter(value === 'Delivery Time' ? null : value);
-                                setCurrentPage(1);
-                            }}
-                            onBudgetApply={(value) => {
-                                setBudgetFilter(value);
-                                setCurrentPage(1);
-                            }}
-                        />
-                    </div>
+                            <ShopFilters
+                                initialServiceLabel={serviceFilter || 'Service Options'}
+                                onServiceChange={(value) => {
+                                    setServiceFilter(value === 'Service Options' ? null : value);
+                                    setCurrentPage(1);
+                                }}
+                                onDeliveryChange={(value) => {
+                                    setDeliveryFilter(value === 'Delivery Time' ? null : value);
+                                    setCurrentPage(1);
+                                }}
+                                onBudgetApply={(value) => {
+                                    setBudgetFilter(value);
+                                    setCurrentPage(1);
+                                }}
+                            />
+                        </div>
 
-                    {/* Grid products */}
-                    <div className="mt-8 grid gap-6 md:grid-cols-4">
-                        {paginatedItems.map((item) => (
-                            <ShopCard key={item.id} item={item} />
-                        ))}
-                    </div>
+                        {/* Grid products */}
+                        <div className="mt-8 grid gap-6 md:grid-cols-4">
+                            {paginatedItems.map((item) => (
+                                <ShopCard key={item.id} item={item} />
+                            ))}
+                        </div>
 
-                    {/* Pagination */}
-                    <div className="mt-10 flex justify-center">
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                        />
-                    </div>
-                </section>
-            </main>
+                        {/* Pagination */}
+                        <div className="mt-10 flex justify-center">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                        </div>
+                    </section>
+                </main>
 
-            <FooterSection />
-        </div>
+                <FooterSection />
+            </div>
+        </InitialShimmer>
     );
 };
 

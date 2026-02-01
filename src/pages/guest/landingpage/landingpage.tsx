@@ -10,21 +10,25 @@ import ServicesSection from '../../../components/guest/landingpage/servicesSecti
 import ExperienceSection from '../../../components/guest/landingpage/experienceSection'
 import FAQSection from '../../../components/guest/landingpage/faqSections'
 import FooterSection from '../../../components/ui/footer'
+import InitialShimmer from '../../../components/ui/InitialShimmer'
+import { LandingPageSkeleton } from '../../../components/ui/skeletons'
 
 const LandingPage: React.FC = () => {
   return (
-    <div id="home" className="min-h-screen bg-white">
-      <Navbar />
-      <HeroSection />
-      <StoriesSection />
-      <AboutSection />
-      <PortfolioSection />
-      <CertificationsSection />
-      <ServicesSection />
-      <ExperienceSection />
-      <FAQSection />
-      <FooterSection />
-    </div>
+    <InitialShimmer delayMs={850} skeleton={<LandingPageSkeleton />}>
+      <div id="home" className="min-h-screen bg-white">
+        <Navbar />
+        <HeroSection />
+        <StoriesSection />
+        <AboutSection />
+        <PortfolioSection />
+        <CertificationsSection />
+        <ServicesSection />
+        <ExperienceSection />
+        <FAQSection />
+        <FooterSection />
+      </div>
+    </InitialShimmer>
   )
 }
 

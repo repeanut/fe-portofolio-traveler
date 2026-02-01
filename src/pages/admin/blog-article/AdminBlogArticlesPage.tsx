@@ -10,6 +10,8 @@ import AdminModal, {
   type AdminModalField,
 } from "../../../components/admin/AdminModal";
 import SummernoteEditor from "../../../components/ui/SummernoteEditor";
+import InitialShimmer from "../../../components/ui/InitialShimmer";
+import { AdminTablePageSkeleton } from "../../../components/ui/skeletons";
 
 interface BlogArticleItem extends Record<string, unknown> {
   id: number;
@@ -190,169 +192,171 @@ const AdminBlogArticlesPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <AdminSidebar
-        active={activeMenu}
-        onNavigate={(key) => {
-          setActiveMenu(key);
-          if (key === "chat") {
-            navigate("/admin/chat");
-          } else if (key === "landing") {
-            navigate("/admin/landing/hero");
-          } else if (key === "users") {
-            navigate("/admin/users");
-          } else if (key === "shop") {
-            navigate("/admin/shop");
-          } else if (key === "blog") {
-            navigate("/admin/blog");
-          }
-        }}
-      />
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-36" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden">
+        <AdminSidebar
+          active={activeMenu}
+          onNavigate={(key) => {
+            setActiveMenu(key);
+            if (key === "chat") {
+              navigate("/admin/chat");
+            } else if (key === "landing") {
+              navigate("/admin/landing/hero");
+            } else if (key === "users") {
+              navigate("/admin/users");
+            } else if (key === "shop") {
+              navigate("/admin/shop");
+            } else if (key === "blog") {
+              navigate("/admin/blog");
+            }
+          }}
+        />
 
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
-        <AdminHeader title="Blog Articles" />
+        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+          <AdminHeader title="Blog Articles" />
 
-        <div className="flex-1 overflow-y-auto space-y-10 pr-1">
-          <section>
-            <AdminTableHeader
-              placeholder="Search article..."
-              onAddClick={() => {
-                setEditingId(null);
-                setPendingMeta(null);
-                setEditorContent("");
-                setEditorTitle(undefined);
-                setIsMetaModalOpen(true);
-              }}
-            />
-
-            <AdminTable
-              columns={columns}
-              data={articles}
-              currentPage={1}
-              itemsPerPage={5}
-              totalPages={1}
-              onPageChange={() => {}}
-              onItemsPerPageChange={() => {}}
-              onEdit={(id) => {
-                if (typeof id === "number") {
-                  const item = articles.find((a) => a.id === id);
-                  if (!item) return;
-                  setEditingId(id);
-                  setPendingMeta({
-                    cover: item.cover,
-                    title: item.title,
-                    category: item.category,
-                    status: item.status,
-                  });
-                  setEditorTitle(item.title);
-                  setEditorContent(item.content);
+          <div className="flex-1 overflow-y-auto space-y-10 pr-1">
+            <section>
+              <AdminTableHeader
+                placeholder="Search article..."
+                onAddClick={() => {
+                  setEditingId(null);
+                  setPendingMeta(null);
+                  setEditorContent("");
+                  setEditorTitle(undefined);
                   setIsMetaModalOpen(true);
-                }
-              }}
-              onDelete={(id) => {
-                if (typeof id === "number") {
-                  setArticles((prev) => prev.filter((a) => a.id !== id));
-                }
-              }}
-            />
-          </section>
+                }}
+              />
+
+              <AdminTable
+                columns={columns}
+                data={articles}
+                currentPage={1}
+                itemsPerPage={5}
+                totalPages={1}
+                onPageChange={() => {}}
+                onItemsPerPageChange={() => {}}
+                onEdit={(id) => {
+                  if (typeof id === "number") {
+                    const item = articles.find((a) => a.id === id);
+                    if (!item) return;
+                    setEditingId(id);
+                    setPendingMeta({
+                      cover: item.cover,
+                      title: item.title,
+                      category: item.category,
+                      status: item.status,
+                    });
+                    setEditorTitle(item.title);
+                    setEditorContent(item.content);
+                    setIsMetaModalOpen(true);
+                  }
+                }}
+                onDelete={(id) => {
+                  if (typeof id === "number") {
+                    setArticles((prev) => prev.filter((a) => a.id !== id));
+                  }
+                }}
+              />
+            </section>
+          </div>
         </div>
-      </div>
 
-      {/* Modal 1: metadata artikel */}
-      <AdminModal
-        isOpen={isMetaModalOpen}
-        title={editingId ? "Edit Artikel" : "Tambah Artikel"}
-        fields={metaFields}
-        initialData={
-          editingId != null && pendingMeta
-            ? {
-                cover: [pendingMeta.cover],
-                title: pendingMeta.title,
-                category: pendingMeta.category,
-                status: pendingMeta.status,
-              }
-            : undefined
-        }
-        onClose={() => {
-          setIsMetaModalOpen(false);
-          setEditingId(null);
-          setPendingMeta(null);
-        }}
-        onSubmit={(data) => {
-          const coverList = (data.cover as string[] | undefined) ?? [];
-          const cover = coverList[0] || "";
-          const title = (data.title as string) || "";
-          const category = (data.category as string) || "";
-          const rawStatus = ((data.status as string) || "draft").toLowerCase();
-          const status: "publish" | "draft" =
-            rawStatus === "publish" ? "publish" : "draft";
-
-          setPendingMeta({ cover, title, category, status });
-          setEditorTitle(title);
-          setIsMetaModalOpen(false);
-          setIsEditorOpen(true);
-        }}
-      />
-
-      {/* Modal 2: editor konten artikel */}
-      <BlogEditorModal
-        isOpen={isEditorOpen}
-        initialTitle={editorTitle}
-        initialContent={editorContent}
-        onClose={() => {
-          setIsEditorOpen(false);
-          setEditingId(null);
-          setPendingMeta(null);
-          setEditorContent("");
-          setEditorTitle(undefined);
-        }}
-        onSubmit={(content) => {
-          if (!pendingMeta) {
-            setIsEditorOpen(false);
-            return;
-          }
-
-          if (editingId != null) {
-            setArticles((prev) =>
-              prev.map((item) =>
-                item.id === editingId
-                  ? {
-                      ...item,
-                      cover: pendingMeta.cover || item.cover,
-                      title: pendingMeta.title || item.title,
-                      category: pendingMeta.category || item.category,
-                      status: pendingMeta.status || item.status,
-                      content,
-                    }
-                  : item
-              )
-            );
-          } else {
-            setArticles((prev) => {
-              const nextId = prev.length ? prev[prev.length - 1].id + 1 : 1;
-              return [
-                ...prev,
-                {
-                  id: nextId,
-                  cover: pendingMeta.cover,
+        {/* Modal 1: metadata artikel */}
+        <AdminModal
+          isOpen={isMetaModalOpen}
+          title={editingId ? "Edit Artikel" : "Tambah Artikel"}
+          fields={metaFields}
+          initialData={
+            editingId != null && pendingMeta
+              ? {
+                  cover: [pendingMeta.cover],
                   title: pendingMeta.title,
                   category: pendingMeta.category,
                   status: pendingMeta.status,
-                  content,
-                },
-              ];
-            });
+                }
+              : undefined
           }
+          onClose={() => {
+            setIsMetaModalOpen(false);
+            setEditingId(null);
+            setPendingMeta(null);
+          }}
+          onSubmit={(data) => {
+            const coverList = (data.cover as string[] | undefined) ?? [];
+            const cover = coverList[0] || "";
+            const title = (data.title as string) || "";
+            const category = (data.category as string) || "";
+            const rawStatus = ((data.status as string) || "draft").toLowerCase();
+            const status: "publish" | "draft" =
+              rawStatus === "publish" ? "publish" : "draft";
 
-          setIsEditorOpen(false);
-          setEditingId(null);
-          setPendingMeta(null);
-          setEditorContent("");
-          setEditorTitle(undefined);
-        }}
-      />
-    </div>
+            setPendingMeta({ cover, title, category, status });
+            setEditorTitle(title);
+            setIsMetaModalOpen(false);
+            setIsEditorOpen(true);
+          }}
+        />
+
+        {/* Modal 2: editor konten artikel */}
+        <BlogEditorModal
+          isOpen={isEditorOpen}
+          initialTitle={editorTitle}
+          initialContent={editorContent}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setEditingId(null);
+            setPendingMeta(null);
+            setEditorContent("");
+            setEditorTitle(undefined);
+          }}
+          onSubmit={(content) => {
+            if (!pendingMeta) {
+              setIsEditorOpen(false);
+              return;
+            }
+
+            if (editingId != null) {
+              setArticles((prev) =>
+                prev.map((item) =>
+                  item.id === editingId
+                    ? {
+                        ...item,
+                        cover: pendingMeta.cover || item.cover,
+                        title: pendingMeta.title || item.title,
+                        category: pendingMeta.category || item.category,
+                        status: pendingMeta.status || item.status,
+                        content,
+                      }
+                    : item
+                )
+              );
+            } else {
+              setArticles((prev) => {
+                const nextId = prev.length ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    cover: pendingMeta.cover,
+                    title: pendingMeta.title,
+                    category: pendingMeta.category,
+                    status: pendingMeta.status,
+                    content,
+                  },
+                ];
+              });
+            }
+
+            setIsEditorOpen(false);
+            setEditingId(null);
+            setPendingMeta(null);
+            setEditorContent("");
+            setEditorTitle(undefined);
+          }}
+        />
+      </div>
+    </InitialShimmer>
   );
 };
 

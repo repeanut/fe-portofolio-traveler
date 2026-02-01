@@ -8,6 +8,8 @@ import type { OrderPackage } from '../../components/order/sidebarOrder';
 import EditAvatarModal from '../../components/profile/EditAvatarModal';
 import ProfileSidebar from '../../components/profile/ProfileSidebar';
 import ProfileContent from '../../components/profile/ProfileContent';
+import InitialShimmer from '../../components/ui/InitialShimmer';
+import { UserProfilePageSkeleton } from '../../components/ui/skeletons';
 
 type OrderStatus = 'process' | 'success' | 'cancel';
 
@@ -163,44 +165,46 @@ const UserProfilePage: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen flex flex-col bg-white">
-            <Navbar />
+        <InitialShimmer delayMs={850} skeleton={<UserProfilePageSkeleton />}>
+            <div className="min-h-screen flex flex-col bg-white">
+                <Navbar />
 
-            <EditAvatarModal
-                open={cropOpen}
-                imageSrc={pendingAvatarSrc}
-                onClose={handleCloseAvatarModal}
-                onSave={handleSaveAvatar}
-            />
+                <EditAvatarModal
+                    open={cropOpen}
+                    imageSrc={pendingAvatarSrc}
+                    onClose={handleCloseAvatarModal}
+                    onSave={handleSaveAvatar}
+                />
 
-            <main className="flex-1">
-                <section className="mx-auto max-w-7xl px-4 md:px-0 py-10">
-                    <div className="grid gap-6 lg:grid-cols-[56px_360px_1fr] items-start lg:items-stretch lg:h-[calc(100vh-220px)]">
-                        <div className="lg:col-start-1 lg:flex lg:justify-center">
-                            <button
-                                type="button"
-                                onClick={() => navigate(-1)}
-                                className="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors inline-flex items-center gap-2 lg:w-10 lg:px-0 lg:justify-center"
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                                <span className="lg:hidden">Kembali</span>
-                            </button>
+                <main className="flex-1">
+                    <section className="mx-auto max-w-7xl px-4 md:px-0 py-10">
+                        <div className="grid gap-6 lg:grid-cols-[56px_360px_1fr] items-start lg:items-stretch lg:h-[calc(100vh-220px)]">
+                            <div className="lg:col-start-1 lg:flex lg:justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate(-1)}
+                                    className="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors inline-flex items-center gap-2 lg:w-10 lg:px-0 lg:justify-center"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                    <span className="lg:hidden">Kembali</span>
+                                </button>
+                            </div>
+
+                            <ProfileSidebar profile={profile} onPickAvatar={handlePickAvatar} onLogout={handleLogout} />
+                            <ProfileContent
+                                activeTab={activeTab}
+                                onTabChange={setActiveTab}
+                                profile={profile}
+                                onProfileChange={setProfile}
+                                orders={orders}
+                            />
                         </div>
+                    </section>
+                </main>
 
-                        <ProfileSidebar profile={profile} onPickAvatar={handlePickAvatar} onLogout={handleLogout} />
-                        <ProfileContent
-                            activeTab={activeTab}
-                            onTabChange={setActiveTab}
-                            profile={profile}
-                            onProfileChange={setProfile}
-                            orders={orders}
-                        />
-                    </div>
-                </section>
-            </main>
-
-            <FooterSection />
-        </div>
+                <FooterSection />
+            </div>
+        </InitialShimmer>
     );
 };
 

@@ -6,6 +6,8 @@ import AdminHeader from "../../../components/admin/AdminHeader";
 import AdminTable from "../../../components/admin/AdminTable";
 import type { Column } from "../../../components/admin/AdminTable";
 import AdminTableHeader from "../../../components/admin/AdminTableHeader";
+import InitialShimmer from "../../../components/ui/InitialShimmer";
+import { AdminTablePageSkeleton } from "../../../components/ui/skeletons";
 
 interface UserItem extends Record<string, unknown> {
   id: number;
@@ -31,65 +33,67 @@ const AdminUserListPage: React.FC = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <AdminSidebar
-        active={activeMenu}
-        onNavigate={(key) => {
-          setActiveMenu(key);
-          if (key === "chat") {
-            navigate("/admin/chat");
-          } else if (key === "landing") {
-            navigate("/admin/landing/hero");
-          } else if (key === "users") {
-            navigate("/admin/users");
-          } else if (key === "shop") {
-            navigate("/admin/shop");
-          } else if (key === "blog") {
-            navigate("/admin/blog");
-          }
-        }}
-        onNavigateLandingSub={(subKey) => {
-          setActiveMenu("landing");
-          if (subKey === "hero") {
-            navigate("/admin/landing/hero");
-          } else if (subKey === "travel") {
-            navigate("/admin/landing/travel-journal");
-          } else if (subKey === "about") {
-            navigate("/admin/landing/about");
-          } else if (subKey === "portfolio") {
-            navigate("/admin/landing/portfolio");
-          } else if (subKey === "certServices") {
-            navigate("/admin/landing/cert-services");
-          } else if (subKey === "experience") {
-            navigate("/admin/landing/experience");
-          } else if (subKey === "faq") {
-            navigate("/admin/landing/faq");
-          }
-        }}
-      />
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-28" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden">
+        <AdminSidebar
+          active={activeMenu}
+          onNavigate={(key) => {
+            setActiveMenu(key);
+            if (key === "chat") {
+              navigate("/admin/chat");
+            } else if (key === "landing") {
+              navigate("/admin/landing/hero");
+            } else if (key === "users") {
+              navigate("/admin/users");
+            } else if (key === "shop") {
+              navigate("/admin/shop");
+            } else if (key === "blog") {
+              navigate("/admin/blog");
+            }
+          }}
+          onNavigateLandingSub={(subKey) => {
+            setActiveMenu("landing");
+            if (subKey === "hero") {
+              navigate("/admin/landing/hero");
+            } else if (subKey === "travel") {
+              navigate("/admin/landing/travel-journal");
+            } else if (subKey === "about") {
+              navigate("/admin/landing/about");
+            } else if (subKey === "portfolio") {
+              navigate("/admin/landing/portfolio");
+            } else if (subKey === "certServices") {
+              navigate("/admin/landing/cert-services");
+            } else if (subKey === "experience") {
+              navigate("/admin/landing/experience");
+            } else if (subKey === "faq") {
+              navigate("/admin/landing/faq");
+            }
+          }}
+        />
 
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
-        <AdminHeader title="User List" />
+        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+          <AdminHeader title="User List" />
 
-        <div className="flex-1 overflow-y-auto space-y-10 pr-1">
-          <section>
-            <AdminTableHeader
-              placeholder="Search user..."
-              addLabel=""
-            />
-            <AdminTable
-              columns={columns}
-              data={userData}
-              currentPage={1}
-              itemsPerPage={5}
-              totalPages={1}
-              onPageChange={() => {}}
-              onItemsPerPageChange={() => {}}
-            />
-          </section>
+          <div className="flex-1 overflow-y-auto space-y-10 pr-1">
+            <section>
+              <AdminTableHeader
+                placeholder="Search user..."
+                addLabel=""
+              />
+              <AdminTable
+                columns={columns}
+                data={userData}
+                currentPage={1}
+                itemsPerPage={5}
+                totalPages={1}
+                onPageChange={() => {}}
+                onItemsPerPageChange={() => {}}
+              />
+            </section>
+          </div>
         </div>
       </div>
-    </div>
+    </InitialShimmer>
   );
 };
 

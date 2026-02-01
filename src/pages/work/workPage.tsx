@@ -6,6 +6,8 @@ import BenefitSection from '../../components/work/benefitSection';
 import ShopSection from '../../components/work/shopSection';
 import FooterSection from '../../components/ui/footer';
 import AuthModal from '../../components/auth/AuthModal';
+import InitialShimmer from '../../components/ui/InitialShimmer';
+import { WorkPageSkeleton } from '../../components/ui/skeletons';
 
 const WorkPage: React.FC = () => {
     const [authOpen, setAuthOpen] = useState(() => {
@@ -93,48 +95,50 @@ const WorkPage: React.FC = () => {
     };
 
     return (
-        <div
-            ref={pageRef}
-            className="min-h-screen bg-white relative overflow-hidden"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-        >
-            <div className="relative z-10">
-                <HeroSection
-                    shouldAnimateCounts={!authOpen}
-                    onSignUpClick={() => setAuthOpen(true)}
-                />
-                <ServicesSection />
-                <BenefitSection />
-                <ShopSection />
-                <FooterSection />
-            </div>
-            <div className={`page-cursor-trail ${cursorActive ? 'active' : ''}`}>
-                {trail.map((p, idx) => {
-                    const strength = Math.pow(1 - idx / Math.max(1, trail.length), 2);
-                    return (
-                        <div
-                            key={idx}
-                            className="page-cursor-dot"
-                            style={{
-                                left: `${p.x}px`,
-                                top: `${p.y}px`,
-                                opacity: 0.10 * strength,
-                                transform: `translate(-50%, -50%) scale(${2.5 + strength * 0.65})`,
-                            }}
-                        />
-                    );
-                })}
-            </div>
+        <InitialShimmer delayMs={850} skeleton={<WorkPageSkeleton />}>
+            <div
+                ref={pageRef}
+                className="min-h-screen bg-white relative overflow-hidden"
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+            >
+                <div className="relative z-10">
+                    <HeroSection
+                        shouldAnimateCounts={!authOpen}
+                        onSignUpClick={() => setAuthOpen(true)}
+                    />
+                    <ServicesSection />
+                    <BenefitSection />
+                    <ShopSection />
+                    <FooterSection />
+                </div>
+                <div className={`page-cursor-trail ${cursorActive ? 'active' : ''}`}>
+                    {trail.map((p, idx) => {
+                        const strength = Math.pow(1 - idx / Math.max(1, trail.length), 2);
+                        return (
+                            <div
+                                key={idx}
+                                className="page-cursor-dot"
+                                style={{
+                                    left: `${p.x}px`,
+                                    top: `${p.y}px`,
+                                    opacity: 0.10 * strength,
+                                    transform: `translate(-50%, -50%) scale(${2.5 + strength * 0.65})`,
+                                }}
+                            />
+                        );
+                    })}
+                </div>
 
-            <AuthModal
-                open={authOpen}
-                mode="signup"
-                closable
-                onClose={() => setAuthOpen(false)}
-                onSuccess={() => setAuthOpen(false)}
-            />
-        </div>
+                <AuthModal
+                    open={authOpen}
+                    mode="signup"
+                    closable
+                    onClose={() => setAuthOpen(false)}
+                    onSuccess={() => setAuthOpen(false)}
+                />
+            </div>
+        </InitialShimmer>
     );
 };
 
