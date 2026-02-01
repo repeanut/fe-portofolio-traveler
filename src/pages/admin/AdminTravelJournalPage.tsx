@@ -9,6 +9,8 @@ import type { Column } from "../../components/admin/AdminTable";
 import AdminModal, {
   type AdminModalField,
 } from "../../components/admin/AdminModal";
+import InitialShimmer from "../../components/ui/InitialShimmer";
+import { AdminTablePageSkeleton } from "../../components/ui/skeletons";
 
 interface TravelHighlight extends Record<string, unknown> {
   id: number;
@@ -88,83 +90,85 @@ const AdminTravelJournalPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <AdminSidebar
-        active={activeMenu}
-        landingActiveKey="travel"
-        onNavigate={(key) => {
-          setActiveMenu(key);
-          if (key === "chat") {
-            navigate("/admin/chat");
-          } else if (key === "landing") {
-            navigate("/admin/landing/hero");
-          } else if (key === "users") {
-            navigate("/admin/users");
-          } else if (key === "shop") {
-            navigate("/admin/shop");
-          } else if (key === "blog") {
-            navigate("/admin/blog");
-          }
-        }}
-        onNavigateLandingSub={(subKey) => {
-          if (subKey === "hero") {
-            setActiveMenu("landing");
-            navigate("/admin/landing/hero");
-          } else if (subKey === "travel") {
-            setActiveMenu("landing");
-            navigate("/admin/landing/travel-journal");
-          } else if (subKey === "about") {
-            setActiveMenu("landing");
-            navigate("/admin/landing/about");
-          } else if (subKey === "portfolio") {
-            setActiveMenu("landing");
-            navigate("/admin/landing/portfolio");
-          } else if (subKey === "certServices") {
-            setActiveMenu("landing");
-            navigate("/admin/landing/cert-services");
-          } else if (subKey === "experience") {
-            setActiveMenu("landing");
-            navigate("/admin/landing/experience");
-          } else if (subKey === "faq") {
-            setActiveMenu("landing");
-            navigate("/admin/landing/faq");
-          }
-        }}
-      />
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-40" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden">
+        <AdminSidebar
+          active={activeMenu}
+          landingActiveKey="travel"
+          onNavigate={(key) => {
+            setActiveMenu(key);
+            if (key === "chat") {
+              navigate("/admin/chat");
+            } else if (key === "landing") {
+              navigate("/admin/landing/hero");
+            } else if (key === "users") {
+              navigate("/admin/users");
+            } else if (key === "shop") {
+              navigate("/admin/shop");
+            } else if (key === "blog") {
+              navigate("/admin/blog");
+            }
+          }}
+          onNavigateLandingSub={(subKey) => {
+            if (subKey === "hero") {
+              setActiveMenu("landing");
+              navigate("/admin/landing/hero");
+            } else if (subKey === "travel") {
+              setActiveMenu("landing");
+              navigate("/admin/landing/travel-journal");
+            } else if (subKey === "about") {
+              setActiveMenu("landing");
+              navigate("/admin/landing/about");
+            } else if (subKey === "portfolio") {
+              setActiveMenu("landing");
+              navigate("/admin/landing/portfolio");
+            } else if (subKey === "certServices") {
+              setActiveMenu("landing");
+              navigate("/admin/landing/cert-services");
+            } else if (subKey === "experience") {
+              setActiveMenu("landing");
+              navigate("/admin/landing/experience");
+            } else if (subKey === "faq") {
+              setActiveMenu("landing");
+              navigate("/admin/landing/faq");
+            }
+          }}
+        />
 
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
-        <AdminHeader title="Travel Journal Management" />
+        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+          <AdminHeader title="Travel Journal Management" />
 
-        <div className="flex-1 overflow-y-auto space-y-10 pr-1">
-          <section>
-            <AdminTableHeader
-              onAddClick={() => {
-                setEditingId(null);
-                setIsModalOpen(true);
-              }}
-            />
-
-            <AdminTable
-              columns={columns}
-              data={travelData}
-              currentPage={1}
-              itemsPerPage={5}
-              totalPages={1}
-              onPageChange={() => {}}
-              onItemsPerPageChange={() => {}}
-              onEdit={(id) => {
-                if (typeof id === "number") {
-                  setEditingId(id);
+          <div className="flex-1 overflow-y-auto space-y-10 pr-1">
+            <section>
+              <AdminTableHeader
+                onAddClick={() => {
+                  setEditingId(null);
                   setIsModalOpen(true);
-                }
-              }}
-              onDelete={(id) => {
-                if (typeof id === "number") {
-                  setTravelData((prev) => prev.filter((item) => item.id !== id));
-                }
-              }}
-            />
-          </section>
+                }}
+              />
+
+              <AdminTable
+                columns={columns}
+                data={travelData}
+                currentPage={1}
+                itemsPerPage={5}
+                totalPages={1}
+                onPageChange={() => {}}
+                onItemsPerPageChange={() => {}}
+                onEdit={(id) => {
+                  if (typeof id === "number") {
+                    setEditingId(id);
+                    setIsModalOpen(true);
+                  }
+                }}
+                onDelete={(id) => {
+                  if (typeof id === "number") {
+                    setTravelData((prev) => prev.filter((item) => item.id !== id));
+                  }
+                }}
+              />
+            </section>
+          </div>
         </div>
       </div>
 
@@ -221,7 +225,7 @@ const AdminTravelJournalPage: React.FC = () => {
           setEditingId(null);
         }}
       />
-    </div>
+    </InitialShimmer>
   );
 };
 

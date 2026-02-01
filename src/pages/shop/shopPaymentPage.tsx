@@ -7,6 +7,8 @@ import type { OrderPackage } from '../../components/order/sidebarOrder';
 import OrderDetails from '../../components/payments/OrderDetails';
 import PaymentMethods from '../../components/payments/PaymentMethods';
 import TotalPayment from '../../components/payments/TotalPayment';
+import InitialShimmer from '../../components/ui/InitialShimmer';
+import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
 
 interface PaymentLocationState {
     item?: ShopItem;
@@ -54,41 +56,43 @@ const ShopPaymentPage: React.FC = () => {
     const total = subtotal + serviceFee;
 
     return (
-        <div className="min-h-screen flex flex-col bg-white">
-            <NavbarShop />
+        <InitialShimmer delayMs={850} skeleton={<ShopPaymentPageSkeleton />}>
+            <div className="min-h-screen flex flex-col bg-white">
+                <NavbarShop />
 
-            <main className="flex-1">
-                <section className="mx-auto max-w-6xl px-4 md:px-0 py-8 md:py-10">
+                <main className="flex-1">
+                    <section className="mx-auto max-w-6xl px-4 md:px-0 py-8 md:py-10">
 
-                    <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
-                        <div className="space-y-6">
-                            <OrderDetails
-                                item={item}
-                                orderPackage={orderPackage}
-                                quantity={quantity}
-                                subtotal={subtotal}
-                            />
-                            <PaymentMethods onPaymentMethodChange={setSelectedPaymentMethodLabel} />
+                        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
+                            <div className="space-y-6">
+                                <OrderDetails
+                                    item={item}
+                                    orderPackage={orderPackage}
+                                    quantity={quantity}
+                                    subtotal={subtotal}
+                                />
+                                <PaymentMethods onPaymentMethodChange={setSelectedPaymentMethodLabel} />
+                            </div>
+
+                            <aside className="space-y-4 lg:sticky lg:top-24">
+                                <TotalPayment
+                                    subtotal={subtotal}
+                                    serviceFee={serviceFee}
+                                    total={total}
+                                    itemTitle={item.title}
+                                    orderPackageTitle={orderPackage.title}
+                                    deliveryLabel={orderPackage.deliveryLabel}
+                                    quantity={quantity}
+                                    paymentMethodLabel={selectedPaymentMethodLabel}
+                                />
+                            </aside>
                         </div>
+                    </section>
+                </main>
 
-                        <aside className="space-y-4 lg:sticky lg:top-24">
-                            <TotalPayment
-                                subtotal={subtotal}
-                                serviceFee={serviceFee}
-                                total={total}
-                                itemTitle={item.title}
-                                orderPackageTitle={orderPackage.title}
-                                deliveryLabel={orderPackage.deliveryLabel}
-                                quantity={quantity}
-                                paymentMethodLabel={selectedPaymentMethodLabel}
-                            />
-                        </aside>
-                    </div>
-                </section>
-            </main>
-
-            <FooterSection />
-        </div>
+                <FooterSection />
+            </div>
+        </InitialShimmer>
     );
 };
 

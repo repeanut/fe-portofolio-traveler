@@ -1,4 +1,5 @@
 import React from "react";
+import Skeleton from "../ui/Skeleton";
 
 export interface Column {
   header: string;
@@ -212,7 +213,7 @@ const AdminTable: React.FC<AdminTableProps> = ({
                   ? Array.from({ length: itemsPerPage }).map((_, idx) => (
                       <tr key={idx}>
                         <td className="px-4 py-3 whitespace-nowrap text-[11px] text-slate-300 w-12">
-                          <div className="h-4 w-6 bg-gray-200 rounded animate-pulse" />
+                          <Skeleton className="h-4 w-6" rounded="rounded" />
                         </td>
                         {columns.map((col, cidx) => (
                           <td
@@ -226,7 +227,10 @@ const AdminTable: React.FC<AdminTableProps> = ({
                                 : " whitespace-nowrap"
                             }`}
                           >
-                            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                            <Skeleton
+                              className={`h-4 ${col.type === "action" ? "w-16" : "w-24"}`}
+                              rounded="rounded"
+                            />
                           </td>
                         ))}
                       </tr>
