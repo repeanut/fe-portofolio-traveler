@@ -9,6 +9,7 @@ import type { Column } from "../../components/admin/AdminTable";
 import AdminModal, {
   type AdminModalField,
 } from "../../components/admin/AdminModal";
+import { useAdminToast } from "../../hooks/useAdminToast";
 
 interface PortfolioAdminItem extends Record<string, unknown> {
   id: number;
@@ -20,6 +21,7 @@ interface PortfolioAdminItem extends Record<string, unknown> {
 const AdminPortfolioPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [portfolioData, setPortfolioData] = useState<PortfolioAdminItem[]>([
     {
@@ -184,7 +186,12 @@ const AdminPortfolioPage: React.FC = () => {
               }}
               onDelete={(id) => {
                 if (typeof id === "number") {
-                  setPortfolioData((prev) => prev.filter((item) => item.id !== id));
+                  try {
+                    setPortfolioData((prev) => prev.filter((item) => item.id !== id));
+                    toast.success("Berhasil", "Portfolio berhasil dihapus");
+                  } catch {
+                    toast.error("Gagal", "Portfolio gagal dihapus");
+                  }
                 }
               }}
             />
@@ -213,36 +220,42 @@ const AdminPortfolioPage: React.FC = () => {
           const tags = (data.tags as string[] | undefined) ?? [];
           const description = (data.description as string) || "";
 
-          if (editingId != null) {
-            setPortfolioData((prev) =>
-              prev.map((item) =>
-                item.id === editingId
-                  ? {
-                      ...item,
-                      images: images.length ? images : item.images,
-                      tags: tags.length ? tags : item.tags,
-                      description: description || item.description,
-                    }
-                  : item
-              )
-            );
-          } else {
-            setPortfolioData((prev) => {
-              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-              return [
-                ...prev,
-                {
-                  id: nextId,
-                  images,
-                  tags,
-                  description,
-                },
-              ];
-            });
-          }
+          try {
+            if (editingId != null) {
+              setPortfolioData((prev) =>
+                prev.map((item) =>
+                  item.id === editingId
+                    ? {
+                        ...item,
+                        images: images.length ? images : item.images,
+                        tags: tags.length ? tags : item.tags,
+                        description: description || item.description,
+                      }
+                    : item
+                )
+              );
+              toast.success("Berhasil", "Portfolio berhasil diperbarui");
+            } else {
+              setPortfolioData((prev) => {
+                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    images,
+                    tags,
+                    description,
+                  },
+                ];
+              });
+              toast.success("Berhasil", "Portfolio berhasil ditambahkan");
+            }
 
-          setIsModalOpen(false);
-          setEditingId(null);
+            setIsModalOpen(false);
+            setEditingId(null);
+          } catch {
+            toast.error("Gagal", "Perubahan portfolio gagal disimpan");
+          }
         }}
       />
     </div>

@@ -11,6 +11,7 @@ import AdminModal, {
 } from "../../components/admin/AdminModal";
 import InitialShimmer from "../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../components/ui/skeletons";
+import { useAdminToast } from "../../hooks/useAdminToast";
 
 interface TravelHighlight extends Record<string, unknown> {
   id: number;
@@ -22,6 +23,7 @@ interface TravelHighlight extends Record<string, unknown> {
 const AdminTravelJournalPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [travelData, setTravelData] = useState<TravelHighlight[]>([
     {
@@ -165,7 +167,12 @@ const AdminTravelJournalPage: React.FC = () => {
                 }}
                 onDelete={(id) => {
                   if (typeof id === "number") {
-                    setTravelData((prev) => prev.filter((item) => item.id !== id));
+                    try {
+                      setTravelData((prev) => prev.filter((item) => item.id !== id));
+                      toast.success("Berhasil", "Travel highlight berhasil dihapus");
+                    } catch {
+                      toast.error("Gagal", "Travel highlight gagal dihapus");
+                    }
                   }
                 }}
               />
@@ -195,36 +202,42 @@ const AdminTravelJournalPage: React.FC = () => {
           const images = (data.images as string[] | undefined) ?? [];
           const cover = coverList[0] || "";
 
-          if (editingId != null) {
-            setTravelData((prev) =>
-              prev.map((item) =>
-                item.id === editingId
-                  ? {
-                      ...item,
-                      name: name || item.name,
-                      cover: cover || item.cover,
-                      images: images.length ? images : item.images,
-                    }
-                  : item
-              )
-            );
-          } else {
-            setTravelData((prev) => {
-              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-              return [
-                ...prev,
-                {
-                  id: nextId,
-                  name,
-                  cover,
-                  images,
-                },
-              ];
-            });
-          }
+          try {
+            if (editingId != null) {
+              setTravelData((prev) =>
+                prev.map((item) =>
+                  item.id === editingId
+                    ? {
+                        ...item,
+                        name: name || item.name,
+                        cover: cover || item.cover,
+                        images: images.length ? images : item.images,
+                      }
+                    : item
+                )
+              );
+              toast.success("Berhasil", "Travel highlight berhasil diperbarui");
+            } else {
+              setTravelData((prev) => {
+                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    name,
+                    cover,
+                    images,
+                  },
+                ];
+              });
+              toast.success("Berhasil", "Travel highlight berhasil ditambahkan");
+            }
 
-          setIsModalOpen(false);
-          setEditingId(null);
+            setIsModalOpen(false);
+            setEditingId(null);
+          } catch {
+            toast.error("Gagal", "Perubahan travel highlight gagal disimpan");
+          }
         }}
       />
     </InitialShimmer>

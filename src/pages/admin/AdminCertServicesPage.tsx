@@ -9,6 +9,7 @@ import type { Column } from "../../components/admin/AdminTable";
 import AdminModal, {
   type AdminModalField,
 } from "../../components/admin/AdminModal";
+import { useAdminToast } from "../../hooks/useAdminToast";
 
 interface CertificationItem extends Record<string, unknown> {
   id: number;
@@ -26,6 +27,7 @@ interface ServiceItem extends Record<string, unknown> {
 const AdminCertServicesPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [certData, setCertData] = useState<CertificationItem[]>([
     {
@@ -185,7 +187,12 @@ const AdminCertServicesPage: React.FC = () => {
               }}
               onDelete={(id) => {
                 if (typeof id === "number") {
-                  setCertData((prev) => prev.filter((item) => item.id !== id));
+                  try {
+                    setCertData((prev) => prev.filter((item) => item.id !== id));
+                    toast.success("Berhasil", "Certification berhasil dihapus");
+                  } catch {
+                    toast.error("Gagal", "Certification gagal dihapus");
+                  }
                 }
               }}
             />
@@ -220,7 +227,12 @@ const AdminCertServicesPage: React.FC = () => {
               }}
               onDelete={(id) => {
                 if (typeof id === "number") {
-                  setServicesData((prev) => prev.filter((item) => item.id !== id));
+                  try {
+                    setServicesData((prev) => prev.filter((item) => item.id !== id));
+                    toast.success("Berhasil", "Service berhasil dihapus");
+                  } catch {
+                    toast.error("Gagal", "Service gagal dihapus");
+                  }
                 }
               }}
             />
@@ -251,38 +263,44 @@ const AdminCertServicesPage: React.FC = () => {
           const subtitle = (data.subtitle as string) || "";
           const organization = (data.organization as string) || "";
 
-          if (editingCertId != null) {
-            setCertData((prev) =>
-              prev.map((item) =>
-                item.id === editingCertId
-                  ? {
-                      ...item,
-                      logo: logo || item.logo,
-                      title: title || item.title,
-                      subtitle: subtitle || item.subtitle,
-                      organization: organization || item.organization,
-                    }
-                  : item
-              )
-            );
-          } else {
-            setCertData((prev) => {
-              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-              return [
-                ...prev,
-                {
-                  id: nextId,
-                  logo,
-                  title,
-                  subtitle,
-                  organization,
-                },
-              ];
-            });
-          }
+          try {
+            if (editingCertId != null) {
+              setCertData((prev) =>
+                prev.map((item) =>
+                  item.id === editingCertId
+                    ? {
+                        ...item,
+                        logo: logo || item.logo,
+                        title: title || item.title,
+                        subtitle: subtitle || item.subtitle,
+                        organization: organization || item.organization,
+                      }
+                    : item
+                )
+              );
+              toast.success("Berhasil", "Certification berhasil diperbarui");
+            } else {
+              setCertData((prev) => {
+                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    logo,
+                    title,
+                    subtitle,
+                    organization,
+                  },
+                ];
+              });
+              toast.success("Berhasil", "Certification berhasil ditambahkan");
+            }
 
-          setIsCertModalOpen(false);
-          setEditingCertId(null);
+            setIsCertModalOpen(false);
+            setEditingCertId(null);
+          } catch {
+            toast.error("Gagal", "Perubahan certification gagal disimpan");
+          }
         }}
       />
 
@@ -305,32 +323,38 @@ const AdminCertServicesPage: React.FC = () => {
         onSubmit={(data) => {
           const name = (data.name as string) || "";
 
-          if (editingServiceId != null) {
-            setServicesData((prev) =>
-              prev.map((item) =>
-                item.id === editingServiceId
-                  ? {
-                      ...item,
-                      name: name || item.name,
-                    }
-                  : item
-              )
-            );
-          } else {
-            setServicesData((prev) => {
-              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-              return [
-                ...prev,
-                {
-                  id: nextId,
-                  name,
-                },
-              ];
-            });
-          }
+          try {
+            if (editingServiceId != null) {
+              setServicesData((prev) =>
+                prev.map((item) =>
+                  item.id === editingServiceId
+                    ? {
+                        ...item,
+                        name: name || item.name,
+                      }
+                    : item
+                )
+              );
+              toast.success("Berhasil", "Service berhasil diperbarui");
+            } else {
+              setServicesData((prev) => {
+                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    name,
+                  },
+                ];
+              });
+              toast.success("Berhasil", "Service berhasil ditambahkan");
+            }
 
-          setIsServiceModalOpen(false);
-          setEditingServiceId(null);
+            setIsServiceModalOpen(false);
+            setEditingServiceId(null);
+          } catch {
+            toast.error("Gagal", "Perubahan service gagal disimpan");
+          }
         }}
       />
     </div>

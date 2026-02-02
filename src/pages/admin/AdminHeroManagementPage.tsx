@@ -11,10 +11,12 @@ import AdminModal, {
 } from "../../components/admin/AdminModal";
 import InitialShimmer from "../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../components/ui/skeletons";
+import { useAdminToast } from "../../hooks/useAdminToast";
 
 const AdminHeroManagementPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   // State for hero text/brands table
   const [heroBrandsData, setHeroBrandsData] = useState<
@@ -191,6 +193,7 @@ const AdminHeroManagementPage: React.FC = () => {
               <AdminTableHeader
                 onAddClick={() => {
                   if (heroBrandsData.length >= 1) {
+                    toast.warning("Batas maksimal", "Hero text hanya boleh 1 item");
                     return;
                   }
                   setEditingHeroId(null);
@@ -215,7 +218,12 @@ const AdminHeroManagementPage: React.FC = () => {
                 }}
                 onDelete={(id) => {
                   if (typeof id === "number") {
-                    setHeroBrandsData((prev) => prev.filter((item) => item.id !== id));
+                    try {
+                      setHeroBrandsData((prev) => prev.filter((item) => item.id !== id));
+                      toast.success("Berhasil", "Hero text berhasil dihapus");
+                    } catch {
+                      toast.error("Gagal", "Hero text gagal dihapus");
+                    }
                   }
                 }}
               />
@@ -230,6 +238,7 @@ const AdminHeroManagementPage: React.FC = () => {
               <AdminTableHeader
                 onAddClick={() => {
                   if (heroImageData.length >= 7) {
+                    toast.warning("Batas maksimal", "Hero image maksimal 7 item");
                     return;
                   }
                   setEditingImageId(null);
@@ -254,7 +263,12 @@ const AdminHeroManagementPage: React.FC = () => {
                 }}
                 onDelete={(id) => {
                   if (typeof id === "number") {
-                    setHeroImageData((prev) => prev.filter((item) => item.id !== id));
+                    try {
+                      setHeroImageData((prev) => prev.filter((item) => item.id !== id));
+                      toast.success("Berhasil", "Hero image berhasil dihapus");
+                    } catch {
+                      toast.error("Gagal", "Hero image gagal dihapus");
+                    }
                   }
                 }}
               />
@@ -281,41 +295,46 @@ const AdminHeroManagementPage: React.FC = () => {
           onSubmit={(data) => {
             const brands = (data.brands as string[] | undefined) ?? [];
 
-            if (editingHeroId != null) {
-              // update existing
-              setHeroBrandsData((prev) =>
-                prev.map((item) =>
-                  item.id === editingHeroId
-                    ? {
-                        ...item,
-                        description: (data.description as string) || item.description,
-                        badge: (data.badge as string) || item.badge,
-                        brands: brands.length > 0 ? brands : item.brands,
-                      }
-                    : item
-                )
-              );
-            } else {
-              // add new
-              setHeroBrandsData((prev) => {
-                if (prev.length >= 1) {
-                  return prev;
-                }
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    description: (data.description as string) || "",
-                    badge: (data.badge as string) || "",
-                    brands,
-                  },
-                ];
-              });
-            }
+            try {
+              if (editingHeroId != null) {
+                setHeroBrandsData((prev) =>
+                  prev.map((item) =>
+                    item.id === editingHeroId
+                      ? {
+                          ...item,
+                          description: (data.description as string) || item.description,
+                          badge: (data.badge as string) || item.badge,
+                          brands: brands.length > 0 ? brands : item.brands,
+                        }
+                      : item
+                  )
+                );
+                toast.success("Berhasil", "Hero text berhasil diperbarui");
+              } else {
+                setHeroBrandsData((prev) => {
+                  if (prev.length >= 1) {
+                    toast.warning("Batas maksimal", "Hero text hanya boleh 1 item");
+                    return prev;
+                  }
+                  const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                  return [
+                    ...prev,
+                    {
+                      id: nextId,
+                      description: (data.description as string) || "",
+                      badge: (data.badge as string) || "",
+                      brands,
+                    },
+                  ];
+                });
+                toast.success("Berhasil", "Hero text berhasil ditambahkan");
+              }
 
-            setIsHeroModalOpen(false);
-            setEditingHeroId(null);
+              setIsHeroModalOpen(false);
+              setEditingHeroId(null);
+            } catch {
+              toast.error("Gagal", "Perubahan hero text gagal disimpan");
+            }
           }}
         />
 
@@ -338,35 +357,42 @@ const AdminHeroManagementPage: React.FC = () => {
           onSubmit={(data) => {
             const mainImage = (data.mainImage as string) || "";
 
-            if (editingImageId != null) {
-              setHeroImageData((prev) =>
-                prev.map((item) =>
-                  item.id === editingImageId
-                    ? {
-                        ...item,
-                        mainImage: mainImage || item.mainImage,
-                      }
-                    : item
-                )
-              );
-            } else {
-              setHeroImageData((prev) => {
-                if (prev.length >= 7) {
-                  return prev;
-                }
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    mainImage,
-                  },
-                ];
-              });
-            }
+            try {
+              if (editingImageId != null) {
+                setHeroImageData((prev) =>
+                  prev.map((item) =>
+                    item.id === editingImageId
+                      ? {
+                          ...item,
+                          mainImage: mainImage || item.mainImage,
+                        }
+                      : item
+                  )
+                );
+                toast.success("Berhasil", "Hero image berhasil diperbarui");
+              } else {
+                setHeroImageData((prev) => {
+                  if (prev.length >= 7) {
+                    toast.warning("Batas maksimal", "Hero image maksimal 7 item");
+                    return prev;
+                  }
+                  const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                  return [
+                    ...prev,
+                    {
+                      id: nextId,
+                      mainImage,
+                    },
+                  ];
+                });
+                toast.success("Berhasil", "Hero image berhasil ditambahkan");
+              }
 
-            setIsImageModalOpen(false);
-            setEditingImageId(null);
+              setIsImageModalOpen(false);
+              setEditingImageId(null);
+            } catch {
+              toast.error("Gagal", "Perubahan hero image gagal disimpan");
+            }
           }}
         />
       </div>

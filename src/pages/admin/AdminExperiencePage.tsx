@@ -9,6 +9,7 @@ import type { Column } from "../../components/admin/AdminTable";
 import AdminModal, {
   type AdminModalField,
 } from "../../components/admin/AdminModal";
+import { useAdminToast } from "../../hooks/useAdminToast";
 
 interface ExperienceItem extends Record<string, unknown> {
   id: number;
@@ -23,6 +24,7 @@ interface ExperienceItem extends Record<string, unknown> {
 const AdminExperiencePage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [experienceData, setExperienceData] = useState<ExperienceItem[]>([
     {
@@ -182,7 +184,12 @@ const AdminExperiencePage: React.FC = () => {
               }}
               onDelete={(id) => {
                 if (typeof id === "number") {
-                  setExperienceData((prev) => prev.filter((item) => item.id !== id));
+                  try {
+                    setExperienceData((prev) => prev.filter((item) => item.id !== id));
+                    toast.success("Berhasil", "Experience berhasil dihapus");
+                  } catch {
+                    toast.error("Gagal", "Experience gagal dihapus");
+                  }
                 }
               }}
             />
@@ -218,41 +225,47 @@ const AdminExperiencePage: React.FC = () => {
           const duration = (data.duration as string) || "";
           const company = (data.company as string) || "";
 
-          if (editingId != null) {
-            setExperienceData((prev) =>
-              prev.map((item) =>
-                item.id === editingId
-                  ? {
-                      ...item,
-                      logo: logo || item.logo,
-                      title: title || item.title,
-                      period: period || item.period,
-                      duration: duration || item.duration,
-                      company: company || item.company,
-                    }
-                  : item
-              )
-            );
-          } else {
-            setExperienceData((prev) => {
-              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-              return [
-                ...prev,
-                {
-                  id: nextId,
-                  logo,
-                  logoAlt: "",
-                  title,
-                  company,
-                  period,
-                  duration,
-                },
-              ];
-            });
-          }
+          try {
+            if (editingId != null) {
+              setExperienceData((prev) =>
+                prev.map((item) =>
+                  item.id === editingId
+                    ? {
+                        ...item,
+                        logo: logo || item.logo,
+                        title: title || item.title,
+                        period: period || item.period,
+                        duration: duration || item.duration,
+                        company: company || item.company,
+                      }
+                    : item
+                )
+              );
+              toast.success("Berhasil", "Experience berhasil diperbarui");
+            } else {
+              setExperienceData((prev) => {
+                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    logo,
+                    logoAlt: "",
+                    title,
+                    company,
+                    period,
+                    duration,
+                  },
+                ];
+              });
+              toast.success("Berhasil", "Experience berhasil ditambahkan");
+            }
 
-          setIsModalOpen(false);
-          setEditingId(null);
+            setIsModalOpen(false);
+            setEditingId(null);
+          } catch {
+            toast.error("Gagal", "Perubahan experience gagal disimpan");
+          }
         }}
       />
     </div>

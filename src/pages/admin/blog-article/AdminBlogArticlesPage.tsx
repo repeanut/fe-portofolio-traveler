@@ -12,6 +12,7 @@ import AdminModal, {
 import SummernoteEditor from "../../../components/ui/SummernoteEditor";
 import InitialShimmer from "../../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../../components/ui/skeletons";
+import { useAdminToast } from "../../../hooks/useAdminToast";
 
 interface BlogArticleItem extends Record<string, unknown> {
   id: number;
@@ -103,6 +104,7 @@ const BlogEditorModal: React.FC<EditorModalProps> = ({
 const AdminBlogArticlesPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("blog");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [articles, setArticles] = useState<BlogArticleItem[]>(() => {
     try {
@@ -256,7 +258,12 @@ const AdminBlogArticlesPage: React.FC = () => {
                 }}
                 onDelete={(id) => {
                   if (typeof id === "number") {
-                    setArticles((prev) => prev.filter((a) => a.id !== id));
+                    try {
+                      setArticles((prev) => prev.filter((a) => a.id !== id));
+                      toast.success("Berhasil", "Artikel berhasil dihapus");
+                    } catch {
+                      toast.error("Gagal", "Artikel gagal dihapus");
+                    }
                   }
                 }}
               />
@@ -293,10 +300,15 @@ const AdminBlogArticlesPage: React.FC = () => {
             const status: "publish" | "draft" =
               rawStatus === "publish" ? "publish" : "draft";
 
-            setPendingMeta({ cover, title, category, status });
-            setEditorTitle(title);
-            setIsMetaModalOpen(false);
-            setIsEditorOpen(true);
+            try {
+              setPendingMeta({ cover, title, category, status });
+              setEditorTitle(title);
+              setIsMetaModalOpen(false);
+              setIsEditorOpen(true);
+              toast.success("Berhasil", "Metadata artikel tersimpan. Lanjut tulis konten.");
+            } catch {
+              toast.error("Gagal", "Metadata artikel gagal disimpan");
+            }
           }}
         />
 
@@ -318,52 +330,58 @@ const AdminBlogArticlesPage: React.FC = () => {
               return;
             }
 
-            if (editingId != null) {
-              setArticles((prev) =>
-                prev.map((item) =>
-                  item.id === editingId
-                    ? {
-                        ...item,
-                        cover: pendingMeta.cover || item.cover,
-                        title: pendingMeta.title || item.title,
-                        category: pendingMeta.category || item.category,
-                        status: pendingMeta.status || item.status,
-                        content,
-                      }
-                    : item
-                )
-              );
-            } else {
-              setArticles((prev) => {
-                const nextId = prev.length ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    cover: pendingMeta.cover,
-                    title: pendingMeta.title,
-                    category: pendingMeta.category,
-                    status: pendingMeta.status,
-                    content,
-                  },
-                ];
-              });
-            }
+            try {
+              if (editingId != null) {
+                setArticles((prev) =>
+                  prev.map((item) =>
+                    item.id === editingId
+                      ? {
+                          ...item,
+                          cover: pendingMeta.cover || item.cover,
+                          title: pendingMeta.title || item.title,
+                          category: pendingMeta.category || item.category,
+                          status: pendingMeta.status || item.status,
+                          content,
+                        }
+                      : item
+                  )
+                );
+                toast.success("Berhasil", "Artikel berhasil diperbarui");
+              } else {
+                setArticles((prev) => {
+                  const nextId = prev.length ? prev[prev.length - 1].id + 1 : 1;
+                  return [
+                    ...prev,
+                    {
+                      id: nextId,
+                      cover: pendingMeta.cover,
+                      title: pendingMeta.title,
+                      category: pendingMeta.category,
+                      status: pendingMeta.status,
+                      content,
+                    },
+                  ];
+                });
+                toast.success("Berhasil", "Artikel berhasil ditambahkan");
+              }
 
-            setIsEditorOpen(false);
-            setEditingId(null);
-            setPendingMeta(null);
-            setEditorContent("");
-            setEditorTitle(undefined);
-            
-            // Show success message and navigate to blog page if published
-            if (pendingMeta.status === 'publish') {
-              alert('🎉 Artikel berhasil dipublikasikan! Mengalihkan ke halaman blog...');
-              setTimeout(() => {
-                navigate('/blog');
-              }, 1500);
-            } else {
-              alert('✅ Artikel berhasil disimpan sebagai draft.');
+              setIsEditorOpen(false);
+              setEditingId(null);
+              setPendingMeta(null);
+              setEditorContent("");
+              setEditorTitle(undefined);
+
+              // Show success message
+              if (pendingMeta.status === "publish") {
+                toast.success("Berhasil", "Artikel berhasil dipublikasikan");
+                setTimeout(() => {
+                  navigate("/blog");
+                }, 1500);
+              } else {
+                toast.success("Berhasil", "Artikel berhasil disimpan sebagai draft");
+              }
+            } catch {
+              toast.error("Gagal", "Perubahan artikel gagal disimpan");
             }
           }}
         />
