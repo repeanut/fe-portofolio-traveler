@@ -24,6 +24,8 @@ import AdminShopPage from "./pages/admin/shop/AdminShopPage";
 import AdminTransactionsPage from "./pages/admin/transactions/AdminTransactionsPage";
 import AiMotionLoadingPage from "./components/ui/AiMotionLoadingPage";
 import AdminToastProvider from "./components/admin/AdminToastProvider";
+import GoogleOAuthCallback from "./components/auth/GoogleOAuthCallback";
+import AuthCallback from "./components/auth/AuthCallback";
 
 export const Router = () => {
     const location = useLocation();
@@ -102,6 +104,8 @@ export const Router = () => {
                 <Route path="/admin/landing/cert-services" element={<AdminCertServicesPage />} />
                 <Route path="/admin/landing/experience" element={<AdminExperiencePage />} />
                 <Route path="/admin/landing/faq" element={<AdminFaqPage />} />
+                <Route path="/auth/callback" element={<GoogleOAuthCallback />} />
+                <Route path="/auth/success" element={<AuthCallback />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 </Routes>
             )}

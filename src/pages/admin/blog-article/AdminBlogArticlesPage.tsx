@@ -370,6 +370,16 @@ const AdminBlogArticlesPage: React.FC = () => {
               setPendingMeta(null);
               setEditorContent("");
               setEditorTitle(undefined);
+
+              // Show success message
+              if (pendingMeta.status === "publish") {
+                toast.success("Berhasil", "Artikel berhasil dipublikasikan");
+                setTimeout(() => {
+                  navigate("/blog");
+                }, 1500);
+              } else {
+                toast.success("Berhasil", "Artikel berhasil disimpan sebagai draft");
+              }
             } catch {
               toast.error("Gagal", "Perubahan artikel gagal disimpan");
             }

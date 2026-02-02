@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import NavbarShop from '../../components/ui/navbarShop';
 import FooterSection from '../../components/ui/footer';
 import type { ShopItem } from '../../components/ui/shopCards';
@@ -9,6 +9,7 @@ import PaymentMethods from '../../components/payments/PaymentMethods';
 import TotalPayment from '../../components/payments/TotalPayment';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
+import paymentService from '../../services/payment.service';
 
 interface PaymentLocationState {
     item?: ShopItem;
@@ -18,6 +19,7 @@ interface PaymentLocationState {
 
 const ShopPaymentPage: React.FC = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const state = (location.state as PaymentLocationState | null) ?? null;
 
     const fallbackItem: ShopItem = {
@@ -44,6 +46,8 @@ const ShopPaymentPage: React.FC = () => {
     const orderPackage = state?.orderPackage ?? fallbackPackage;
     const [quantity] = useState<number>(state?.quantity && state.quantity > 0 ? state.quantity : 1);
     const [selectedPaymentMethodLabel, setSelectedPaymentMethodLabel] = useState<string | null>(null);
+    const [paymentData, setPaymentData] = useState<any>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const unitPrice = orderPackage.price;
     const subtotal = useMemo(() => unitPrice * quantity, [unitPrice, quantity]);
@@ -54,6 +58,58 @@ const ShopPaymentPage: React.FC = () => {
     }, [subtotal]);
 
     const total = subtotal + serviceFee;
+
+    const handlePaymentDataChange = (data: any) => {
+        setPaymentData(data);
+    };
+
+    const handlePayment = async () => {
+        if (!paymentData?.isValid) {
+            alert('Silakan lengkapi detail pembayaran terlebih dahulu.');
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const paymentRequest = {
+                method: paymentData.method === 'paypal' ? 'credit_card' : paymentData.method,
+                amount: total,
+                currency: 'USD',
+                description: `${item.title} - ${orderPackage.title}`,
+                customerInfo: {
+                    name: paymentData.cardDetails?.cardholderName,
+                    email: 'user@example.com',
+                    phone: '+1234567890',
+                    cardDetails: paymentData.cardDetails
+                }
+            };
+
+            const response = await paymentService.processPayment(paymentRequest);
+            
+            if (response.success) {
+                navigate('/shop/payment/payment-success', {
+                    state: {
+                        subtotal,
+                        serviceFee,
+                        total,
+                        itemTitle: item.title,
+                        orderPackageTitle: orderPackage.title,
+                        deliveryLabel: orderPackage.deliveryLabel,
+                        quantity,
+                        paymentMethodLabel: selectedPaymentMethodLabel,
+                        paymentId: response.data?.paymentId
+                    },
+                });
+            } else {
+                alert('Pembayaran gagal: ' + response.message);
+            }
+        } catch (error: any) {
+            console.error('Payment error:', error);
+            alert('Terjadi kesalahan saat memproses pembayaran: ' + error.message);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     return (
         <InitialShimmer delayMs={850} skeleton={<ShopPaymentPageSkeleton />}>
@@ -71,7 +127,10 @@ const ShopPaymentPage: React.FC = () => {
                                     quantity={quantity}
                                     subtotal={subtotal}
                                 />
-                                <PaymentMethods onPaymentMethodChange={setSelectedPaymentMethodLabel} />
+                                <PaymentMethods 
+                                    onPaymentMethodChange={setSelectedPaymentMethodLabel}
+                                    onPaymentDataChange={handlePaymentDataChange}
+                                />
                             </div>
 
                             <aside className="space-y-4 lg:sticky lg:top-24">
@@ -84,6 +143,9 @@ const ShopPaymentPage: React.FC = () => {
                                     deliveryLabel={orderPackage.deliveryLabel}
                                     quantity={quantity}
                                     paymentMethodLabel={selectedPaymentMethodLabel}
+                                    onPayment={handlePayment}
+                                    isProcessing={isProcessing}
+                                    canPay={paymentData?.isValid || false}
                                 />
                             </aside>
                         </div>

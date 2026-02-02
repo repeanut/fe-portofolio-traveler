@@ -61,6 +61,14 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
         return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     }, []);
 
+    const getUserName = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            const storedName = localStorage.getItem('userName');
+            return storedName || 'Farras';
+        }
+        return 'Farras';
+    }, []);
+
     const createGreeting = useCallback((): Message[] => {
         if (chatModeProp === 'cs') {
             return [{
@@ -127,7 +135,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
             id: `user-${Date.now()}`,
             content: question,
             role: 'user',
-            name: 'Farras',
+            name: getUserName(),
             timestamp: getCurrentTime(),
         };
         setMessages(prev => [...prev, userMessage]);
@@ -161,7 +169,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
             id: `${senderRole}-${Date.now()}`,
             content: message,
             role: senderRole,
-            name: senderRole === 'admin' ? 'Rizwords' : 'Farras',
+            name: senderRole === 'admin' ? 'Rizwords' : getUserName(),
             timestamp: getCurrentTime(),
         };
         setMessages(prev => [...prev, outgoingMessage]);
@@ -178,7 +186,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
         setTimeout(() => {
             const adminMessage: Message = {
                 id: `admin-${Date.now()}`,
-                content: 'Halo Farras, admin di sini. Ada yang bisa saya bantu?',
+                content: `Halo ${getUserName()}, admin di sini. Ada yang bisa saya bantu?`,
                 role: 'admin',
                 name: 'Rizwords',
                 timestamp: getCurrentTime(),
