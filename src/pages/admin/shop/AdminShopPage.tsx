@@ -401,6 +401,8 @@ const AdminShopPage: React.FC = () => {
             navigate("/admin/landing/hero");
           } else if (key === "users") {
             navigate("/admin/users");
+          } else if (key === "transactions") {
+            navigate("/admin/transactions");
           } else if (key === "blog") {
             navigate("/admin/blog");
           } else if (key === "shop") {
