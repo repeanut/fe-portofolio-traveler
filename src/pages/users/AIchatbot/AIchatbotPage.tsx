@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ChatContainer, { type ChatContainerHandle, type Message } from '../../../components/AIchatbot/ChatContainer';
 import ChatHistory from '../../../components/AIchatbot/ChatHistory';
 import AuthModal from '../../../components/auth/AuthModal';
+import UserAvatar from '../../../components/auth/UserAvatar';
 
 const sampleHistoryItems = [
     { id: '1', title: 'How to get fit without doing an...', timestamp: '2m ago' },
@@ -58,11 +59,16 @@ const AIChatbotPage: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
         return typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
     });
+    const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(() => {
+        return typeof window !== 'undefined' ? localStorage.getItem('userAvatarUrl') : null;
+    });
 
     useEffect(() => {
         const syncAuthFromStorage = () => {
             const authed = typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
             setIsAuthenticated(authed);
+            const avatarUrl = typeof window !== 'undefined' ? localStorage.getItem('userAvatarUrl') : null;
+            setUserAvatarUrl(avatarUrl);
         };
 
         syncAuthFromStorage();
@@ -70,18 +76,33 @@ const AIChatbotPage: React.FC = () => {
         window.addEventListener('storage', syncAuthFromStorage);
         window.addEventListener('focus', syncAuthFromStorage);
         document.addEventListener('visibilitychange', syncAuthFromStorage);
+        window.addEventListener('auth:changed', syncAuthFromStorage);
 
         return () => {
             window.removeEventListener('storage', syncAuthFromStorage);
             window.removeEventListener('focus', syncAuthFromStorage);
             document.removeEventListener('visibilitychange', syncAuthFromStorage);
+            window.removeEventListener('auth:changed', syncAuthFromStorage);
         };
+    }, []);
+
+    // Force re-render when auth state changes
+    useEffect(() => {
+        const handleAuthChange = () => {
+            const authed = typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
+            setIsAuthenticated(authed);
+        };
+
+        window.addEventListener('auth:changed', handleAuthChange);
+        return () => window.removeEventListener('auth:changed', handleAuthChange);
     }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('userAvatarUrl');
         setIsAuthenticated(false);
+        setUserAvatarUrl(null);
     };
     const [historyItems, setHistoryItems] = useState(() => sampleHistoryItems);
     const [activeHistoryId, setActiveHistoryId] = useState<string | undefined>(() => initialChatId);
@@ -256,17 +277,15 @@ const AIChatbotPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const showAuthModal = !isAuthenticated;
-
     return (
         <div className={`fixed inset-0 overflow-hidden ${pageClasses}`}>
             <div
                 className={
                     `h-full grid overflow-hidden ` +
                     (chatMode === 'ai' ? 'grid-cols-[72px_320px_1fr]' : 'grid-cols-[72px_1fr]') +
-                    (showAuthModal ? ' pointer-events-none select-none blur-[1px]' : '')
+                    (!isAuthenticated ? ' pointer-events-none select-none blur-[1px]' : '')
                 }
-                aria-hidden={showAuthModal}
+                aria-hidden={!isAuthenticated}
             >
                 {/* Left icon sidebar */}
                 <aside className={`h-full border-r flex flex-col items-center py-5 overflow-hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-gray-100 bg-white'}`}>
@@ -321,9 +340,12 @@ const AIChatbotPage: React.FC = () => {
 
                         <div className={`w-10 h-10 rounded-full overflow-hidden border mb-1 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
                             <img
-                                src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300"
+                                src={userAvatarUrl || "https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300"}
                                 alt="User"
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.src = "https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300";
+                                }}
                             />
                         </div>
                     </div>
@@ -432,7 +454,29 @@ const AIChatbotPage: React.FC = () => {
                 </section>
             </div>
 
-            {showAuthModal && (
+            {/* User Profile - Bottom Left Corner */}
+            {localStorage.getItem('isAuthenticated') === 'true' ? (
+                <div className="fixed bottom-6 left-6 z-50 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-gray-200 dark:border-slate-700">
+                    <UserAvatar size="sm" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
+                        {localStorage.getItem('userName')}
+                    </span>
+                </div>
+            ) : (
+                <div className="fixed bottom-6 left-6 z-50">
+                    <button
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors shadow-lg ${
+                            isDark 
+                                ? 'bg-sky-600 text-white hover:bg-sky-700' 
+                                : 'bg-sky-500 text-white hover:bg-sky-600'
+                        }`}
+                    >
+                        Login
+                    </button>
+                </div>
+            )}
+
+            {!isAuthenticated && (
                 <>
                     {/* Back button on transparent overlay to return to landing page */}
                     <button

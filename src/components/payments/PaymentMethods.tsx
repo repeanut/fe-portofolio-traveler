@@ -3,12 +3,53 @@ import { CreditCard } from 'lucide-react';
 
 interface PaymentMethodsProps {
 	onPaymentMethodChange?: (methodLabel: string | null) => void;
+	onPaymentDataChange?: (paymentData: any) => void;
 }
 
-const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange }) => {
+interface CardDetails {
+	cardNumber: string;
+	expiryDate: string;
+	securityCode: string;
+	cardholderName: string;
+	nameOnCard: string;
+	saveCard: boolean;
+}
+
+const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange, onPaymentDataChange }) => {
     const [activeMethod, setActiveMethod] = useState<'card' | 'ewallet'>('card');
     const [selectedCard, setSelectedCard] = useState<'paypal' | 'bri' | 'bca' | null>(null);
     const [selectedWallet, setSelectedWallet] = useState<'gopay' | 'qris' | null>(null);
+    const [cardDetails, setCardDetails] = useState<CardDetails>({
+        cardNumber: '',
+        expiryDate: '',
+        securityCode: '',
+        cardholderName: '',
+        nameOnCard: '',
+        saveCard: false
+    });
+
+    const validateCardDetails = () => {
+        if (!selectedCard) return false;
+        if (!cardDetails.cardNumber.replace(/\s/g, '').match(/^\d{16}$/)) return false;
+        if (!cardDetails.expiryDate.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) return false;
+        if (!cardDetails.securityCode.match(/^\d{3,4}$/)) return false;
+        if (!cardDetails.cardholderName.trim()) return false;
+        if (!cardDetails.nameOnCard.trim()) return false;
+        return true;
+    };
+
+    const handleCardDetailChange = (field: keyof CardDetails, value: string | boolean) => {
+        const updatedDetails = { ...cardDetails, [field]: value };
+        setCardDetails(updatedDetails);
+        
+        if (onPaymentDataChange) {
+            onPaymentDataChange({
+                method: selectedCard,
+                cardDetails: updatedDetails,
+                isValid: validateCardDetails()
+            });
+        }
+    };
 
     return (
         <section>
@@ -95,6 +136,7 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange }
                                                 setSelectedCard(card.id as 'paypal' | 'bri' | 'bca');
                                                 setSelectedWallet(null);
                                                 onPaymentMethodChange?.(card.label);
+                                                handleCardDetailChange('cardNumber', cardDetails.cardNumber);
                                             }}
                                             className={`h-16 rounded-xl border px-3 py-2 text-left shadow-sm transition-colors flex flex-col justify-center gap-1 ${
                                                 selectedCard === card.id
@@ -124,7 +166,17 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange }
                                                 type="text"
                                                 inputMode="numeric"
                                                 placeholder="1234 5678 9012 3456"
-                                                className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                value={cardDetails.cardNumber}
+                                                onChange={(e) => {
+                                                    let value = e.target.value.replace(/\s/g, '');
+                                                    if (value.length <= 16) {
+                                                        value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+                                                        handleCardDetailChange('cardNumber', value);
+                                                    }
+                                                }}
+                                                className={`w-full rounded-xl border bg-white pl-9 pr-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                                                    cardDetails.cardNumber && !cardDetails.cardNumber.replace(/\s/g, '').match(/^\d{16}$/) ? 'border-red-500' : 'border-gray-200'
+                                                }`}
                                             />
                                         </div>
                                     </div>
@@ -135,7 +187,17 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange }
                                             <input
                                                 type="text"
                                                 placeholder="MM/YY"
-                                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                value={cardDetails.expiryDate}
+                                                onChange={(e) => {
+                                                    let value = e.target.value.replace(/\D/g, '');
+                                                    if (value.length >= 2) {
+                                                        value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                                                    }
+                                                    handleCardDetailChange('expiryDate', value);
+                                                }}
+                                                className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                                                    cardDetails.expiryDate && !cardDetails.expiryDate.match(/^(0[1-9]|1[0-2])\/\d{2}$/) ? 'border-red-500' : 'border-gray-200'
+                                                }`}
                                             />
                                         </div>
                                         <div>
@@ -144,7 +206,14 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange }
                                                 type="text"
                                                 inputMode="numeric"
                                                 placeholder="123"
-                                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                value={cardDetails.securityCode}
+                                                onChange={(e) => {
+                                                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                                    handleCardDetailChange('securityCode', value);
+                                                }}
+                                                className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                                                    cardDetails.securityCode && !cardDetails.securityCode.match(/^\d{3,4}$/) ? 'border-red-500' : 'border-gray-200'
+                                                }`}
                                             />
                                         </div>
                                     </div>
@@ -154,7 +223,11 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange }
                                         <input
                                             type="text"
                                             placeholder="Your full name"
-                                            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                            value={cardDetails.cardholderName}
+                                            onChange={(e) => handleCardDetailChange('cardholderName', e.target.value)}
+                                            className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                                                cardDetails.cardholderName && !cardDetails.cardholderName.trim() ? 'border-red-500' : 'border-gray-200'
+                                            }`}
                                         />
                                     </div>
 
@@ -163,13 +236,19 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange }
                                         <input
                                             type="text"
                                             placeholder="Exact name on card"
-                                            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                            value={cardDetails.nameOnCard}
+                                            onChange={(e) => handleCardDetailChange('nameOnCard', e.target.value)}
+                                            className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                                                cardDetails.nameOnCard && !cardDetails.nameOnCard.trim() ? 'border-red-500' : 'border-gray-200'
+                                            }`}
                                         />
                                     </div>
 
                                     <label className="mt-4 inline-flex items-center gap-2 text-xs text-gray-600">
                                         <input
                                             type="checkbox"
+                                            checked={cardDetails.saveCard}
+                                            onChange={(e) => handleCardDetailChange('saveCard', e.target.checked)}
                                             className="h-4 w-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500"
                                         />
                                         <span>Save this card for future payments</span>
@@ -196,6 +275,12 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange }
                                                 setSelectedWallet(wallet.id as 'gopay' | 'qris');
                                                 setSelectedCard(null);
                                                 onPaymentMethodChange?.(wallet.label);
+                                                if (onPaymentDataChange) {
+                                                    onPaymentDataChange({
+                                                        method: wallet.id,
+                                                        isValid: true
+                                                    });
+                                                }
                                             }}
                                             className={`h-14 rounded-xl border px-3 py-2 text-left shadow-sm transition-colors flex items-center justify-between gap-2 ${
                                                 selectedWallet === wallet.id

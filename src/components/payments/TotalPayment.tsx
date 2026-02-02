@@ -11,6 +11,9 @@ export interface TotalPaymentProps {
     deliveryLabel?: string;
     quantity: number;
     paymentMethodLabel: string | null;
+    onPayment?: () => void;
+    isProcessing?: boolean;
+    canPay?: boolean;
 }
 
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
@@ -24,21 +27,29 @@ const TotalPayment: React.FC<TotalPaymentProps> = ({
     deliveryLabel,
     quantity,
     paymentMethodLabel,
+    onPayment,
+    isProcessing = false,
+    canPay = false,
 }) => {
     const navigate = useNavigate();
+    
     const handleConfirmAndPay = () => {
-        navigate('/shop/payment/payment-success', {
-            state: {
-                subtotal,
-                serviceFee,
-                total,
-                itemTitle,
-                orderPackageTitle,
-                deliveryLabel,
-                quantity,
-                paymentMethodLabel,
-            },
-        });
+        if (onPayment) {
+            onPayment();
+        } else {
+            navigate('/shop/payment/payment-success', {
+                state: {
+                    subtotal,
+                    serviceFee,
+                    total,
+                    itemTitle,
+                    orderPackageTitle,
+                    deliveryLabel,
+                    quantity,
+                    paymentMethodLabel,
+                },
+            });
+        }
     };
     return (
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 space-y-4">
@@ -50,9 +61,14 @@ const TotalPayment: React.FC<TotalPaymentProps> = ({
             <button
                 type="button"
                 onClick={handleConfirmAndPay}
-                className="w-full rounded-full bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold py-2.5 shadow-sm transition-colors"
+                disabled={!canPay || isProcessing}
+                className={`w-full rounded-full text-sm font-semibold py-2.5 shadow-sm transition-colors ${
+                    !canPay || isProcessing
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-sky-500 hover:bg-sky-600 text-white'
+                }`}
             >
-                Confirm & Pay
+                {isProcessing ? 'Processing...' : 'Confirm & Pay'}
             </button>
 
             <p className="text-[11px] text-gray-500 leading-relaxed">

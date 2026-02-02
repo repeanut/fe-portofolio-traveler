@@ -9,80 +9,83 @@ import AdminTableHeader from "../../../components/admin/AdminTableHeader";
 import InitialShimmer from "../../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../../components/ui/skeletons";
 
-interface UserItem extends Record<string, unknown> {
+interface LandingPageItem extends Record<string, unknown> {
   id: number;
-  username: string;
-  email: string;
-  role: string;
-  displayName?: string;
-  provider?: string;
-  isEmailVerified?: boolean;
-  lastLogin?: string;
+  section: string;
+  title: string;
+  subtitle?: string;
+  content?: string;
+  imageUrl?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdBy: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
-const AdminUserListPage: React.FC = () => {
-  const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("users");
-  const [userData, setUserData] = useState<UserItem[]>([]);
+const AdminLandingPage: React.FC = () => {
+  const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
+  const [landingData, setLandingData] = useState<LandingPageItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Fetch users from backend API
+  // Fetch landing pages from backend API
   useEffect(() => {
-    fetchUsers();
+    fetchLandingPages();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchLandingPages = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/users');
+      const response = await fetch('http://localhost:5000/api/landing-pages?includeUser=true');
       const result = await response.json();
       
       if (result.success) {
-        setUserData(result.data.users.map((user: any) => ({
-          ...user,
-          id: parseInt(user.id) || 0
+        setLandingData(result.data.pages.map((page: any) => ({
+          ...page,
+          id: parseInt(page.id) || 0
         })));
         setError(null);
       } else {
-        setError(result.message || 'Failed to fetch users');
+        setError(result.message || 'Failed to fetch landing pages');
       }
     } catch (err) {
       setError('Error connecting to backend API');
-      console.error('Error fetching users:', err);
+      console.error('Error fetching landing pages:', err);
     }
   };
 
   const columns: Column[] = [
-    { header: "Username", accessor: "username", type: "text" },
-    { header: "Email", accessor: "email", type: "text" },
-    { header: "Display Name", accessor: "displayName", type: "text" },
-    { header: "Role", accessor: "role", type: "text" },
-    { header: "Provider", accessor: "provider", type: "text" },
-    { header: "Email Verified", accessor: "isEmailVerified", type: "text" },
-    { header: "Last Login", accessor: "lastLogin", type: "text" },
+    { header: "Section", accessor: "section", type: "text" },
+    { header: "Title", accessor: "title", type: "text" },
+    { header: "Subtitle", accessor: "subtitle", type: "text" },
+    { header: "Button Text", accessor: "buttonText", type: "text" },
+    { header: "Order", accessor: "orderIndex", type: "number" },
+    { header: "Active", accessor: "isActive", type: "text" },
     { header: "Created", accessor: "createdAt", type: "text" },
   ];
 
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) {
+  const handleDeleteLandingPage = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this landing page?')) {
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+      const response = await fetch(`http://localhost:5000/api/landing-pages/${id}`, {
         method: 'DELETE'
       });
       
       const result = await response.json();
       
       if (result.success) {
-        fetchUsers(); // Refresh the list
+        fetchLandingPages(); // Refresh the list
       } else {
-        setError(result.message || 'Failed to delete user');
+        setError(result.message || 'Failed to delete landing page');
       }
     } catch (err) {
-      setError('Error deleting user');
-      console.error('Error deleting user:', err);
+      setError('Error deleting landing page');
+      console.error('Error deleting landing page:', err);
     }
   };
 
@@ -101,6 +104,8 @@ const AdminUserListPage: React.FC = () => {
               navigate("/admin/users");
             } else if (key === "shop") {
               navigate("/admin/shop");
+            } else if (key === "portfolio") {
+              navigate("/admin/portfolio");
             } else if (key === "blog") {
               navigate("/admin/blog");
             }
@@ -109,29 +114,29 @@ const AdminUserListPage: React.FC = () => {
             setActiveMenu("landing");
             if (subKey === "hero") {
               navigate("/admin/landing/hero");
-            } else if (subKey === "travel") {
-              navigate("/admin/landing/travel-journal");
             } else if (subKey === "about") {
               navigate("/admin/landing/about");
+            } else if (subKey === "services") {
+              navigate("/admin/landing/services");
             } else if (subKey === "portfolio") {
               navigate("/admin/landing/portfolio");
-            } else if (subKey === "certServices") {
-              navigate("/admin/landing/cert-services");
-            } else if (subKey === "experience") {
-              navigate("/admin/landing/experience");
-            } else if (subKey === "faq") {
-              navigate("/admin/landing/faq");
+            } else if (subKey === "testimonials") {
+              navigate("/admin/landing/testimonials");
+            } else if (subKey === "contact") {
+              navigate("/admin/landing/contact");
+            } else if (subKey === "footer") {
+              navigate("/admin/landing/footer");
             }
           }}
         />
 
         <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
-          <AdminHeader title="User List" />
+          <AdminHeader title="Landing Page Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
             <section>
               <AdminTableHeader
-                placeholder="Search user..."
+                placeholder="Search landing page..."
                 addLabel=""
               />
               
@@ -143,13 +148,13 @@ const AdminUserListPage: React.FC = () => {
               
               <AdminTable
                 columns={columns}
-                data={userData}
+                data={landingData}
                 currentPage={1}
                 itemsPerPage={5}
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
-                onDelete={(id?: number) => id && handleDeleteUser(id)}
+                onDelete={(id?: number) => id && handleDeleteLandingPage(id)}
               />
             </section>
           </div>
@@ -159,4 +164,4 @@ const AdminUserListPage: React.FC = () => {
   );
 };
 
-export default AdminUserListPage;
+export default AdminLandingPage;

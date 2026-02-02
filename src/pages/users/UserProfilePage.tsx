@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import Navbar from '../../components/ui/navbar';
@@ -41,7 +41,10 @@ const UserProfilePage: React.FC = () => {
     const handleLogout = () => {
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('userName');
         localStorage.removeItem('userAvatarUrl');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authProvider');
         window.dispatchEvent(new Event('auth:changed'));
         navigate('/work', { replace: true });
     };
@@ -59,10 +62,13 @@ const UserProfilePage: React.FC = () => {
 
         const savedAvatar = localStorage.getItem('userAvatarUrl');
         const savedEmail = localStorage.getItem('userEmail');
+        const savedName = localStorage.getItem('userName');
+        
         return {
             ...fallback,
             avatarUrl: savedAvatar || fallback.avatarUrl,
             email: savedEmail || fallback.email,
+            name: savedName || fallback.name,
         };
     });
 
@@ -82,6 +88,25 @@ const UserProfilePage: React.FC = () => {
         setProfile((prev) => ({ ...prev, avatarUrl: avatarDataUrl }));
         handleCloseAvatarModal();
     };
+
+    // Listen for auth changes and update profile
+    useEffect(() => {
+        const handleAuthChange = () => {
+            const savedName = localStorage.getItem('userName');
+            const savedEmail = localStorage.getItem('userEmail');
+            const savedAvatar = localStorage.getItem('userAvatarUrl');
+            
+            setProfile(prev => ({
+                ...prev,
+                name: savedName || prev.name,
+                email: savedEmail || prev.email,
+                avatarUrl: savedAvatar || prev.avatarUrl,
+            }));
+        };
+
+        window.addEventListener('auth:changed', handleAuthChange);
+        return () => window.removeEventListener('auth:changed', handleAuthChange);
+    }, []);
 
     const orders: UserOrder[] = useMemo(
         () => [

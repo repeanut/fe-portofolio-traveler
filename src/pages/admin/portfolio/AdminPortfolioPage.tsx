@@ -9,80 +9,87 @@ import AdminTableHeader from "../../../components/admin/AdminTableHeader";
 import InitialShimmer from "../../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../../components/ui/skeletons";
 
-interface UserItem extends Record<string, unknown> {
+interface PortfolioItem extends Record<string, unknown> {
   id: number;
-  username: string;
-  email: string;
-  role: string;
-  displayName?: string;
-  provider?: string;
-  isEmailVerified?: boolean;
-  lastLogin?: string;
+  title: string;
+  description?: string;
+  category: string;
+  imageUrl?: string;
+  projectUrl?: string;
+  githubUrl?: string;
+  technologies?: string[];
+  tags?: string[];
+  featured: boolean;
+  published: boolean;
+  orderIndex: number;
+  clientName?: string;
+  completionDate?: string;
+  createdBy: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
-const AdminUserListPage: React.FC = () => {
-  const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("users");
-  const [userData, setUserData] = useState<UserItem[]>([]);
+const AdminPortfolioPage: React.FC = () => {
+  const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("portfolio");
+  const [portfolioData, setPortfolioData] = useState<PortfolioItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Fetch users from backend API
+  // Fetch portfolios from backend API
   useEffect(() => {
-    fetchUsers();
+    fetchPortfolios();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchPortfolios = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/users');
+      const response = await fetch('http://localhost:5000/api/portfolios?includeUser=true');
       const result = await response.json();
       
       if (result.success) {
-        setUserData(result.data.users.map((user: any) => ({
-          ...user,
-          id: parseInt(user.id) || 0
+        setPortfolioData(result.data.portfolios.map((portfolio: any) => ({
+          ...portfolio,
+          id: parseInt(portfolio.id) || 0
         })));
         setError(null);
       } else {
-        setError(result.message || 'Failed to fetch users');
+        setError(result.message || 'Failed to fetch portfolios');
       }
     } catch (err) {
       setError('Error connecting to backend API');
-      console.error('Error fetching users:', err);
+      console.error('Error fetching portfolios:', err);
     }
   };
 
   const columns: Column[] = [
-    { header: "Username", accessor: "username", type: "text" },
-    { header: "Email", accessor: "email", type: "text" },
-    { header: "Display Name", accessor: "displayName", type: "text" },
-    { header: "Role", accessor: "role", type: "text" },
-    { header: "Provider", accessor: "provider", type: "text" },
-    { header: "Email Verified", accessor: "isEmailVerified", type: "text" },
-    { header: "Last Login", accessor: "lastLogin", type: "text" },
+    { header: "Title", accessor: "title", type: "text" },
+    { header: "Category", accessor: "category", type: "text" },
+    { header: "Client", accessor: "clientName", type: "text" },
+    { header: "Featured", accessor: "featured", type: "text" },
+    { header: "Published", accessor: "published", type: "text" },
+    { header: "Order", accessor: "orderIndex", type: "number" },
     { header: "Created", accessor: "createdAt", type: "text" },
   ];
 
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) {
+  const handleDeletePortfolio = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this portfolio?')) {
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+      const response = await fetch(`http://localhost:5000/api/portfolios/${id}`, {
         method: 'DELETE'
       });
       
       const result = await response.json();
       
       if (result.success) {
-        fetchUsers(); // Refresh the list
+        fetchPortfolios(); // Refresh the list
       } else {
-        setError(result.message || 'Failed to delete user');
+        setError(result.message || 'Failed to delete portfolio');
       }
     } catch (err) {
-      setError('Error deleting user');
-      console.error('Error deleting user:', err);
+      setError('Error deleting portfolio');
+      console.error('Error deleting portfolio:', err);
     }
   };
 
@@ -101,37 +108,21 @@ const AdminUserListPage: React.FC = () => {
               navigate("/admin/users");
             } else if (key === "shop") {
               navigate("/admin/shop");
+            } else if (key === "portfolio") {
+              navigate("/admin/portfolio");
             } else if (key === "blog") {
               navigate("/admin/blog");
-            }
-          }}
-          onNavigateLandingSub={(subKey) => {
-            setActiveMenu("landing");
-            if (subKey === "hero") {
-              navigate("/admin/landing/hero");
-            } else if (subKey === "travel") {
-              navigate("/admin/landing/travel-journal");
-            } else if (subKey === "about") {
-              navigate("/admin/landing/about");
-            } else if (subKey === "portfolio") {
-              navigate("/admin/landing/portfolio");
-            } else if (subKey === "certServices") {
-              navigate("/admin/landing/cert-services");
-            } else if (subKey === "experience") {
-              navigate("/admin/landing/experience");
-            } else if (subKey === "faq") {
-              navigate("/admin/landing/faq");
             }
           }}
         />
 
         <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
-          <AdminHeader title="User List" />
+          <AdminHeader title="Portfolio Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
             <section>
               <AdminTableHeader
-                placeholder="Search user..."
+                placeholder="Search portfolio..."
                 addLabel=""
               />
               
@@ -143,13 +134,13 @@ const AdminUserListPage: React.FC = () => {
               
               <AdminTable
                 columns={columns}
-                data={userData}
+                data={portfolioData}
                 currentPage={1}
                 itemsPerPage={5}
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
-                onDelete={(id?: number) => id && handleDeleteUser(id)}
+                onDelete={(id?: number) => id && handleDeletePortfolio(id)}
               />
             </section>
           </div>
@@ -159,4 +150,4 @@ const AdminUserListPage: React.FC = () => {
   );
 };
 
-export default AdminUserListPage;
+export default AdminPortfolioPage;

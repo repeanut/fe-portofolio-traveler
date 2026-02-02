@@ -353,6 +353,16 @@ const AdminBlogArticlesPage: React.FC = () => {
             setPendingMeta(null);
             setEditorContent("");
             setEditorTitle(undefined);
+            
+            // Show success message and navigate to blog page if published
+            if (pendingMeta.status === 'publish') {
+              alert('🎉 Artikel berhasil dipublikasikan! Mengalihkan ke halaman blog...');
+              setTimeout(() => {
+                navigate('/blog');
+              }, 1500);
+            } else {
+              alert('✅ Artikel berhasil disimpan sebagai draft.');
+            }
           }}
         />
       </div>

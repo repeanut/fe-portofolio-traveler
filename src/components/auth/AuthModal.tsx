@@ -81,9 +81,12 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     const completeAuth = () => {
         const normalizedEmail = (email || '').trim();
+        const fullName = `${firstName} ${lastName}`.trim();
         localStorage.setItem('isAuthenticated', 'true');
         if (normalizedEmail) localStorage.setItem('userEmail', normalizedEmail);
+        if (fullName) localStorage.setItem('userName', fullName);
         if (avatarUrl) localStorage.setItem('userAvatarUrl', avatarUrl);
+        localStorage.setItem('authProvider', 'local');
         window.dispatchEvent(new Event('auth:changed'));
         setOverrideMode(null);
         setSignupStep('account');
@@ -115,11 +118,127 @@ const AuthModal: React.FC<AuthModalProps> = ({
             if (!normalizedPassword) return;
         }
 
-        completeAuth();
+        // Call backend API instead of local auth
+        handleBackendAuth();
     };
 
-    const handleProviderClick = () => {
-        completeAuth();
+    const handleBackendAuth = async () => {
+        const normalizedEmail = (email || '').trim();
+        const normalizedPassword = (password || '').trim();
+        const normalizedFirstName = (firstName || '').trim();
+        const normalizedLastName = (lastName || '').trim();
+        const isSignup = activeMode === 'signup';
+
+        try {
+            // Get current page context to determine login_page
+            const currentPath = window.location.pathname;
+            let loginPage = 'default';
+            
+            if (currentPath.includes('/ai-chatbot')) {
+                loginPage = 'aichatbot';
+            } else if (currentPath.includes('/shop')) {
+                loginPage = 'shop';
+            } else if (currentPath.includes('/admin')) {
+                loginPage = 'admin';
+            }
+
+            // Prepare form data
+            const formData = {
+                email: normalizedEmail,
+                ...(isSignup && {
+                    username: `${normalizedFirstName.toLowerCase()}${normalizedLastName.toLowerCase()}`,
+                    displayName: `${normalizedFirstName} ${normalizedLastName}`.trim(),
+                    password: normalizedPassword
+                }),
+                ...(!isSignup && {
+                    password: normalizedPassword
+                })
+            };
+
+            // Determine API endpoint
+            const endpoint = isSignup ? 'register' : 'login';
+            const apiUrl = `http://localhost:5000/api/auth/${endpoint}?login_page=${loginPage}`;
+
+            // Make API call
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Store authentication data
+                localStorage.setItem('authToken', result.data.token);
+                localStorage.setItem('userEmail', result.data.user.email);
+                localStorage.setItem('userName', result.data.user.displayName || result.data.user.username);
+                localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('authProvider', 'manual');
+                
+                if (result.data.user.profilePicture) {
+                    localStorage.setItem('userAvatarUrl', result.data.user.profilePicture);
+                }
+                
+                // Dispatch auth change event
+                window.dispatchEvent(new Event('auth:changed'));
+                
+                // Show success message
+                if (isSignup) {
+                    alert('🎉 Welcome to Travello! Your account has been successfully created.');
+                } else {
+                    alert('👋 Welcome back! Successfully signed in.');
+                }
+                
+                // Redirect based on login_page
+                if (loginPage === 'aichatbot') {
+                    window.location.href = '/ai-chatbot';
+                } else if (loginPage === 'shop') {
+                    window.location.href = '/shop';
+                } else if (loginPage === 'admin') {
+                    window.location.href = '/admin/users';
+                } else {
+                    // Default redirect to admin users page
+                    window.location.href = '/admin/users';
+                }
+                
+                onSuccess?.();
+            } else {
+                alert('Authentication failed: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Authentication error:', error);
+            alert('Authentication failed. Please try again.');
+        }
+    };
+
+    const handleProviderClick = async () => {
+        try {
+            // Determine if this is signup or login mode
+            const isSignup = activeMode === 'signup';
+            
+            // Get current page context to determine login_page
+            const currentPath = window.location.pathname;
+            let loginPage = 'default';
+            
+            if (currentPath.includes('/ai-chatbot')) {
+                loginPage = 'aichatbot';
+            } else if (currentPath.includes('/shop')) {
+                loginPage = 'shop';
+            } else if (currentPath.includes('/admin')) {
+                loginPage = 'admin';
+            }
+            
+            // Redirect to Google OAuth endpoint with mode and login_page parameters
+            const googleOAuthUrl = `http://localhost:5000/api/auth/google?mode=${isSignup ? 'signup' : 'login'}&login_page=${loginPage}`;
+            window.location.href = googleOAuthUrl;
+        } catch (error) {
+            console.error('Google OAuth error:', error);
+            // Fallback to manual auth
+            completeAuth();
+        }
     };
 
     const handleAvatarButtonClick = () => {
