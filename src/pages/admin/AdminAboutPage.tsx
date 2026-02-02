@@ -74,6 +74,8 @@ const AdminAboutPage: React.FC = () => {
               navigate("/admin/users");
             } else if (key === "shop") {
               navigate("/admin/shop");
+            } else if (key === "transactions") {
+              navigate("/admin/transactions");
             } else if (key === "blog") {
               navigate("/admin/blog");
             }
