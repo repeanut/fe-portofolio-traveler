@@ -8,6 +8,7 @@ import AdminTable from "../../../components/admin/AdminTable";
 import type { Column } from "../../../components/admin/AdminTable";
 import AdminModal, { type AdminModalField } from "../../../components/admin/AdminModal";
 import type { ShopItem } from "../../../components/ui/shopCards";
+import { useAdminToast } from "../../../hooks/useAdminToast";
 
 type AdminShopItem = ShopItem & {
   status: "active" | "inactive";
@@ -37,6 +38,7 @@ type ProductPackage = {
 const AdminShopPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("shop");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [items, setItems] = useState<AdminShopItem[]>([
     {
@@ -377,16 +379,25 @@ const AdminShopPage: React.FC = () => {
         String(data.status ?? "active") === "inactive" ? "inactive" : "active",
     };
 
-    setItems((prev) => {
-      if (editingItem) {
-        return prev.map((x) => (x.id === editingItem.id ? next : x));
-      }
-      return [next, ...prev];
-    });
+    try {
+      setItems((prev) => {
+        if (editingItem) {
+          return prev.map((x) => (x.id === editingItem.id ? next : x));
+        }
+        return [next, ...prev];
+      });
 
-    setSelectedId(next.id);
-    setIsModalOpen(false);
-    setEditingId(null);
+      setSelectedId(next.id);
+      setIsModalOpen(false);
+      setEditingId(null);
+
+      toast.success(
+        "Berhasil",
+        editingItem ? "Produk berhasil diperbarui" : "Produk berhasil ditambahkan"
+      );
+    } catch {
+      toast.error("Gagal", "Perubahan produk gagal disimpan");
+    }
   };
 
   return (
@@ -451,8 +462,13 @@ const AdminShopPage: React.FC = () => {
                   const ok = window.confirm("Delete this product?");
                   if (!ok) return;
 
-                  setItems((prev) => prev.filter((x) => x.id !== id));
-                  setSelectedId((prev) => (prev === id ? null : prev));
+                  try {
+                    setItems((prev) => prev.filter((x) => x.id !== id));
+                    setSelectedId((prev) => (prev === id ? null : prev));
+                    toast.success("Berhasil", "Produk berhasil dihapus");
+                  } catch {
+                    toast.error("Gagal", "Produk gagal dihapus");
+                  }
                 }}
               />
             </section>
@@ -674,13 +690,18 @@ const AdminShopPage: React.FC = () => {
                                 if (!id) return;
                                 const ok = window.confirm("Delete this details entry?");
                                 if (!ok) return;
-                                setDetailsByProductId((prev) => {
-                                  const existing = prev[selectedProductId] ?? [];
-                                  return {
-                                    ...prev,
-                                    [selectedProductId]: existing.filter((x) => x.id !== id),
-                                  };
-                                });
+                                try {
+                                  setDetailsByProductId((prev) => {
+                                    const existing = prev[selectedProductId] ?? [];
+                                    return {
+                                      ...prev,
+                                      [selectedProductId]: existing.filter((x) => x.id !== id),
+                                    };
+                                  });
+                                  toast.success("Berhasil", "Detail produk berhasil dihapus");
+                                } catch {
+                                  toast.error("Gagal", "Detail produk gagal dihapus");
+                                }
                               }}
                             />
                           </div>
@@ -724,13 +745,18 @@ const AdminShopPage: React.FC = () => {
                                 if (!id) return;
                                 const ok = window.confirm("Delete this advantage?");
                                 if (!ok) return;
-                                setAdvantagesByProductId((prev) => {
-                                  const existing = prev[selectedProductId] ?? [];
-                                  return {
-                                    ...prev,
-                                    [selectedProductId]: existing.filter((x) => x.id !== id),
-                                  };
-                                });
+                                try {
+                                  setAdvantagesByProductId((prev) => {
+                                    const existing = prev[selectedProductId] ?? [];
+                                    return {
+                                      ...prev,
+                                      [selectedProductId]: existing.filter((x) => x.id !== id),
+                                    };
+                                  });
+                                  toast.success("Berhasil", "Keunggulan berhasil dihapus");
+                                } catch {
+                                  toast.error("Gagal", "Keunggulan gagal dihapus");
+                                }
                               }}
                             />
                           </div>
@@ -774,13 +800,18 @@ const AdminShopPage: React.FC = () => {
                                 if (!id) return;
                                 const ok = window.confirm("Delete this package?");
                                 if (!ok) return;
-                                setPackagesByProductId((prev) => {
-                                  const existing = prev[selectedProductId] ?? [];
-                                  return {
-                                    ...prev,
-                                    [selectedProductId]: existing.filter((x) => x.id !== id),
-                                  };
-                                });
+                                try {
+                                  setPackagesByProductId((prev) => {
+                                    const existing = prev[selectedProductId] ?? [];
+                                    return {
+                                      ...prev,
+                                      [selectedProductId]: existing.filter((x) => x.id !== id),
+                                    };
+                                  });
+                                  toast.success("Berhasil", "Paket berhasil dihapus");
+                                } catch {
+                                  toast.error("Gagal", "Paket gagal dihapus");
+                                }
                               }}
                             />
                           </div>
@@ -833,21 +864,29 @@ const AdminShopPage: React.FC = () => {
             id: editingDetailId ?? Date.now(),
             fullText: String(data.fullText ?? ""),
           };
-          setDetailsByProductId((prev) => {
-            const existing = prev[selectedProductId] ?? [];
-            if (editingDetailId) {
+          try {
+            setDetailsByProductId((prev) => {
+              const existing = prev[selectedProductId] ?? [];
+              if (editingDetailId) {
+                return {
+                  ...prev,
+                  [selectedProductId]: existing.map((x) => (x.id === editingDetailId ? next : x)),
+                };
+              }
               return {
                 ...prev,
-                [selectedProductId]: existing.map((x) => (x.id === editingDetailId ? next : x)),
+                [selectedProductId]: [next, ...existing],
               };
-            }
-            return {
-              ...prev,
-              [selectedProductId]: [next, ...existing],
-            };
-          });
-          setDetailsModalOpen(false);
-          setEditingDetailId(null);
+            });
+            setDetailsModalOpen(false);
+            setEditingDetailId(null);
+            toast.success(
+              "Berhasil",
+              editingDetailId ? "Detail produk berhasil diperbarui" : "Detail produk berhasil ditambahkan"
+            );
+          } catch {
+            toast.error("Gagal", "Perubahan detail produk gagal disimpan");
+          }
         }}
       />
 
@@ -871,21 +910,29 @@ const AdminShopPage: React.FC = () => {
             title: String(data.title ?? ""),
             subtitle: String(data.subtitle ?? ""),
           };
-          setAdvantagesByProductId((prev) => {
-            const existing = prev[selectedProductId] ?? [];
-            if (editingAdvId) {
+          try {
+            setAdvantagesByProductId((prev) => {
+              const existing = prev[selectedProductId] ?? [];
+              if (editingAdvId) {
+                return {
+                  ...prev,
+                  [selectedProductId]: existing.map((x) => (x.id === editingAdvId ? next : x)),
+                };
+              }
               return {
                 ...prev,
-                [selectedProductId]: existing.map((x) => (x.id === editingAdvId ? next : x)),
+                [selectedProductId]: [next, ...existing],
               };
-            }
-            return {
-              ...prev,
-              [selectedProductId]: [next, ...existing],
-            };
-          });
-          setAdvModalOpen(false);
-          setEditingAdvId(null);
+            });
+            setAdvModalOpen(false);
+            setEditingAdvId(null);
+            toast.success(
+              "Berhasil",
+              editingAdvId ? "Keunggulan berhasil diperbarui" : "Keunggulan berhasil ditambahkan"
+            );
+          } catch {
+            toast.error("Gagal", "Perubahan keunggulan gagal disimpan");
+          }
         }}
       />
 
@@ -916,21 +963,29 @@ const AdminShopPage: React.FC = () => {
             defaultWords: Number(data.defaultWords ?? 0) || 0,
             basePrice: Number(data.basePrice ?? 0) || 0,
           };
-          setPackagesByProductId((prev) => {
-            const existing = prev[selectedProductId] ?? [];
-            if (editingPkgId) {
+          try {
+            setPackagesByProductId((prev) => {
+              const existing = prev[selectedProductId] ?? [];
+              if (editingPkgId) {
+                return {
+                  ...prev,
+                  [selectedProductId]: existing.map((x) => (x.id === editingPkgId ? next : x)),
+                };
+              }
               return {
                 ...prev,
-                [selectedProductId]: existing.map((x) => (x.id === editingPkgId ? next : x)),
+                [selectedProductId]: [next, ...existing],
               };
-            }
-            return {
-              ...prev,
-              [selectedProductId]: [next, ...existing],
-            };
-          });
-          setPkgModalOpen(false);
-          setEditingPkgId(null);
+            });
+            setPkgModalOpen(false);
+            setEditingPkgId(null);
+            toast.success(
+              "Berhasil",
+              editingPkgId ? "Paket berhasil diperbarui" : "Paket berhasil ditambahkan"
+            );
+          } catch {
+            toast.error("Gagal", "Perubahan paket gagal disimpan");
+          }
         }}
       />
     </div>

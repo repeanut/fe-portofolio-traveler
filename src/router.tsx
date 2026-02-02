@@ -23,6 +23,7 @@ import AdminBlogArticlesPage from "./pages/admin/blog-article/AdminBlogArticlesP
 import AdminShopPage from "./pages/admin/shop/AdminShopPage";
 import AdminTransactionsPage from "./pages/admin/transactions/AdminTransactionsPage";
 import AiMotionLoadingPage from "./components/ui/AiMotionLoadingPage";
+import AdminToastProvider from "./components/admin/AdminToastProvider";
 
 export const Router = () => {
     const location = useLocation();
@@ -71,7 +72,7 @@ export const Router = () => {
     const routesLocation = isLoading ? displayLocation : location;
 
     return (
-        <>
+        <AdminToastProvider>
             {isLoading ? (
                 <AiMotionLoadingPage label="Preparing AI Workspace" />
             ) : (
@@ -104,6 +105,6 @@ export const Router = () => {
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 </Routes>
             )}
-        </>
+        </AdminToastProvider>
     );
 };

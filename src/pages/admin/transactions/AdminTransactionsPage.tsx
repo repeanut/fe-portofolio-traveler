@@ -11,6 +11,7 @@ import InitialShimmer from "../../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../../components/ui/skeletons";
 import { ChevronDown } from "lucide-react";
 import TransactionReceiptModal from "../../../components/admin/TransactionReceiptModal";
+import { useAdminToast } from "../../../hooks/useAdminToast";
 
 type TransactionStatus = "paid" | "processing" | "refunded" | "cancelled";
 
@@ -156,6 +157,7 @@ const formatRupiah = (value: number) => {
 const AdminTransactionsPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("transactions");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | TransactionStatus>("all");
@@ -293,17 +295,26 @@ const AdminTransactionsPage: React.FC = () => {
     },
   ]);
 
-  const updateTransactionStatus = useCallback((id: number, nextStatus: TransactionStatus) => {
-    setTransactions((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t;
-        return {
-          ...t,
-          status: nextStatus,
-        };
-      })
-    );
-  }, []);
+  const updateTransactionStatus = useCallback(
+    (id: number, nextStatus: TransactionStatus) => {
+      try {
+        setTransactions((prev) =>
+          prev.map((t) => {
+            if (t.id !== id) return t;
+            return {
+              ...t,
+              status: nextStatus,
+              paidStatus: nextStatus === "paid" ? "paid" : "unpaid",
+            };
+          })
+        );
+        toast.success("Berhasil", "Status transaksi berhasil diperbarui");
+      } catch {
+        toast.error("Gagal", "Status transaksi gagal diperbarui");
+      }
+    },
+    [toast]
+  );
 
   const receiptData = useMemo(() => {
     if (receiptId == null) return null;

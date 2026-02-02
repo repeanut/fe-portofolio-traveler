@@ -11,6 +11,7 @@ import AdminModal, {
 } from "../../components/admin/AdminModal";
 import InitialShimmer from "../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../components/ui/skeletons";
+import { useAdminToast } from "../../hooks/useAdminToast";
 
 interface FaqItem extends Record<string, unknown> {
   id: number;
@@ -23,6 +24,7 @@ const MAX_FAQ = 6;
 const AdminFaqPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [faqData, setFaqData] = useState<FaqItem[]>([
     {
@@ -116,6 +118,7 @@ const AdminFaqPage: React.FC = () => {
               <AdminTableHeader
                 onAddClick={() => {
                   if (faqData.length >= MAX_FAQ) {
+                    toast.warning("Batas maksimal", `FAQ maksimal ${MAX_FAQ} item`);
                     return;
                   }
                   setEditingId(null);
@@ -139,7 +142,12 @@ const AdminFaqPage: React.FC = () => {
                 }}
                 onDelete={(id) => {
                   if (typeof id === "number") {
-                    setFaqData((prev) => prev.filter((item) => item.id !== id));
+                    try {
+                      setFaqData((prev) => prev.filter((item) => item.id !== id));
+                      toast.success("Berhasil", "FAQ berhasil dihapus");
+                    } catch {
+                      toast.error("Gagal", "FAQ gagal dihapus");
+                    }
                   }
                 }}
               />
@@ -167,37 +175,44 @@ const AdminFaqPage: React.FC = () => {
           const question = (data.question as string) || "";
           const answer = (data.answer as string) || "";
 
-          if (editingId != null) {
-            setFaqData((prev) =>
-              prev.map((item) =>
-                item.id === editingId
-                  ? {
-                      ...item,
-                      question: question || item.question,
-                      answer: answer || item.answer,
-                    }
-                  : item
-              )
-            );
-          } else {
-            setFaqData((prev) => {
-              if (prev.length >= MAX_FAQ) {
-                return prev;
-              }
-              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-              return [
-                ...prev,
-                {
-                  id: nextId,
-                  question,
-                  answer,
-                },
-              ];
-            });
-          }
+          try {
+            if (editingId != null) {
+              setFaqData((prev) =>
+                prev.map((item) =>
+                  item.id === editingId
+                    ? {
+                        ...item,
+                        question: question || item.question,
+                        answer: answer || item.answer,
+                      }
+                    : item
+                )
+              );
+              toast.success("Berhasil", "FAQ berhasil diperbarui");
+            } else {
+              setFaqData((prev) => {
+                if (prev.length >= MAX_FAQ) {
+                  toast.warning("Batas maksimal", `FAQ maksimal ${MAX_FAQ} item`);
+                  return prev;
+                }
+                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    question,
+                    answer,
+                  },
+                ];
+              });
+              toast.success("Berhasil", "FAQ berhasil ditambahkan");
+            }
 
-          setIsModalOpen(false);
-          setEditingId(null);
+            setIsModalOpen(false);
+            setEditingId(null);
+          } catch {
+            toast.error("Gagal", "Perubahan FAQ gagal disimpan");
+          }
         }}
       />
     </InitialShimmer>

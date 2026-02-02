@@ -11,6 +11,7 @@ import AdminModal, {
 } from "../../components/admin/AdminModal";
 import InitialShimmer from "../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../components/ui/skeletons";
+import { useAdminToast } from "../../hooks/useAdminToast";
 
 interface AboutContent extends Record<string, unknown> {
   id: number;
@@ -21,6 +22,7 @@ interface AboutContent extends Record<string, unknown> {
 const AdminAboutPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const navigate = useNavigate();
+  const toast = useAdminToast();
 
   const [aboutData, setAboutData] = useState<AboutContent[]>([
     {
@@ -114,6 +116,7 @@ const AdminAboutPage: React.FC = () => {
               <AdminTableHeader
                 onAddClick={() => {
                   if (aboutData.length >= 1) {
+                    toast.warning("Batas maksimal", "Data About hanya boleh 1 item");
                     return;
                   }
                   setEditingId(null);
@@ -137,7 +140,12 @@ const AdminAboutPage: React.FC = () => {
                 }}
                 onDelete={(id) => {
                   if (typeof id === "number") {
-                    setAboutData((prev) => prev.filter((item) => item.id !== id));
+                    try {
+                      setAboutData((prev) => prev.filter((item) => item.id !== id));
+                      toast.success("Berhasil", "Data About berhasil dihapus");
+                    } catch {
+                      toast.error("Gagal", "Data About gagal dihapus");
+                    }
                   }
                 }}
               />
@@ -166,37 +174,44 @@ const AdminAboutPage: React.FC = () => {
           const image = imageList[0] || "";
           const description = (data.description as string) || "";
 
-          if (editingId != null) {
-            setAboutData((prev) =>
-              prev.map((item) =>
-                item.id === editingId
-                  ? {
-                      ...item,
-                      image: image || item.image,
-                      description: description || item.description,
-                    }
-                  : item
-              )
-            );
-          } else {
-            setAboutData((prev) => {
-              if (prev.length >= 1) {
-                return prev;
-              }
-              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-              return [
-                ...prev,
-                {
-                  id: nextId,
-                  image,
-                  description,
-                },
-              ];
-            });
-          }
+          try {
+            if (editingId != null) {
+              setAboutData((prev) =>
+                prev.map((item) =>
+                  item.id === editingId
+                    ? {
+                        ...item,
+                        image: image || item.image,
+                        description: description || item.description,
+                      }
+                    : item
+                )
+              );
+              toast.success("Berhasil", "Data About berhasil diperbarui");
+            } else {
+              setAboutData((prev) => {
+                if (prev.length >= 1) {
+                  toast.warning("Batas maksimal", "Data About hanya boleh 1 item");
+                  return prev;
+                }
+                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    image,
+                    description,
+                  },
+                ];
+              });
+              toast.success("Berhasil", "Data About berhasil ditambahkan");
+            }
 
-          setIsModalOpen(false);
-          setEditingId(null);
+            setIsModalOpen(false);
+            setEditingId(null);
+          } catch {
+            toast.error("Gagal", "Perubahan data About gagal disimpan");
+          }
         }}
       />
     </InitialShimmer>
