@@ -7,6 +7,7 @@ interface AdminTableHeaderProps {
   onSearchChange?: (value: string) => void;
   onAddClick?: () => void;
   onExportClick?: () => void;
+  rightSlot?: React.ReactNode;
 }
 
 const AdminTableHeader: React.FC<AdminTableHeaderProps> = ({
@@ -15,6 +16,7 @@ const AdminTableHeader: React.FC<AdminTableHeaderProps> = ({
   onSearchChange,
   onAddClick,
   onExportClick,
+  rightSlot,
 }) => {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -31,6 +33,7 @@ const AdminTableHeader: React.FC<AdminTableHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
+        {rightSlot}
         {onExportClick && (
           <button
             type="button"

@@ -21,6 +21,7 @@ import AdminFaqPage from "./pages/admin/AdminFaqPage";
 import AdminUserListPage from "./pages/admin/userlist/AdminUserListPage";
 import AdminBlogArticlesPage from "./pages/admin/blog-article/AdminBlogArticlesPage";
 import AdminShopPage from "./pages/admin/shop/AdminShopPage";
+import AdminTransactionsPage from "./pages/admin/transactions/AdminTransactionsPage";
 import AiMotionLoadingPage from "./components/ui/AiMotionLoadingPage";
 
 export const Router = () => {
@@ -89,6 +90,7 @@ export const Router = () => {
                 <Route path="/admin/blog" element={<AdminBlogArticlesPage />} />
                 <Route path="/admin/users" element={<AdminUserListPage />} />
                 <Route path="/admin/shop" element={<AdminShopPage />} />
+                <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
                 <Route path="/admin/landing/hero" element={<AdminHeroManagementPage />} />
                 <Route
                   path="/admin/landing/travel-journal"

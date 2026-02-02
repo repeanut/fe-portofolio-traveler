@@ -178,6 +178,8 @@ const AdminChatPage: React.FC = () => {
             navigate("/admin/shop");
           } else if (key === "blog") {
             navigate("/admin/blog");
+          } else if (key === "transactions") {
+            navigate("/admin/transactions");
           }
         }}
         onNavigateLandingSub={(subKey) => {

@@ -37,13 +37,22 @@ const AdminTable: React.FC<AdminTableProps> = ({
   data,
   onDelete,
   onEdit,
-  itemsPerPage = 7,
+  itemsPerPage = 5,
   currentPage = 1,
-  totalPages = 1,
+  totalPages,
   onPageChange,
   onItemsPerPageChange,
   isLoading = false,
 }) => {
+
+  const computedTotalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
+  const effectiveTotalPages =
+    typeof totalPages === "number"
+      ? Math.max(1, Math.max(totalPages, computedTotalPages))
+      : computedTotalPages;
+  const effectiveCurrentPage = Math.min(Math.max(1, currentPage), effectiveTotalPages);
+  const startIndex = (effectiveCurrentPage - 1) * itemsPerPage;
+  const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
 
   const renderCell = (column: Column, row: Record<string, unknown>) => {
     if (column.render) {
@@ -176,101 +185,99 @@ const AdminTable: React.FC<AdminTableProps> = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs">
-      <div className="max-h-[calc(100vh-225px)] overflow-y-auto md:overflow-x-hidden">
-        <div className="min-w-full inline-block align-middle">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100">
-              <thead className="bg-slate-50 sticky top-0 z-10">
-                <tr>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 w-12">
-                    No
-                  </th>
-                  {columns.map((column, index) => {
-                    const isLongText =
-                      ["description", "title"].includes(column.accessor) ||
-                      column.type === "textarea";
-                    const isAction = column.type === "action";
-                    return (
-                      <th
-                        key={index}
-                        className={`px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50${
-                          isAction ? " w-24" : ""
-                        }${
-                          isLongText
-                            ? " whitespace-normal break-words max-w-md"
-                            : " whitespace-nowrap"
-                        }`}
-                      >
-                        {column.header}
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-100">
-                {isLoading
-                  ? Array.from({ length: itemsPerPage }).map((_, idx) => (
-                      <tr key={idx}>
-                        <td className="px-4 py-3 whitespace-nowrap text-[11px] text-slate-300 w-12">
-                          <Skeleton className="h-4 w-6" rounded="rounded" />
+    <div className="overflow-visible rounded-2xl border border-slate-100 bg-white shadow-xs">
+      <div className="min-w-full inline-block align-middle">
+        <div className="relative overflow-x-auto overflow-y-visible">
+          <table className="w-full table-fixed divide-y divide-slate-100">
+            <thead className="bg-slate-50 sticky top-0 z-10">
+              <tr>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 w-12">
+                  No
+                </th>
+                {columns.map((column, index) => {
+                  const isLongText =
+                    ["description", "title"].includes(column.accessor) ||
+                    column.type === "textarea";
+                  const isAction = column.type === "action";
+                  return (
+                    <th
+                      key={index}
+                      className={`px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50${
+                        isAction ? " w-24" : ""
+                      }${
+                        isLongText
+                          ? " whitespace-normal break-words max-w-md"
+                          : " truncate"
+                      }`}
+                    >
+                      {column.header}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-100">
+              {isLoading
+                ? Array.from({ length: itemsPerPage }).map((_, idx) => (
+                    <tr key={idx}>
+                      <td className="px-4 py-3 whitespace-nowrap text-[11px] text-slate-300 w-12">
+                        <Skeleton className="h-4 w-6" rounded="rounded" />
+                      </td>
+                      {columns.map((col, cidx) => (
+                        <td
+                          key={cidx}
+                          className={`px-4 py-3${
+                            col.type === "action" ? " w-24" : ""
+                          }${
+                            ["description", "title"].includes(col.accessor) ||
+                            col.type === "textarea"
+                              ? " whitespace-normal break-words max-w-md"
+                              : " whitespace-nowrap"
+                          }`}
+                        >
+                          <Skeleton
+                            className={`h-4 ${col.type === "action" ? "w-16" : "w-24"}`}
+                            rounded="rounded"
+                          />
                         </td>
-                        {columns.map((col, cidx) => (
+                      ))}
+                    </tr>
+                  ))
+                : paginatedData.length > 0
+                  ? paginatedData.map((row, index) => (
+                      <tr key={row.id || index} className="hover:bg-slate-50/60">
+                        <td className="px-4 py-3 whitespace-nowrap text-[11px] text-slate-500 w-12">
+                          {(effectiveCurrentPage - 1) * itemsPerPage + index + 1}
+                        </td>
+                        {columns.map((column, colIndex) => (
                           <td
-                            key={cidx}
-                            className={`px-4 py-3${
-                              col.type === "action" ? " w-24" : ""
+                            key={colIndex}
+                            className={`px-4 py-3 text-[11px] text-slate-700${
+                              column.type === "action" ? " w-24" : ""
                             }${
-                              ["description", "title"].includes(col.accessor) ||
-                              col.type === "textarea"
+                              ["description", "title"].includes(column.accessor) ||
+                              column.type === "textarea"
                                 ? " whitespace-normal break-words max-w-md"
-                                : " whitespace-nowrap"
+                                : " truncate"
                             }`}
                           >
-                            <Skeleton
-                              className={`h-4 ${col.type === "action" ? "w-16" : "w-24"}`}
-                              rounded="rounded"
-                            />
+                            {renderCell(column, row)}
                           </td>
                         ))}
                       </tr>
                     ))
-                  : data.length > 0
-                    ? data.map((row, index) => (
-                        <tr key={row.id || index} className="hover:bg-slate-50/60">
-                          <td className="px-4 py-3 whitespace-nowrap text-[11px] text-slate-500 w-12">
-                            {(currentPage - 1) * itemsPerPage + index + 1}
-                          </td>
-                          {columns.map((column, colIndex) => (
-                            <td
-                              key={colIndex}
-                              className={`px-4 py-3 text-[11px] text-slate-700${
-                                column.type === "action" ? " w-24" : ""
-                              }${
-                                ["description", "title"].includes(column.accessor) ||
-                                column.type === "textarea"
-                                  ? " whitespace-normal break-words max-w-md"
-                                  : " whitespace-nowrap"
-                              }`}
-                            >
-                              {renderCell(column, row)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))
-                    : (
-                        <tr>
-                          <td
-                            colSpan={columns.length + 1}
-                            className="px-4 py-10 text-center text-sm text-slate-500"
-                          >
-                            No data found.
-                          </td>
-                        </tr>
-                      )}
-              </tbody>
-            </table>
-          </div>
+                  : (
+                      <tr>
+                        <td
+                          colSpan={columns.length + 1}
+                          className="px-4 py-10 text-center text-sm text-slate-500"
+                        >
+                          No data found.
+                        </td>
+                      </tr>
+                    )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -290,8 +297,8 @@ const AdminTable: React.FC<AdminTableProps> = ({
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => onPageChange?.(currentPage - 1)}
-            disabled={currentPage === 1}
+            onClick={() => onPageChange?.(effectiveCurrentPage - 1)}
+            disabled={effectiveCurrentPage === 1}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 disabled:opacity-50"
           >
             <svg
@@ -309,12 +316,12 @@ const AdminTable: React.FC<AdminTableProps> = ({
               />
             </svg>
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          {Array.from({ length: effectiveTotalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => onPageChange?.(page)}
               className={`px-2 py-0.5 rounded-lg text-[11px] ${
-                currentPage === page
+                effectiveCurrentPage === page
                   ? "bg-blue-600 text-white"
                   : "hover:bg-slate-100 text-slate-700"
               }`}
@@ -323,8 +330,8 @@ const AdminTable: React.FC<AdminTableProps> = ({
             </button>
           ))}
           <button
-            onClick={() => onPageChange?.(currentPage + 1)}
-            disabled={currentPage === totalPages}
+            onClick={() => onPageChange?.(effectiveCurrentPage + 1)}
+            disabled={effectiveCurrentPage === effectiveTotalPages}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 disabled:opacity-50"
           >
             <svg

@@ -4,6 +4,7 @@ import {
   Layers,
   ShoppingBag,
   FileText,
+  ReceiptText,
   MessagesSquare,
   Users,
   ChevronLeft,
@@ -14,6 +15,7 @@ export type AdminSidebarItemKey =
   | "dashboard"
   | "landing"
   | "shop"
+  | "transactions"
   | "blog"
   | "chat"
   | "users";
@@ -38,6 +40,7 @@ const menuItems: { key: AdminSidebarItemKey; label: string; icon: React.ElementT
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "landing", label: "Landing Page", icon: Layers },
   { key: "shop", label: "Shop", icon: ShoppingBag },
+  { key: "transactions", label: "Transactions", icon: ReceiptText },
   { key: "blog", label: "Blog Articles", icon: FileText },
   { key: "chat", label: "Chat", icon: MessagesSquare },
   { key: "users", label: "User List", icon: Users },
@@ -66,16 +69,37 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <button
         type="button"
         onClick={() => setIsCollapsed((prev) => !prev)}
-        className="absolute -right-3 top-10 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500 text-white shadow-md hover:bg-blue-600 transition-colors"
+        className="absolute -right-3 top-14 z-10 flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-md transition-colors border border-slate-200 bg-white"
       >
         <ChevronLeft
-          className={`h-4 w-4 transform transition-transform duration-300 ${
+          className={`h-4 w-4 transform transition-transform duration-300 text-slate-600 ${
             isCollapsed ? "rotate-180" : "rotate-0"
           }`}
         />
       </button>
 
-      <nav className="mt-2 flex-1 space-y-1 px-2">
+      {/* Header Section */}
+      <div className="px-3 flex justify-center">
+        <div
+          className={`flex w-full items-center rounded-xl ${
+            isCollapsed ? "justify-center" : "gap-3"
+          }`}
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500 text-white text-[11px] font-semibold">
+            R
+          </div>
+          {!isCollapsed && (
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-slate-900 truncate">Rizwords</div>
+              <div className="mt-0.5 text-[11px] text-slate-500 truncate">Admin Panel</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 border-b border-slate-100" />
+
+      <nav className="mt-2 flex-1 space-y-1 px-3">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.key === active;
