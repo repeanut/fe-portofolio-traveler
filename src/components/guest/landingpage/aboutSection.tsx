@@ -5,13 +5,13 @@ const AboutSection: React.FC = () => {
     const navigate = useNavigate()
 
     return (
-        <section id="about" className="py-20 bg-white overflow-hidden mt-16">
-            <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <section id="about" className="py-14 md:py-20 bg-white overflow-hidden mt-10 md:mt-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row items-center gap-12 md:gap-20">
 
                     {/* Left Column */}
                     <div className="relative w-full md:w-2/5 flex justify-center items-center">
-                        <div className="relative w-[300px] h-[300px] md:w-[350px] md:h-[350px] z-0">
+                        <div className="relative w-[260px] h-[260px] sm:w-[300px] sm:h-[300px] md:w-[350px] md:h-[350px] z-0">
 
                             {/* Layer 1 */}
                             <div className="absolute top-0 right-[-10%] w-full h-full bg-[#E0F2FE] rounded-full z-0 pointer-events-none" />
@@ -41,30 +41,30 @@ const AboutSection: React.FC = () => {
                     </div>
 
                     {/* Right Column */}
-                    <div className="w-full md:w-3/5 text-left">
+                    <div className="w-full md:w-3/5 text-center md:text-left">
                         <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 leading-tight">
                             Why You <span className="text-sky-500">Hire Me</span> for <br />
                             Your Next Projects?
                         </h2>
 
-                        <p className="mt-6 text-slate-500 text-sm leading-relaxed">
+                        <p className="mt-6 text-slate-500 text-sm sm:text-base leading-relaxed mx-auto md:mx-0 max-w-2xl">
                             With over 5 years of experience and a deep understanding of copywriting psychology, marketing funnel, stages of awareness, and market sophistication I'll connect your brand with your target audience's pain points through ads and content. Then present your product as the perfect solution for their problems.
                         </p>
 
                         {/* Stats Pills */}
-                        <div className="mt-8 flex flex-wrap gap-4">
-                            <div className="bg-sky-50 px-6 py-2 rounded-full flex items-center gap-2">
+                        <div className="mt-8 grid grid-cols-2 gap-3 max-w-md mx-auto md:max-w-none md:mx-0 md:flex md:flex-wrap md:gap-4 md:justify-start">
+                            <div className="bg-sky-50 px-4 py-2 rounded-full flex items-center justify-center gap-2 w-full md:w-fit">
                                 <span className="text-sky-500 text-xl font-bold">5+</span>
                                 <span className="text-slate-700 font-medium text-sm">Years Experience</span>
                             </div>
-                            <div className="bg-sky-50 px-6 py-3 rounded-full flex items-center gap-2">
+                            <div className="bg-sky-50 px-4 py-2 rounded-full flex items-center justify-center gap-2 w-full md:w-fit">
                                 <span className="text-sky-500 text-xl font-bold">100+</span>
                                 <span className="text-slate-700 font-medium text-sm">Projects</span>
                             </div>
                         </div>
 
                         {/* CTA Button */}
-                        <div className="mt-8">
+                        <div className="mt-8 flex justify-center md:justify-start">
                             <button
                                 onClick={() => navigate('/work/shop')}
                                 className="px-8 py-3 rounded-full border-2 border-sky-500 text-sm text-sky-500 font-semibold hover:bg-sky-500 hover:text-white transition-colors duration-300"

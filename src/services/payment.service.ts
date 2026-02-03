@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axios, { AxiosError } from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface PaymentRequest {
     method: string;
@@ -30,10 +30,14 @@ export interface PaymentResponse {
         amount: number;
         currency: string;
         method: string;
-        gatewayResponse?: any;
+        gatewayResponse?: unknown;
         createdAt: string;
     };
 }
+
+type ApiErrorPayload = {
+    message?: string;
+};
 
 export interface PaymentMethod {
     id: string;
@@ -45,12 +49,17 @@ export interface PaymentMethod {
 }
 
 class PaymentService {
-    private getAuthHeaders() {
-        const token = localStorage.getItem('token');
+    private getAuthHeaders(): Record<string, string> {
+        const token = localStorage.getItem("token");
         return {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` })
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
+    }
+
+    private getErrorMessage(error: unknown, fallback: string): string {
+        const axiosError = error as AxiosError<ApiErrorPayload>;
+        return axiosError?.response?.data?.message || fallback;
     }
 
     async processPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
@@ -61,9 +70,8 @@ class PaymentService {
                 { headers: this.getAuthHeaders() }
             );
             return response.data;
-        } catch (error: any) {
-            console.error('Payment processing error:', error);
-            throw new Error(error.response?.data?.message || 'Failed to process payment');
+        } catch (error: unknown) {
+            throw new Error(this.getErrorMessage(error, "Failed to process payment"));
         }
     }
 
@@ -73,14 +81,13 @@ class PaymentService {
                 `${API_BASE_URL}/payments/methods`,
                 { headers: this.getAuthHeaders() }
             );
-            return response.data.data;
-        } catch (error: any) {
-            console.error('Get payment methods error:', error);
-            throw new Error(error.response?.data?.message || 'Failed to get payment methods');
+            return (response.data as { data?: PaymentMethod[] }).data ?? [];
+        } catch (error: unknown) {
+            throw new Error(this.getErrorMessage(error, "Failed to get payment methods"));
         }
     }
 
-    async getPaymentHistory(page = 1, limit = 10, status?: string) {
+    async getPaymentHistory(page = 1, limit = 10, status?: string): Promise<unknown> {
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
@@ -93,39 +100,36 @@ class PaymentService {
                 { headers: this.getAuthHeaders() }
             );
             return response.data;
-        } catch (error: any) {
-            console.error('Get payment history error:', error);
-            throw new Error(error.response?.data?.message || 'Failed to get payment history');
+        } catch (error: unknown) {
+            throw new Error(this.getErrorMessage(error, "Failed to get payment history"));
         }
     }
 
-    async getPaymentDetails(paymentId: string) {
+    async getPaymentDetails(paymentId: string): Promise<unknown> {
         try {
             const response = await axios.get(
                 `${API_BASE_URL}/payments/details/${paymentId}`,
                 { headers: this.getAuthHeaders() }
             );
             return response.data;
-        } catch (error: any) {
-            console.error('Get payment details error:', error);
-            throw new Error(error.response?.data?.message || 'Failed to get payment details');
+        } catch (error: unknown) {
+            throw new Error(this.getErrorMessage(error, "Failed to get payment details"));
         }
     }
 
-    async verifyPayment(paymentId: string) {
+    async verifyPayment(paymentId: string): Promise<unknown> {
         try {
             const response = await axios.get(
                 `${API_BASE_URL}/payments/verify/${paymentId}`,
                 { headers: this.getAuthHeaders() }
             );
             return response.data;
-        } catch (error: any) {
-            console.error('Verify payment error:', error);
-            throw new Error(error.response?.data?.message || 'Failed to verify payment');
+        } catch (error: unknown) {
+            throw new Error(this.getErrorMessage(error, "Failed to verify payment"));
         }
     }
 
-    async refundPayment(paymentId: string, reason?: string) {
+    async refundPayment(paymentId: string, reason?: string): Promise<unknown> {
         try {
             const response = await axios.post(
                 `${API_BASE_URL}/payments/refund/${paymentId}`,
@@ -133,9 +137,8 @@ class PaymentService {
                 { headers: this.getAuthHeaders() }
             );
             return response.data;
-        } catch (error: any) {
-            console.error('Refund payment error:', error);
-            throw new Error(error.response?.data?.message || 'Failed to refund payment');
+        } catch (error: unknown) {
+            throw new Error(this.getErrorMessage(error, "Failed to refund payment"));
         }
     }
 }
