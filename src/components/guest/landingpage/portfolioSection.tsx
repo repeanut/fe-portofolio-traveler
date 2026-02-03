@@ -179,7 +179,7 @@ const PortfolioSection: React.FC = () => {
     }
 
     return (
-        <section className="py-16 bg-white" id="portfolio">
+        <section className="py-12 md:py-16 bg-white" id="portfolio">
             {/* Image Modal */}
             {selectedImage && (
                 <ImageModal
@@ -189,28 +189,27 @@ const PortfolioSection: React.FC = () => {
                 />
             )}
 
-            <div className="max-w-7xl mx-auto px-4 md:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex justify-between items-start mb-10">
+                <div className="flex sm:justify-center sm:items-center gap-4 mb-10">
                     <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 leading-tight">
-                        Let's Have a Look at<br />
-                        my <span className="text-sky-500">Portfolio</span>.
+                        Let's Have a Look at
+                        my <span className="text-sky-500">Portfolio</span>
                     </h2>
-                    <button className="flex items-center gap-2 px-6 py-3 bg-sky-500 text-white rounded-full font-semibold text-sm hover:bg-sky-600 transition-colors">
-                        Show More
-                        <ArrowUpRight className="w-4 h-4" />
-                    </button>
+                    <span className="w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center">
+                        <ArrowUpRight className="w-3 h-3 text-white" />
+                    </span>
                 </div>
 
                 {/* Slider Container */}
                 <div className="relative">
                     {/* Navigation Arrows */}
                     <button
-                        className={`absolute left-22 top-1/2 -translate-y-1/2 -translate-x-6 z-10 w-17 h-17 rounded-full bg-gray-800 text-white flex items-center justify-center shadow-lg transition-all hover:scale-105 border border-white border-3 ${currentSlide === 0 ? 'cursor-not-allowed' : 'hover:bg-slate-800'}`}
+                        className={`hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 h-16 w-16 lg:h-[68px] lg:w-[68px] rounded-full bg-gray-800 text-white items-center justify-center shadow-lg transition-all hover:scale-105 border border-white ${currentSlide === 0 ? 'cursor-not-allowed opacity-60' : 'hover:bg-slate-800'}`}
                         onClick={handlePrev}
                         disabled={currentSlide === 0}
                     >
-                        <ChevronLeft size={56} />
+                        <ChevronLeft size={40} />
                     </button>
 
                     <div
@@ -219,11 +218,14 @@ const PortfolioSection: React.FC = () => {
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         {portfolioData.map((category) => (
-                            <div className="min-w-full snap-start px-8" key={category.id}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-14 max-w-5xl mx-auto">
+                            <div className="min-w-full snap-start px-0 sm:px-4 md:px-8" key={category.id}>
+                                <div
+                                    className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-2 md:gap-14 md:overflow-visible md:pb-0 max-w-5xl mx-auto"
+                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                >
                                     {category.items.map((item) => (
                                         <div
-                                            className="relative group cursor-pointer overflow-hidden rounded-3xl border border-gray-200 border-2 bg-white transition-all duration-300"
+                                            className="relative group cursor-pointer overflow-hidden rounded-3xl border border-gray-200 border-2 bg-white transition-all duration-300 shrink-0 w-[260px] sm:w-[320px] snap-start md:w-auto"
                                             key={item.id}
                                             onClick={() => handleImageClick(item.image, item.title)}
                                         >
@@ -251,16 +253,16 @@ const PortfolioSection: React.FC = () => {
                     </div>
 
                     <button
-                        className={`absolute right-22 top-1/2 -translate-y-1/2 translate-x-6 z-10 w-17 h-17 rounded-full bg-gray-800 text-white flex items-center justify-center shadow-lg transition-all hover:scale-105 border border-white border-3 ${currentSlide === totalSlides - 1 ? 'cursor-not-allowed' : 'hover:bg-slate-800'}`}
+                        className={`hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 h-16 w-16 lg:h-[68px] lg:w-[68px] rounded-full bg-gray-800 text-white items-center justify-center shadow-lg transition-all hover:scale-105 border border-white ${currentSlide === totalSlides - 1 ? 'cursor-not-allowed opacity-60' : 'hover:bg-slate-800'}`}
                         onClick={handleNext}
                         disabled={currentSlide === totalSlides - 1}
                     >
-                        <ChevronRight size={56} />
+                        <ChevronRight size={40} />
                     </button>
                 </div>
 
                 {/* Category Tags */}
-                <div className="flex justify-center gap-3 mt-14 flex-wrap">
+                <div className="flex justify-center gap-3 mt-10 md:mt-14 flex-wrap">
                     {portfolioData.map((category, index) => (
                         <button
                             key={category.id}
@@ -275,14 +277,8 @@ const PortfolioSection: React.FC = () => {
                     ))}
                 </div>
 
-                {/* My Latest Project Section */}
+                {/* Descriptions */}
                 <div className="text-center mt-10">
-                    <h3 className="text-xl md:text-2xl font-semibold text-slate-900 inline-flex items-center gap-2">
-                        My Latest Project
-                        <span className="w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center">
-                            <ArrowUpRight className="w-3 h-3 text-white" />
-                        </span>
-                    </h3>
                     <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl mx-auto">
                         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque cursus finibus
                         arcu sit amet tempor. Praesent consequat, dolor vestibulum euismod blandit,

@@ -310,7 +310,7 @@ const StoriesSection: React.FC = () => {
     }
 
     return (
-        <section className="py-8 bg-gray-100 mt-16" id="stories">
+        <section className="py-12 md:py-16 bg-gray-100 mt-10 md:mt-16" id="stories">
             {/* Viewer Modal */}
             {selectedHighlightIndex !== null && (
                 <StoryViewer
@@ -320,10 +320,10 @@ const StoriesSection: React.FC = () => {
                 />
             )}
 
-            <div className="max-w-7xl mx-auto px-4">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-12">
-                    <h2 className="text-3xl font-semibold text-slate-900">Travel Journal</h2>
+                <div className="mb-8 md:mb-12">
+                    <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">Travel Journal</h2>
                     <p className="text-slate-500 mt-2">Snippets from my global adventures.</p>
                 </div>
 
@@ -332,24 +332,24 @@ const StoriesSection: React.FC = () => {
                     {/* Controls - Always visible */}
                     <button
                         onClick={() => scroll('left')}
-                        className="absolute left-0 z-10 w-15 h-15 -ml-4 bg-gray-100/80 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-600 hover:bg-gray-200 transition-colors shadow-sm"
+                        className="hidden md:flex absolute left-0 z-10 h-12 w-12 lg:h-14 lg:w-14 -ml-4 bg-gray-100/80 backdrop-blur-sm rounded-full items-center justify-center text-slate-600 hover:bg-gray-200 transition-colors shadow-sm"
                         aria-label="Scroll left"
                     >
-                        <ChevronLeft className="w-full h-full text-gray-900" />
+                        <ChevronLeft className="h-6 w-6 text-gray-900" />
                     </button>
 
                     <button
                         onClick={() => scroll('right')}
-                        className="absolute right-0 z-10 w-15 h-15 -mr-4 bg-gray-100/80 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-600 hover:bg-gray-200 transition-colors shadow-sm"
+                        className="hidden md:flex absolute right-0 z-10 h-12 w-12 lg:h-14 lg:w-14 -mr-4 bg-gray-100/80 backdrop-blur-sm rounded-full items-center justify-center text-slate-600 hover:bg-gray-200 transition-colors shadow-sm"
                         aria-label="Scroll right"
                     >
-                        <ChevronRight className="w-full h-full text-gray-900" />
+                        <ChevronRight className="h-6 w-6 text-gray-900" />
                     </button>
 
                     {/* Scroll Area */}
                     <div
                         ref={scrollContainer}
-                        className="flex gap-8 justify-center overflow-x-auto pb-4 pt-2 px-8 w-full mx-auto scrollbar-hide scroll-smooth"
+                        className="flex gap-4 sm:gap-6 md:gap-8 justify-start md:justify-center overflow-x-auto pb-4 pt-2 px-1 sm:px-8 w-full mx-auto scrollbar-hide scroll-smooth"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         {highlights.map((highlight, index) => (

@@ -163,10 +163,10 @@ const ExperienceSection: React.FC = () => {
     }
 
     return (
-        <section className="py-20 bg-white" id="experience">
-            <div className="container mx-auto px-4">
+        <section className="py-14 md:py-20 bg-white" id="experience">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
-                <div className="text-center mb-12">
+                <div className="text-center mb-24 md:mb-12">
                     <h2 className="text-3xl md:text-4xl font-semibold text-slate-800 mb-4">
                         My Experience
                     </h2>
@@ -175,8 +175,33 @@ const ExperienceSection: React.FC = () => {
                     </p>
                 </div>
 
-                {/* Carousel Container */}
-                <div className="relative h-80 md:h-96 flex items-center justify-center overflow-hidden">
+                {/* Mobile: Carousel card */}
+                <div className="md:hidden ">
+                    <div className="mx-auto max-w-sm rounded-2xl bg-white shadow-lg border border-gray-100 overflow-visible relative">
+                        <div className="absolute left-1/2 -translate-x-1/2 -top-10 w-20 h-20 rounded-full flex items-center justify-center shadow-md bg-white">
+                            <img
+                                src={experiences[activeIndex].logo}
+                                alt={experiences[activeIndex].logoAlt}
+                                className="w-20 h-20 rounded-full object-contain"
+                            />
+                        </div>
+
+                        <div className="pt-16 pb-6 px-6">
+                            <h3 className="font-semibold text-slate-800 text-center mb-2 text-lg">
+                                {experiences[activeIndex].title}
+                            </h3>
+                            <p className="text-gray-400 text-center mb-6 text-sm">
+                                {experiences[activeIndex].period} · {experiences[activeIndex].duration}
+                            </p>
+                            <button className="w-full py-3 rounded-full text-white font-semibold bg-sky-500 hover:bg-sky-600 transition-colors text-sm">
+                                {experiences[activeIndex].company}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Desktop: Carousel Container */}
+                <div className="hidden md:flex relative h-80 md:h-96 items-center justify-center overflow-hidden">
                     {/* Cards */}
                     <div className="relative w-full h-full flex items-center justify-center">
                         {renderCard(experiences[prev], 'left')}

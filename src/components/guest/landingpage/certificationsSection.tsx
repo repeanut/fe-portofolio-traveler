@@ -45,7 +45,7 @@ const CertificationsSection: React.FC = () => {
             <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-8">
                     {/* Title */}
-                    <div className="md:col-span-2 text-left">
+                    <div className="md:col-span-2 text-center md:text-left">
                         <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-tight">
                             Let's Have a Look at my<br />
                             <span className="text-sky-500">Professional Certifications</span>.
@@ -53,10 +53,11 @@ const CertificationsSection: React.FC = () => {
                     </div>
 
                     {/* Certification Cards */}
-                    <div
-                        className="md:col-span-4 flex flex-col md:flex-row gap-4 overflow-x-auto scrollbar-hide p-4"
-                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    >
+                    <div className="md:col-span-4 -mx-4 md:mx-0">
+                        <div
+                            className="flex flex-row flex-nowrap gap-4 overflow-x-auto scrollbar-hide px-4 md:px-0 py-4"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
                         {certifications.map((cert) => (
                             <div
                                 key={cert.id}
@@ -87,6 +88,7 @@ const CertificationsSection: React.FC = () => {
                                 </div>
                             </div>
                         ))}
+                        </div>
                     </div>
                 </div>
             </div>

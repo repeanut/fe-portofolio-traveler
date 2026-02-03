@@ -47,17 +47,17 @@ const FAQSection: React.FC = () => {
     }
 
     return (
-        <section className="py-20" id="faq">
-            <div className="container mx-auto px-4">
+        <section className="py-14 md:py-20" id="faq">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     {/* Left Column - Title & Illustration */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 text-center lg:text-left">
                         <div>
                             <h2 className="text-3xl md:text-4xl font-semibold text-slate-800">
                                 Frequently asked{' '}
                                 <span className="text-sky-500">questions!</span>
                             </h2>
-                            <p className="text-gray-500 mt-4 max-w-md">
+                            <p className="text-gray-500 mt-4 max-w-md mx-auto lg:mx-0">
                                 Find quick answers to the most common questions about my services, process, and how we can work together.
                             </p>
                         </div>
@@ -67,13 +67,13 @@ const FAQSection: React.FC = () => {
                             <img
                                 src="/illustration.png"
                                 alt="FAQ Illustration"
-                                className="w-120 h-auto object-contain"
+                                className="w-full max-w-sm sm:max-w-md h-auto object-contain"
                             />
                         </div>
                     </div>
 
                     {/* Right Column - FAQ Accordion */}
-                    <div className="space-y-0 p-4 rounded-xl bg-white shadow-lg">
+                    <div className="space-y-0 p-4 sm:p-5 rounded-xl bg-white shadow-lg">
                         {faqs.map((faq, index) => (
                             <div
                                 key={index}
@@ -97,7 +97,7 @@ const FAQSection: React.FC = () => {
 
                                 {/* Answer - Collapsible */}
                                 <div
-                                    className={`overflow-hidden transition-all ml-5 duration-300 ease-in-out ${openIndex === index ? 'max-h-96 pb-5' : 'max-h-0'
+                                    className={`overflow-hidden transition-all ml-3 md:ml-5 duration-300 ease-in-out ${openIndex === index ? 'max-h-96 pb-5' : 'max-h-0'
                                         }`}
                                 >
                                     <p className="text-gray-500 text-sm leading-relaxed pr-8">

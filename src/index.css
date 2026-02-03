@@ -73,7 +73,7 @@ body {
   border-radius: 999px;
 }
 
-h1 {
+h1:not([class]) {
   font-size: 3.2em;
   line-height: 1.1;
 }
