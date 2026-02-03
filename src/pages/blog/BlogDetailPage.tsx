@@ -31,6 +31,34 @@ const BlogDetailPage: React.FC = () => {
 
   const NavbarComponent = from === "shop" ? NavbarShop : Navbar;
 
+  const normalizedHtmlContent = useMemo(() => {
+    if (!post || Array.isArray(post.content)) return null;
+    const html = String(post.content ?? "");
+    const normalized = html.replace(/<img\b([^>]*?)\/>|<img\b([^>]*?)>/gi, (match, g1, g2) => {
+      const attrs = String(g1 ?? g2 ?? "");
+      const cleaned = attrs
+        .replace(/\swidth\s*=\s*"[^"]*"/gi, "")
+        .replace(/\sheight\s*=\s*"[^"]*"/gi, "")
+        .replace(/\swidth\s*=\s*'[^']*'/gi, "")
+        .replace(/\sheight\s*=\s*'[^']*'/gi, "");
+
+      const hasStyle = /\sstyle\s*=\s*/i.test(cleaned);
+      if (hasStyle) {
+        return match.replace(
+          /style\s*=\s*(["'])(.*?)\1/i,
+          (_m, q, v) =>
+            `style=${q}${String(v)};width:100% !important;max-width:100% !important;display:block;aspect-ratio:16/9;object-fit:cover;border-radius:1rem !important;${q}`
+        );
+      }
+
+      const closing = match.endsWith("/>") ? " />" : ">";
+      const core = match.startsWith("<img") ? "<img" : "<IMG";
+      return `${core}${cleaned} style="width:100% !important;max-width:100% !important;display:block;aspect-ratio:16/9;object-fit:cover;border-radius:1rem !important;"${closing}`;
+    });
+
+    return normalized;
+  }, [post]);
+
   if (!post) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
@@ -132,8 +160,8 @@ const BlogDetailPage: React.FC = () => {
                   </div>
                 ) : (
                   <div
-                    className="prose prose-slate max-w-none prose-img:rounded-xl prose-img:shadow-sm prose-img:border prose-img:border-slate-100"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
+                    className="prose prose-slate max-w-none prose-img:!block prose-img:!w-full prose-img:!max-w-full prose-img:aspect-video prose-img:object-cover prose-img:rounded-2xl prose-img:shadow-sm prose-img:border prose-img:border-slate-100"
+                    dangerouslySetInnerHTML={{ __html: normalizedHtmlContent ?? String(post.content ?? "") }}
                   />
                 )}
               </article>
