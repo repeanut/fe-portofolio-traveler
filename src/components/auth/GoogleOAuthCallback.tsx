@@ -39,12 +39,7 @@ const GoogleOAuthCallback: React.FC = () => {
                     // Dispatch auth change event
                     window.dispatchEvent(new Event('auth:changed'));
                     
-                    // Show appropriate message based on action
-                    if (action === 'signup') {
-                        alert('🎉 Welcome to Travello! Your Google account has been successfully registered.');
-                    } else if (action === 'login') {
-                        alert('👋 Welcome back! Successfully signed in with Google.');
-                    }
+                    // Success message removed - no more annoying popup
                     
                     // Redirect based on login_page parameter
                     if (loginPage === 'aichatbot') {

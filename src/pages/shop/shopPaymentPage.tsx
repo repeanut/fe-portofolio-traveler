@@ -63,6 +63,49 @@ const ShopPaymentPage: React.FC = () => {
         setPaymentData(data);
     };
 
+    const handlePayPalPayment = async (paymentId: string) => {
+        setIsProcessing(true);
+        try {
+            const paymentRequest = {
+                method: 'paypal',
+                amount: total,
+                currency: 'USD',
+                description: `${item.title} - ${orderPackage.title}`,
+                customerInfo: {
+                    name: 'PayPal User',
+                    email: 'user@example.com',
+                    phone: '+1234567890'
+                },
+                paypalPaymentId: paymentId
+            };
+
+            const response = await paymentService.processPayment(paymentRequest);
+            
+            if (response.success) {
+                navigate('/shop/payment/payment-success', {
+                    state: {
+                        subtotal,
+                        serviceFee,
+                        total,
+                        itemTitle: item.title,
+                        orderPackageTitle: orderPackage.title,
+                        deliveryLabel: orderPackage.deliveryLabel,
+                        quantity,
+                        paymentMethodLabel: 'PayPal',
+                        paymentId: response.data?.paymentId
+                    },
+                });
+            } else {
+                alert('Pembayaran gagal: ' + response.message);
+            }
+        } catch (error: any) {
+            console.error('PayPal payment error:', error);
+            alert('Terjadi kesalahan saat memproses pembayaran PayPal: ' + error.message);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     const handlePayment = async () => {
         if (!paymentData?.isValid) {
             alert('Silakan lengkapi detail pembayaran terlebih dahulu.');
@@ -130,6 +173,9 @@ const ShopPaymentPage: React.FC = () => {
                                 <PaymentMethods 
                                     onPaymentMethodChange={setSelectedPaymentMethodLabel}
                                     onPaymentDataChange={handlePaymentDataChange}
+                                    onPayPalPayment={handlePayPalPayment}
+                                    amount={total}
+                                    description={`${item.title} - ${orderPackage.title}`}
                                 />
                             </div>
 

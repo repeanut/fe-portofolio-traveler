@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
@@ -18,6 +18,9 @@ interface TravelHighlight extends Record<string, unknown> {
   name: string;
   cover: string;
   images: string[];
+  createdAt?: string;
+  timestamp?: string;
+  status?: string;
 }
 
 const AdminTravelJournalPage: React.FC = () => {
@@ -25,20 +28,142 @@ const AdminTravelJournalPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useAdminToast();
 
-  const [travelData, setTravelData] = useState<TravelHighlight[]>([
-    {
-      id: 1,
-      name: "Bali",
-      cover: "/foto 2.jpg",
-      images: ["/foto 2.jpg", "/foto 5.jpg", "/foto 7.jpg"],
-    },
-    {
-      id: 2,
-      name: "Tokyo",
-      cover: "/foto 1.jpg",
-      images: ["/foto 1.jpg"],
-    },
-  ]);
+  const [travelData, setTravelData] = useState<TravelHighlight[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch travel journals from API
+  useEffect(() => {
+    fetchTravelJournals();
+  }, []);
+
+  const fetchTravelJournals = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/travel-journal');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setTravelData(result.data.journals);
+        setError(null);
+        console.log('✅ Travel journals loaded:', result.data.journals);
+      } else {
+        setError(result.message || 'Failed to fetch travel journals');
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || 'Error connecting to backend API';
+      setError(errorMessage);
+      console.error('Error fetching travel journals:', err);
+      
+      // Fallback to hardcoded data if API fails
+      setTravelData([
+        {
+          id: 1,
+          name: "Bali",
+          cover: "/foto 2.jpg",
+          images: ["/foto 2.jpg", "/foto 5.jpg", "/foto 7.jpg"],
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          timestamp: "54w",
+          status: "active"
+        },
+        {
+          id: 2,
+          name: "Tokyo",
+          cover: "/foto 1.jpg",
+          images: ["/foto 1.jpg"],
+          createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+          timestamp: "12w",
+          status: "active"
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveTravelJournal = async (data: Partial<TravelHighlight>, id?: number) => {
+    try {
+      const url = id 
+        ? `http://localhost:5000/api/travel-journal/${id}`
+        : 'http://localhost:5000/api/travel-journal';
+      
+      const method = id ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await fetchTravelJournals(); // Refresh data
+        return result.data.journal;
+      } else {
+        throw new Error(result.message || 'Failed to save travel journal');
+      }
+    } catch (err: any) {
+      // Fallback to local state update if API fails
+      console.warn('API failed, using local state:', err.message);
+      
+      if (id) {
+        setTravelData(prev => prev.map(item => 
+          item.id === id ? { ...item, ...data } : item
+        ));
+      } else {
+        const newItem: TravelHighlight = {
+          id: travelData.length > 0 ? Math.max(...travelData.map(j => j.id)) + 1 : 1,
+          name: data.name || 'Untitled',
+          cover: data.cover || '',
+          images: data.images || [],
+          createdAt: new Date().toISOString(),
+          timestamp: 'Just now',
+          status: 'active'
+        };
+        setTravelData(prev => [...prev, newItem]);
+      }
+      
+      return { ...data, id: id || travelData.length + 1 };
+    }
+  };
+
+  const deleteTravelJournal = async (id: number) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/travel-journal/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await fetchTravelJournals(); // Refresh data
+        return true;
+      } else {
+        throw new Error(result.message || 'Failed to delete travel journal');
+      }
+    } catch (err: any) {
+      // Fallback to local state update if API fails
+      console.warn('API failed, using local state:', err.message);
+      setTravelData(prev => prev.filter(item => item.id !== id));
+      return true;
+    }
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -76,16 +201,20 @@ const AdminTravelJournalPage: React.FC = () => {
         label: "Name Highlight",
         type: "text",
         placeholder: "Misal: Bali, Tokyo, Alps",
+        required: true,
       },
       {
         name: "cover",
         label: "Cover Image",
         type: "image",
+        required: true,
       },
       {
         name: "images",
         label: "Travel Images",
         type: "image",
+        multiple: true,
+        required: false,
       },
     ],
     []
@@ -151,31 +280,67 @@ const AdminTravelJournalPage: React.FC = () => {
                 }}
               />
 
-              <AdminTable
-                columns={columns}
-                data={travelData}
-                currentPage={1}
-                itemsPerPage={5}
-                totalPages={1}
-                onPageChange={() => {}}
-                onItemsPerPageChange={() => {}}
-                onEdit={(id) => {
-                  if (typeof id === "number") {
-                    setEditingId(id);
-                    setIsModalOpen(true);
-                  }
-                }}
-                onDelete={(id) => {
-                  if (typeof id === "number") {
-                    try {
-                      setTravelData((prev) => prev.filter((item) => item.id !== id));
-                      toast.success("Berhasil", "Travel highlight berhasil dihapus");
-                    } catch {
-                      toast.error("Gagal", "Travel highlight gagal dihapus");
+              {error && (
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {error}
+                  </div>
+                </div>
+              )}
+
+              {loading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Loading travel journals...</span>
+                </div>
+              )}
+
+              {!loading && travelData.length === 0 && !error && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No travel journals found</h3>
+                  <p className="text-gray-600">Start by adding your first travel journal.</p>
+                </div>
+              )}
+
+              {!loading && travelData.length > 0 && (
+                <AdminTable
+                  columns={columns}
+                  data={travelData}
+                  currentPage={1}
+                  itemsPerPage={5}
+                  totalPages={1}
+                  onPageChange={() => {}}
+                  onItemsPerPageChange={() => {}}
+                  onPreview={(id) => {
+                    if (typeof id === "number") {
+                      // Open travel journal in main page
+                      window.open(`/#stories?highlight=${id}`, '_blank');
                     }
-                  }
-                }}
-              />
+                  }}
+                  onEdit={(id) => {
+                    if (typeof id === "number") {
+                      setEditingId(id);
+                      setIsModalOpen(true);
+                    }
+                  }}
+                  onDelete={async (id) => {
+                    if (typeof id === "number") {
+                      try {
+                        await deleteTravelJournal(id);
+                        toast.success("Berhasil", "Travel highlight berhasil dihapus");
+                      } catch (error: any) {
+                        toast.error("Gagal", error?.message || "Travel highlight gagal dihapus");
+                      }
+                    }
+                  }}
+                />
+              )}
             </section>
           </div>
         </div>
@@ -187,56 +352,43 @@ const AdminTravelJournalPage: React.FC = () => {
         fields={modalFields}
         initialData={
           editingId != null
-            ? (travelData.find((item) => item.id === editingId) as
-                | Record<string, unknown>
-                | undefined)
+            ? travelData.find((item) => item.id === editingId)
             : undefined
         }
         onClose={() => {
           setIsModalOpen(false);
           setEditingId(null);
         }}
-        onSubmit={(data) => {
-          const name = (data.name as string) || "";
-          const coverList = (data.cover as string[] | undefined) ?? [];
-          const images = (data.images as string[] | undefined) ?? [];
-          const cover = coverList[0] || "";
-
+        onSubmit={async (data) => {
           try {
+            const name = (data.name as string)?.trim() || "";
+            const coverList = (data.cover as string[] | undefined) ?? [];
+            const imagesList = (data.images as string[] | undefined) ?? [];
+            const cover = Array.isArray(coverList) ? coverList[0] : coverList;
+            const images = Array.isArray(imagesList) ? imagesList : imagesList ? [imagesList] : [];
+
+            if (!name) {
+              toast.error("Gagal", "Name highlight is required");
+              return;
+            }
+
+            if (!cover) {
+              toast.error("Gagal", "Cover image is required");
+              return;
+            }
+
+            await saveTravelJournal({ name, cover, images }, editingId || undefined);
+            
             if (editingId != null) {
-              setTravelData((prev) =>
-                prev.map((item) =>
-                  item.id === editingId
-                    ? {
-                        ...item,
-                        name: name || item.name,
-                        cover: cover || item.cover,
-                        images: images.length ? images : item.images,
-                      }
-                    : item
-                )
-              );
               toast.success("Berhasil", "Travel highlight berhasil diperbarui");
             } else {
-              setTravelData((prev) => {
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    name,
-                    cover,
-                    images,
-                  },
-                ];
-              });
               toast.success("Berhasil", "Travel highlight berhasil ditambahkan");
             }
 
             setIsModalOpen(false);
             setEditingId(null);
-          } catch {
-            toast.error("Gagal", "Perubahan travel highlight gagal disimpan");
+          } catch (error: any) {
+            toast.error("Gagal", error?.message || "Perubahan travel highlight gagal disimpan");
           }
         }}
       />

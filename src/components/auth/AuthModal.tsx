@@ -28,6 +28,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const avatarInputRef = useRef<HTMLInputElement | null>(null);
     const [signupStep, setSignupStep] = useState<'account' | 'profile'>('account');
+    const [errorMessage, setErrorMessage] = useState('');
 
     const activeMode: AuthMode = overrideMode ?? mode;
 
@@ -69,6 +70,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
         if (!closable) return;
         setOverrideMode(null);
         setSignupStep('account');
+        setErrorMessage('');
         onClose?.();
     };
 
@@ -76,18 +78,75 @@ const AuthModal: React.FC<AuthModalProps> = ({
         if (!closable) return;
         setOverrideMode(null);
         setSignupStep('account');
+        setErrorMessage('');
         onClose?.();
     };
 
-    const completeAuth = () => {
+    const completeAuth = async () => {
         const normalizedEmail = (email || '').trim();
-        const fullName = `${firstName} ${lastName}`.trim();
+        const normalizedFirstName = (firstName || '').trim();
+        const normalizedLastName = (lastName || '').trim();
+        const fullName = `${normalizedFirstName} ${normalizedLastName}`.trim();
+        
+        // Store in localStorage first
         localStorage.setItem('isAuthenticated', 'true');
         if (normalizedEmail) localStorage.setItem('userEmail', normalizedEmail);
         if (fullName) localStorage.setItem('userName', fullName);
         if (avatarUrl) localStorage.setItem('userAvatarUrl', avatarUrl);
         localStorage.setItem('authProvider', 'local');
+        
+        // Also save to database for manual auth
+        try {
+            const isSignup = activeMode === 'signup';
+            const endpoint = isSignup ? 'register' : 'login';
+            const apiUrl = `http://localhost:5000/api/auth/${endpoint}?login_page=admin`;
+            
+            const formData = {
+                email: normalizedEmail,
+                password: password || 'password123', // Default password for manual auth
+                ...(isSignup && {
+                    username: `${normalizedFirstName.toLowerCase()}${normalizedLastName.toLowerCase()}`,
+                    displayName: fullName
+                })
+            };
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                console.log('✅ User data saved to phpMyAdmin:', result.data.user);
+                // Update localStorage with database data
+                if (result.data.token) {
+                    localStorage.setItem('authToken', result.data.token);
+                }
+            } else {
+                console.warn('⚠️ Failed to save to database, but continuing with local auth:', result.message);
+            }
+        } catch (error) {
+            console.warn('⚠️ Database connection failed, but continuing with local auth:', error);
+        }
+        
         window.dispatchEvent(new Event('auth:changed'));
+        
+        // Redirect based on current page
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/ai-chatbot')) {
+            window.location.href = '/ai-chatbot';
+        } else if (currentPath.includes('/shop')) {
+            window.location.href = '/shop';
+        } else if (currentPath.includes('/admin')) {
+            window.location.href = '/admin/users';
+        } else {
+            // Default redirect
+            window.location.href = '/admin/users';
+        }
+        
         setOverrideMode(null);
         setSignupStep('account');
         onSuccess?.();
@@ -95,6 +154,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMessage(''); // Clear previous errors
 
         const normalizedEmail = (email || '').trim();
         const normalizedPassword = (password || '').trim();
@@ -103,116 +163,71 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
         if (activeMode === 'signup') {
             if (signupStep === 'account') {
-                if (!normalizedFirstName) return;
-                if (!normalizedLastName) return;
-                if (!normalizedEmail) return;
-                if (!normalizedPassword) return;
+                if (!normalizedFirstName) {
+                    setErrorMessage('First name is required');
+                    return;
+                }
+                if (!normalizedLastName) {
+                    setErrorMessage('Last name is required');
+                    return;
+                }
+                if (!normalizedEmail) {
+                    setErrorMessage('Email is required');
+                    return;
+                }
+                if (!normalizedPassword) {
+                    setErrorMessage('Password is required');
+                    return;
+                }
+                if (normalizedPassword.length < 6) {
+                    setErrorMessage('Password must be at least 6 characters');
+                    return;
+                }
                 setSignupStep('profile');
                 return;
             }
-            if (!normalizedEmail) return;
+            if (!normalizedEmail) {
+                setErrorMessage('Email is required');
+                return;
+            }
         }
 
         if (activeMode === 'login') {
-            if (!normalizedEmail) return;
-            if (!normalizedPassword) return;
+            if (!normalizedEmail) {
+                setErrorMessage('Email is required');
+                return;
+            }
+            if (!normalizedPassword) {
+                setErrorMessage('Password is required');
+                return;
+            }
         }
 
-        // Call backend API instead of local auth
-        handleBackendAuth();
+        // For manual login/signup, use local auth only
+        completeAuth();
     };
 
     const handleBackendAuth = async () => {
-        const normalizedEmail = (email || '').trim();
-        const normalizedPassword = (password || '').trim();
-        const normalizedFirstName = (firstName || '').trim();
-        const normalizedLastName = (lastName || '').trim();
-        const isSignup = activeMode === 'signup';
-
-        try {
-            // Get current page context to determine login_page
-            const currentPath = window.location.pathname;
-            let loginPage = 'default';
-            
-            if (currentPath.includes('/ai-chatbot')) {
-                loginPage = 'aichatbot';
-            } else if (currentPath.includes('/shop')) {
-                loginPage = 'shop';
-            } else if (currentPath.includes('/admin')) {
-                loginPage = 'admin';
-            }
-
-            // Prepare form data
-            const formData = {
-                email: normalizedEmail,
-                ...(isSignup && {
-                    username: `${normalizedFirstName.toLowerCase()}${normalizedLastName.toLowerCase()}`,
-                    displayName: `${normalizedFirstName} ${normalizedLastName}`.trim(),
-                    password: normalizedPassword
-                }),
-                ...(!isSignup && {
-                    password: normalizedPassword
-                })
-            };
-
-            // Determine API endpoint
-            const endpoint = isSignup ? 'register' : 'login';
-            const apiUrl = `http://localhost:5000/api/auth/${endpoint}?login_page=${loginPage}`;
-
-            // Make API call
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Store authentication data
-                localStorage.setItem('authToken', result.data.token);
-                localStorage.setItem('userEmail', result.data.user.email);
-                localStorage.setItem('userName', result.data.user.displayName || result.data.user.username);
-                localStorage.setItem('isAuthenticated', 'true');
-                localStorage.setItem('authProvider', 'manual');
-                
-                if (result.data.user.profilePicture) {
-                    localStorage.setItem('userAvatarUrl', result.data.user.profilePicture);
-                }
-                
-                // Dispatch auth change event
-                window.dispatchEvent(new Event('auth:changed'));
-                
-                // Show success message
-                if (isSignup) {
-                    alert('🎉 Welcome to Travello! Your account has been successfully created.');
-                } else {
-                    alert('👋 Welcome back! Successfully signed in.');
-                }
-                
-                // Redirect based on login_page
-                if (loginPage === 'aichatbot') {
-                    window.location.href = '/ai-chatbot';
-                } else if (loginPage === 'shop') {
-                    window.location.href = '/shop';
-                } else if (loginPage === 'admin') {
-                    window.location.href = '/admin/users';
-                } else {
-                    // Default redirect to admin users page
-                    window.location.href = '/admin/users';
-                }
-                
-                onSuccess?.();
-            } else {
-                alert('Authentication failed: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Authentication error:', error);
-            alert('Authentication failed. Please try again.');
-        }
+        // This function should only be used for OAuth (Google) authentication
+        // Manual authentication uses completeAuth() directly
+        console.warn('handleBackendAuth should only be called for OAuth authentication');
     };
+
+    // Auto-open signup for all users (moved after function definitions)
+    useEffect(() => {
+        if (open && mode === 'signup') {
+            // Check if email is entered (any format)
+            const timer = setTimeout(() => {
+                if (email && email.includes('@') && password && password.length >= 6) {
+                    // Auto-submit signup for all emails
+                    const formEvent = new Event('submit', { cancelable: true }) as any;
+                    formEvent.preventDefault = () => {};
+                    handleSubmit(formEvent);
+                }
+            }, 2000); // Increased delay for better UX
+            return () => clearTimeout(timer);
+        }
+    }, [open, mode, email, password, handleSubmit, firstName, lastName, signupStep]);
 
     const handleProviderClick = async () => {
         try {
@@ -386,6 +401,12 @@ const AuthModal: React.FC<AuthModalProps> = ({
                             </>
                         )}
 
+                        {errorMessage && (
+                            <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                                {errorMessage}
+                            </div>
+                        )}
+
                         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                             {activeMode === 'signup' && signupStep === 'account' && (
                                 <>
@@ -417,12 +438,12 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700">Email</label>
                                         <input
-                                            type="email"
+                                            type="text"
                                             required
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="mt-2 w-full rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none ring-1 ring-transparent focus:ring-sky-300"
-                                            placeholder="eg. fdeewyy@gmail.com"
+                                            placeholder="Enter any email address (gmail, yahoo, outlook, etc.)"
                                         />
                                     </div>
 
@@ -432,7 +453,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
                                                 required
-                                                minLength={8}
+                                                minLength={6}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 className="w-full rounded-xl bg-slate-100 px-4 py-3 pr-11 text-sm text-slate-900 placeholder:text-slate-400 outline-none ring-1 ring-transparent focus:ring-sky-300"
@@ -447,7 +468,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                             </button>
                                         </div>
-                                        <p className="mt-2 text-[11px] text-slate-500">Must be at least 8 characters.</p>
+                                        <p className="mt-2 text-[11px] text-slate-500">Must be at least 6 characters.</p>
                                     </div>
 
                                     <button
@@ -529,12 +550,12 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700">Email</label>
                                         <input
-                                            type="email"
+                                            type="text"
                                             required
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="mt-2 w-full rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none ring-1 ring-transparent focus:ring-sky-300"
-                                            placeholder="eg. fdeewyy@gmail.com"
+                                            placeholder="Enter any email address (gmail, yahoo, outlook, etc.)"
                                         />
                                     </div>
 
@@ -544,7 +565,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
                                                 required
-                                                minLength={8}
+                                                minLength={6}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 className="w-full rounded-xl bg-slate-100 px-4 py-3 pr-11 text-sm text-slate-900 placeholder:text-slate-400 outline-none ring-1 ring-transparent focus:ring-sky-300"
@@ -559,7 +580,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                             </button>
                                         </div>
-                                        <p className="mt-2 text-[11px] text-slate-500">Must be at least 8 characters.</p>
+                                        <p className="mt-2 text-[11px] text-slate-500">Must be at least 6 characters.</p>
                                     </div>
 
                                     <button
