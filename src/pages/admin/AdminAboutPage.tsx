@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
@@ -13,10 +13,17 @@ import InitialShimmer from "../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../components/ui/skeletons";
 import { useAdminToast } from "../../hooks/useAdminToast";
 
+const ABOUT_STORAGE_KEY = "landing_about";
+
 interface AboutContent extends Record<string, unknown> {
   id: number;
   image: string;
   description: string;
+  experience?: string[];
+  exp1Value?: string;
+  exp1Label?: string;
+  exp2Value?: string;
+  exp2Label?: string;
 }
 
 const AdminAboutPage: React.FC = () => {
@@ -24,14 +31,35 @@ const AdminAboutPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useAdminToast();
 
-  const [aboutData, setAboutData] = useState<AboutContent[]>([
-    {
-      id: 1,
-      image: "/rizwords-nomad.jpg",
-      description:
-        "With over 5 years of experience and a deep understanding of copywriting psychology, marketing funnel, stages of awareness, and market sophistication I'll connect your brand with your target audience's pain points through ads and content. Then present your product as the perfect solution for their problems.",
-    },
-  ]);
+  const [aboutData, setAboutData] = useState<AboutContent[]>(() => {
+    const fallback: AboutContent[] = [
+      {
+        id: 1,
+        image: "/rizwords-nomad.jpg",
+        description:
+          "With over 5 years of experience and a deep understanding of copywriting psychology, marketing funnel, stages of awareness, and market sophistication I'll connect your brand with your target audience's pain points through ads and content. Then present your product as the perfect solution for their problems.",
+        experience: ["5+ Years Experience", "100+ Projects"],
+      },
+    ];
+
+    try {
+      const raw = localStorage.getItem(ABOUT_STORAGE_KEY);
+      const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+      if (Array.isArray(parsed)) return parsed as AboutContent[];
+    } catch {
+      // ignore
+    }
+
+    return fallback;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(aboutData));
+    } catch {
+      // ignore
+    }
+  }, [aboutData]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -39,6 +67,35 @@ const AdminAboutPage: React.FC = () => {
   const columns: Column[] = [
     { header: "Image", accessor: "image", type: "image" },
     { header: "Description", accessor: "description", type: "textarea" },
+    {
+      header: "Experience",
+      accessor: "experience",
+      type: "text",
+      render: (_value, row) => {
+        const r = row as AboutContent;
+        const fromTags = Array.isArray(r.experience) ? r.experience : [];
+        const legacy = [
+          [r.exp1Value, r.exp1Label].filter(Boolean).join(" ").trim(),
+          [r.exp2Value, r.exp2Label].filter(Boolean).join(" ").trim(),
+        ].filter((x) => x);
+        const tags = (fromTags.length ? fromTags : legacy).filter((x) => (x ?? "").trim());
+
+        if (tags.length === 0) return "-";
+
+        return (
+          <div className="flex flex-wrap gap-2">
+            {tags.map((t, idx) => (
+              <div
+                key={idx}
+                className="rounded-full bg-sky-50 px-3 py-1.5 text-[11px] font-semibold text-slate-700 ring-1 ring-inset ring-sky-100"
+              >
+                {t}
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
     { header: "Action", accessor: "action", type: "action" },
   ];
 
@@ -56,6 +113,11 @@ const AdminAboutPage: React.FC = () => {
         type: "textarea",
         placeholder: "Masukkan deskripsi tentang kamu...",
       },
+      {
+        name: "experience",
+        label: "Experience",
+        type: "tags",
+      },
     ],
     []
   );
@@ -68,7 +130,9 @@ const AdminAboutPage: React.FC = () => {
           landingActiveKey="about"
           onNavigate={(key) => {
             setActiveMenu(key);
-            if (key === "chat") {
+            if (key === "dashboard") {
+              navigate("/admin/dashboard");
+            } else if (key === "chat") {
               navigate("/admin/chat");
             } else if (key === "landing") {
               navigate("/admin/landing/hero");
@@ -160,9 +224,19 @@ const AdminAboutPage: React.FC = () => {
         fields={modalFields}
         initialData={
           editingId != null
-            ? (aboutData.find((item) => item.id === editingId) as
-                | Record<string, unknown>
-                | undefined)
+            ? (() => {
+                const item = aboutData.find((x) => x.id === editingId);
+                if (!item) return undefined;
+                const fromTags = Array.isArray(item.experience) ? item.experience : [];
+                const legacy = [
+                  [item.exp1Value, item.exp1Label].filter(Boolean).join(" ").trim(),
+                  [item.exp2Value, item.exp2Label].filter(Boolean).join(" ").trim(),
+                ].filter((x) => x);
+                return {
+                  ...item,
+                  experience: fromTags.length ? fromTags : legacy,
+                } as Record<string, unknown>;
+              })()
             : undefined
         }
         onClose={() => {
@@ -173,6 +247,7 @@ const AdminAboutPage: React.FC = () => {
           const imageList = (data.image as string[] | undefined) ?? [];
           const image = imageList[0] || "";
           const description = (data.description as string) || "";
+          const experience = ((data.experience as string[] | undefined) ?? []).map((x) => x.trim()).filter(Boolean);
 
           try {
             if (editingId != null) {
@@ -183,6 +258,7 @@ const AdminAboutPage: React.FC = () => {
                         ...item,
                         image: image || item.image,
                         description: description || item.description,
+                        experience: experience.length ? experience : item.experience,
                       }
                     : item
                 )
@@ -201,6 +277,7 @@ const AdminAboutPage: React.FC = () => {
                     id: nextId,
                     image,
                     description,
+                    experience,
                   },
                 ];
               });

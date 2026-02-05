@@ -116,7 +116,9 @@ const AdminExperiencePage: React.FC = () => {
         landingActiveKey="experience"
         onNavigate={(key) => {
           setActiveMenu(key);
-          if (key === "chat") {
+          if (key === "dashboard") {
+            navigate("/admin/dashboard");
+          } else if (key === "chat") {
             navigate("/admin/chat");
           } else if (key === "landing") {
             navigate("/admin/landing/hero");
