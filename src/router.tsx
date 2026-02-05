@@ -10,6 +10,7 @@ import SuccessPayment from "./components/payments/SuccessPayment";
 import UserProfilePage from "./pages/users/UserProfilePage";
 import BlogPage from "./pages/blog/BlogPage";
 import BlogDetailPage from "./pages/blog/BlogDetailPage";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminChatPage from "./pages/admin/AdminChatPage";
 import AdminHeroManagementPage from "./pages/admin/AdminHeroManagementPage";
 import AdminTravelJournalPage from "./pages/admin/AdminTravelJournalPage";
@@ -89,16 +90,16 @@ export const Router = () => {
                 <Route path="/profile" element={<UserProfilePage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:id" element={<BlogDetailPage />} />
+
+                {/* Admin Route */}
+                <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/chat" element={<AdminChatPage />} />
                 <Route path="/admin/blog" element={<AdminBlogArticlesPage />} />
                 <Route path="/admin/users" element={<AdminUserListPage />} />
                 <Route path="/admin/shop" element={<AdminShopPage />} />
                 <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
                 <Route path="/admin/landing/hero" element={<AdminHeroManagementPage />} />
-                <Route
-                  path="/admin/landing/travel-journal"
-                  element={<AdminTravelJournalPage />}
-                />
+                <Route path="/admin/landing/travel-journal" element={<AdminTravelJournalPage />} />
                 <Route path="/admin/landing/about" element={<AdminAboutPage />} />
                 <Route path="/admin/landing/portfolio" element={<AdminPortfolioPage />} />
                 <Route path="/admin/landing/cert-services" element={<AdminCertServicesPage />} />

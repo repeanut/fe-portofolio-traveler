@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Layers,
@@ -9,6 +10,7 @@ import {
   Users,
   ChevronLeft,
   ChevronDown,
+  LogOut,
 } from "lucide-react";
 
 export type AdminSidebarItemKey =
@@ -53,11 +55,25 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onNavigateLandingSub,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isLandingOpen, setIsLandingOpen] = useState(active === "landing");
+  const navigate = useNavigate();
 
-  // Submenu Landing dianggap "terbuka" hanya ketika
-  // sedang berada di salah satu halaman Landing (active === "landing")
-  // dan ada landingActiveKey yang dikirim dari halaman tersebut.
-  const isLandingOpen = active === "landing" && !!landingActiveKey;
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("admin_profile");
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userAvatarUrl");
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("authProvider");
+      window.dispatchEvent(new Event("auth:changed"));
+    } catch {
+      // ignore
+    }
+
+    navigate("/", { replace: true });
+  };
 
   return (
     <aside
@@ -79,18 +95,15 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </button>
 
       {/* Header Section */}
-      <div className="px-3 flex justify-center">
+      <div className="px-3 flex justify-center text-center mx-auto">
         <div
           className={`flex w-full items-center rounded-xl ${
             isCollapsed ? "justify-center" : "gap-3"
           }`}
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500 text-white text-[11px] font-semibold">
-            R
-          </div>
           {!isCollapsed && (
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-slate-900 truncate">Rizwords</div>
+              <div className="text-2xl font-bold text-blue-500 truncate">Rizwords</div>
               <div className="mt-0.5 text-[11px] text-slate-500 truncate">Admin Panel</div>
             </div>
           )}
@@ -109,6 +122,17 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  if (item.key === "landing") {
+                    if (active === "landing") {
+                      setIsLandingOpen((prev) => !prev);
+                      return;
+                    }
+
+                    setIsLandingOpen(true);
+                    onNavigate?.(item.key);
+                    return;
+                  }
+
                   onNavigate?.(item.key);
                 }}
                 className={`group flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -245,6 +269,25 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           );
         })}
       </nav>
+
+      <div className="px-3 pt-3">
+        <div className="border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-700 flex justify-center"
+          >
+            <LogOut className="h-4 w-4 flex-shrink-0 text-slate-400 group-hover:text-rose-600" />
+            <span
+              className={`ml-3 whitespace-nowrap transition-opacity duration-200 ${
+                isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+              }`}
+            >
+              Logout
+            </span>
+          </button>
+        </div>
+      </div>
     </aside>
   );
 };

@@ -34,6 +34,107 @@ type TransactionRow = Record<string, unknown> & {
   date: string;
 };
 
+const TRANSACTIONS_STORAGE_KEY = "admin_transactions";
+
+const DEFAULT_TRANSACTIONS: TransactionRow[] = [
+  {
+    id: 1,
+    trxCode: "TRX-2025-001",
+    orderCode: "ORD-20250121-001",
+    buyerName: "John Doe",
+    buyerEmail: "john@example.com",
+    sellerName: "Khan Ahsam",
+    sellerService: "SEO content writer untuk penulisan artikel",
+    grossAmount: 843750,
+    adminFee: 84375,
+    netAmount: 759375,
+    status: "paid",
+    paymentMethod: "credit_card",
+    paidStatus: "paid",
+    date: "21 Jan 2025",
+  },
+  {
+    id: 2,
+    trxCode: "TRX-2025-002",
+    orderCode: "ORD-20250121-002",
+    buyerName: "Sarah Wilson",
+    buyerEmail: "sarah@example.com",
+    sellerName: "Design Studio",
+    sellerService: "Desain logo profesional",
+    grossAmount: 2250000,
+    adminFee: 225000,
+    netAmount: 2025000,
+    status: "paid",
+    paymentMethod: "ewallet",
+    paidStatus: "paid",
+    date: "21 Jan 2025",
+  },
+  {
+    id: 3,
+    trxCode: "TRX-2025-003",
+    orderCode: "ORD-20250120-003",
+    buyerName: "Michael Chen",
+    buyerEmail: "michael@example.com",
+    sellerName: "WebDev Pro",
+    sellerService: "Pengembangan website landing page",
+    grossAmount: 7500000,
+    adminFee: 750000,
+    netAmount: 6750000,
+    status: "processing",
+    paymentMethod: "bank_transfer",
+    paidStatus: "paid",
+    date: "20 Jan 2025",
+  },
+  {
+    id: 4,
+    trxCode: "TRX-2025-004",
+    orderCode: "ORD-20250120-004",
+    buyerName: "Emma Johnson",
+    buyerEmail: "emma@example.com",
+    sellerName: "Social Media Expert",
+    sellerService: "Manajemen media sosial (1 bulan)",
+    grossAmount: 1125000,
+    adminFee: 112500,
+    netAmount: 1012500,
+    status: "cancelled",
+    paymentMethod: "credit_card",
+    paidStatus: "unpaid",
+    date: "20 Jan 2025",
+  },
+  {
+    id: 5,
+    trxCode: "TRX-2025-005",
+    orderCode: "ORD-20250119-005",
+    buyerName: "David Lee",
+    buyerEmail: "david@example.com",
+    sellerName: "Video Pro Studio",
+    sellerService: "Editing video cinematic",
+    grossAmount: 3000000,
+    adminFee: 300000,
+    netAmount: 2700000,
+    status: "paid",
+    paymentMethod: "ewallet",
+    paidStatus: "paid",
+    date: "19 Jan 2025",
+  },
+  {
+    id: 6,
+    trxCode: "TRX-2025-006",
+    orderCode: "ORD-20250119-006",
+    buyerName: "Lisa Anderson",
+    buyerEmail: "lisa@example.com",
+    sellerName: "SEO Specialist",
+    sellerService: "Optimasi SEO on-page",
+    grossAmount: 1800000,
+    adminFee: 180000,
+    netAmount: 1620000,
+    status: "refunded",
+    paymentMethod: "qris",
+    paidStatus: "paid",
+    date: "19 Jan 2025",
+  },
+];
+
 const StatusDropdownCell: React.FC<{
   id: number;
   value: TransactionStatus;
@@ -154,6 +255,106 @@ const formatRupiah = (value: number) => {
   }
 };
 
+const safeText = (value: unknown, fallback = "-") => {
+  const v = typeof value === "string" ? value : value == null ? "" : String(value);
+  const t = v.trim();
+  return t ? t : fallback;
+};
+
+const coerceNumber = (value: unknown, fallback = 0) => {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const parseTransactionDate = (raw: string) => {
+  const direct = new Date(raw);
+  if (!Number.isNaN(direct.getTime())) return direct;
+
+  const matchDdMmYyyy = raw.trim().match(/^([0-9]{1,2})[-/.]([0-9]{1,2})[-/.]([0-9]{4})$/);
+  if (matchDdMmYyyy) {
+    const dd = Number(matchDdMmYyyy[1]);
+    const mm = Number(matchDdMmYyyy[2]);
+    const yyyy = Number(matchDdMmYyyy[3]);
+    const parsed = new Date(yyyy, mm - 1, dd);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+
+  const matchDMonYyyy = raw.trim().match(/^([0-9]{1,2})\s+([A-Za-z]{3})\s+([0-9]{4})$/);
+  if (!matchDMonYyyy) return null;
+
+  const day = Number(matchDMonYyyy[1]);
+  const mon = matchDMonYyyy[2].toLowerCase();
+  const year = Number(matchDMonYyyy[3]);
+  const months: Record<string, number> = {
+    jan: 0,
+    feb: 1,
+    mar: 2,
+    apr: 3,
+    may: 4,
+    jun: 5,
+    jul: 6,
+    aug: 7,
+    sep: 8,
+    oct: 9,
+    nov: 10,
+    dec: 11,
+  };
+
+  const monthIndex = months[mon];
+  if (monthIndex == null || !Number.isFinite(day) || !Number.isFinite(year)) return null;
+  const parsed = new Date(year, monthIndex, day);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+};
+
+const normalizeTransaction = (raw: unknown, fallbackId: number): TransactionRow | null => {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+
+  const id = coerceNumber(obj.id, fallbackId);
+  const statusRaw = safeText(obj.status, "processing") as TransactionStatus;
+  const status: TransactionStatus =
+    statusRaw === "paid" || statusRaw === "processing" || statusRaw === "refunded" || statusRaw === "cancelled"
+      ? statusRaw
+      : "processing";
+
+  const paymentRaw = safeText(obj.paymentMethod, "bank_transfer") as PaymentMethod;
+  const paymentMethod: PaymentMethod =
+    paymentRaw === "bank_transfer" || paymentRaw === "qris" || paymentRaw === "credit_card" || paymentRaw === "ewallet"
+      ? paymentRaw
+      : "bank_transfer";
+
+  const paidStatusRaw = safeText(obj.paidStatus, status === "paid" ? "paid" : "unpaid") as "paid" | "unpaid";
+  const paidStatus: "paid" | "unpaid" = paidStatusRaw === "paid" ? "paid" : "unpaid";
+
+  const grossAmount = coerceNumber(obj.grossAmount, 0);
+  const adminFee = coerceNumber(obj.adminFee, 0);
+  const netAmount = coerceNumber(obj.netAmount, Math.max(0, grossAmount - adminFee));
+
+  const date = safeText(obj.date, "-");
+
+  const buyerName = safeText(obj.buyerName, `Customer ${id}`);
+  const sellerName = safeText(obj.sellerName, `Provider ${id}`);
+
+  return {
+    ...obj,
+    id,
+    trxCode: safeText(obj.trxCode, `TRX-${String(id).padStart(4, "0")}`),
+    orderCode: safeText(obj.orderCode, `ORD-${String(id).padStart(4, "0")}`),
+    buyerName,
+    buyerEmail: safeText(obj.buyerEmail, `${buyerName.toLowerCase().replace(/\s+/g, ".")}@example.com`),
+    sellerName,
+    sellerService: safeText(obj.sellerService, "General service"),
+    grossAmount,
+    adminFee,
+    netAmount,
+    status,
+    paymentMethod,
+    paidStatus,
+    date,
+  };
+};
+
 const AdminTransactionsPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("transactions");
   const navigate = useNavigate();
@@ -196,104 +397,32 @@ const AdminTransactionsPage: React.FC = () => {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, []);
 
-  const [transactions, setTransactions] = useState<TransactionRow[]>([
-    {
-      id: 1,
-      trxCode: "TRX-2025-001",
-      orderCode: "ORD-20250121-001",
-      buyerName: "John Doe",
-      buyerEmail: "john@example.com",
-      sellerName: "Khan Ahsam",
-      sellerService: "SEO content writer untuk penulisan artikel",
-      grossAmount: 843750,
-      adminFee: 84375,
-      netAmount: 759375,
-      status: "paid",
-      paymentMethod: "credit_card",
-      paidStatus: "paid",
-      date: "21 Jan 2025",
-    },
-    {
-      id: 2,
-      trxCode: "TRX-2025-002",
-      orderCode: "ORD-20250121-002",
-      buyerName: "Sarah Wilson",
-      buyerEmail: "sarah@example.com",
-      sellerName: "Design Studio",
-      sellerService: "Desain logo profesional",
-      grossAmount: 2250000,
-      adminFee: 225000,
-      netAmount: 2025000,
-      status: "paid",
-      paymentMethod: "ewallet",
-      paidStatus: "paid",
-      date: "21 Jan 2025",
-    },
-    {
-      id: 3,
-      trxCode: "TRX-2025-003",
-      orderCode: "ORD-20250120-003",
-      buyerName: "Michael Chen",
-      buyerEmail: "michael@example.com",
-      sellerName: "WebDev Pro",
-      sellerService: "Pengembangan website landing page",
-      grossAmount: 7500000,
-      adminFee: 750000,
-      netAmount: 6750000,
-      status: "processing",
-      paymentMethod: "bank_transfer",
-      paidStatus: "paid",
-      date: "20 Jan 2025",
-    },
-    {
-      id: 4,
-      trxCode: "TRX-2025-004",
-      orderCode: "ORD-20250120-004",
-      buyerName: "Emma Johnson",
-      buyerEmail: "emma@example.com",
-      sellerName: "Social Media Expert",
-      sellerService: "Manajemen media sosial (1 bulan)",
-      grossAmount: 1125000,
-      adminFee: 112500,
-      netAmount: 1012500,
-      status: "cancelled",
-      paymentMethod: "credit_card",
-      paidStatus: "unpaid",
-      date: "20 Jan 2025",
-    },
-    {
-      id: 5,
-      trxCode: "TRX-2025-005",
-      orderCode: "ORD-20250119-005",
-      buyerName: "David Lee",
-      buyerEmail: "david@example.com",
-      sellerName: "Video Pro Studio",
-      sellerService: "Editing video cinematic",
-      grossAmount: 3000000,
-      adminFee: 300000,
-      netAmount: 2700000,
-      status: "paid",
-      paymentMethod: "ewallet",
-      paidStatus: "paid",
-      date: "19 Jan 2025",
-    },
-    {
-      id: 6,
-      trxCode: "TRX-2025-006",
-      orderCode: "ORD-20250119-006",
-      buyerName: "Lisa Anderson",
-      buyerEmail: "lisa@example.com",
-      sellerName: "SEO Specialist",
-      sellerService: "Optimasi SEO on-page",
-      grossAmount: 1800000,
-      adminFee: 180000,
-      netAmount: 1620000,
-      status: "refunded",
-      paymentMethod: "qris",
-      paidStatus: "paid",
-      date: "19 Jan 2025",
-    },
-  ]);
+  const [transactions, setTransactions] = useState<TransactionRow[]>(() => {
+    try {
+      const raw = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
+      if (!raw) return DEFAULT_TRANSACTIONS;
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return DEFAULT_TRANSACTIONS;
+
+      const normalized: TransactionRow[] = [];
+      for (let i = 0; i < parsed.length; i++) {
+        const n = normalizeTransaction(parsed[i], i + 1);
+        if (n) normalized.push(n);
+      }
+
+      return normalized.length ? normalized : DEFAULT_TRANSACTIONS;
+    } catch {
+      return DEFAULT_TRANSACTIONS;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(transactions));
+    } catch {
+      // ignore
+    }
+  }, [transactions]);
 
   const updateTransactionStatus = useCallback(
     (id: number, nextStatus: TransactionStatus) => {
@@ -323,7 +452,8 @@ const AdminTransactionsPage: React.FC = () => {
 
   const referenceNow = useMemo(() => {
     const parsed = transactions
-      .map((x) => new Date(x.date))
+      .map((x) => (x.date ? parseTransactionDate(x.date) : null))
+      .filter((d): d is Date => d != null)
       .filter((d) => !Number.isNaN(d.getTime()));
 
     if (parsed.length === 0) return new Date();
@@ -337,8 +467,7 @@ const AdminTransactionsPage: React.FC = () => {
       if (rangeFilter === "all") return true;
       const now = referenceNow;
 
-      const parsed = new Date(dateText);
-      const date = Number.isNaN(parsed.getTime()) ? null : parsed;
+      const date = dateText ? parseTransactionDate(dateText) : null;
       if (!date) return true;
 
       if (rangeFilter === "7d") {
@@ -393,9 +522,9 @@ const AdminTransactionsPage: React.FC = () => {
               }}
               className="text-left text-[11px] font-semibold text-slate-800 hover:text-blue-600"
             >
-              {String(value)}
+              {safeText(value)}
             </button>
-            <div className="mt-0.5 text-[10px] text-slate-400">{String(row.orderCode ?? "")}</div>
+            <div className="mt-0.5 text-[10px] text-slate-400">{safeText(row.orderCode, "")}</div>
           </div>
         ),
       },
@@ -405,8 +534,8 @@ const AdminTransactionsPage: React.FC = () => {
         type: "text",
         render: (value, row) => (
           <div className="min-w-[180px]">
-            <div className="text-[11px] font-semibold text-slate-800">{String(value)}</div>
-            <div className="mt-0.5 text-[10px] text-slate-400">{String(row.buyerEmail ?? "")}</div>
+            <div className="text-[11px] font-semibold text-slate-800">{safeText(value)}</div>
+            <div className="mt-0.5 text-[10px] text-slate-400">{safeText(row.buyerEmail, "")}</div>
           </div>
         ),
       },
@@ -416,9 +545,9 @@ const AdminTransactionsPage: React.FC = () => {
         type: "textarea",
         render: (value, row) => (
           <div className="w-full">
-            <div className="text-[11px] font-semibold text-slate-800">{String(value)}</div>
+            <div className="text-[11px] font-semibold text-slate-800">{safeText(value)}</div>
             <div className="mt-0.5 text-[10px] text-slate-400 whitespace-normal break-words line-clamp-4">
-              {String(row.sellerService ?? "")}
+              {safeText(row.sellerService, "")}
             </div>
           </div>
         ),
@@ -428,8 +557,8 @@ const AdminTransactionsPage: React.FC = () => {
         accessor: "grossAmount",
         type: "text",
         render: (value, row) => {
-          const gross = Number(value ?? 0);
-          const adminFee = Number(row.adminFee ?? 0);
+          const gross = coerceNumber(value, 0);
+          const adminFee = coerceNumber(row.adminFee, 0);
           const totalBayar = gross + adminFee;
 
           return (
@@ -467,7 +596,7 @@ const AdminTransactionsPage: React.FC = () => {
         accessor: "paymentMethod",
         type: "text",
         render: (value, row) => {
-          const method = String(value) as PaymentMethod;
+          const method = safeText(value, "-") as PaymentMethod;
           const paid = String(row.paidStatus ?? "unpaid") === "paid";
 
           const methodLabel: Record<PaymentMethod, string> = {
@@ -479,7 +608,7 @@ const AdminTransactionsPage: React.FC = () => {
 
           return (
             <div className="min-w-[140px]">
-              <div className="text-[11px] font-medium text-slate-700">{methodLabel[method] ?? method}</div>
+              <div className="text-[11px] font-medium text-slate-700">{methodLabel[method] ?? safeText(method)}</div>
               <div className="mt-1">
                 <span
                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -505,7 +634,9 @@ const AdminTransactionsPage: React.FC = () => {
           active={activeMenu}
           onNavigate={(key) => {
             setActiveMenu(key);
-            if (key === "chat") {
+            if (key === "dashboard") {
+              navigate("/admin/dashboard");
+            } else if (key === "chat") {
               navigate("/admin/chat");
             } else if (key === "landing") {
               navigate("/admin/landing/hero");

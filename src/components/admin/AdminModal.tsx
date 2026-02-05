@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export interface AdminModalField {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select";
+  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select" | "radio";
   options?: Array<{ label: string; value: string }>;
   placeholder?: string;
   // Untuk field image: atur apakah boleh memilih banyak file atau hanya satu.
@@ -19,6 +19,7 @@ interface AdminModalProps {
   onClose: () => void;
   onSubmit: (data: Record<string, unknown>) => void;
   isSaving?: boolean;
+  submitLabel?: string;
 }
 
 const AdminModal: React.FC<AdminModalProps> = ({
@@ -29,10 +30,35 @@ const AdminModal: React.FC<AdminModalProps> = ({
   onClose,
   onSubmit,
   isSaving = false,
+  submitLabel = "Simpan",
 }) => {
   const [imagePreviews, setImagePreviews] = useState<Record<string, string[]>>({});
   const [tagValues, setTagValues] = useState<Record<string, string[]>>({});
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!initialData) return;
+
+    const t = window.setTimeout(() => {
+      setImagePreviews((prev) => {
+        const next = { ...prev };
+        fields.forEach((field) => {
+          if (field.type !== "image") return;
+          const raw = initialData[field.name];
+          const list = Array.isArray(raw)
+            ? (raw as string[])
+            : typeof raw === "string" && raw
+              ? [raw]
+              : [];
+          if (list.length > 0) next[field.name] = list;
+        });
+        return next;
+      });
+    }, 0);
+
+    return () => window.clearTimeout(t);
+  }, [fields, initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -168,6 +194,34 @@ const AdminModal: React.FC<AdminModalProps> = ({
               );
             }
 
+            if (field.type === "radio") {
+              const current = String((initialData?.[field.name] as string) ?? "");
+              const options = field.options ?? [];
+              const fallback = current || options[0]?.value || "";
+
+              return (
+                <div key={field.name} className="space-y-2">
+                  <label className="block text-[11px] font-medium text-slate-700">
+                    {field.label}
+                  </label>
+                  <div className="flex flex-wrap items-center gap-5">
+                    {options.map((opt) => (
+                      <label key={opt.value} className="inline-flex items-center gap-2 text-[11px] text-slate-800">
+                        <input
+                          type="radio"
+                          name={field.name}
+                          value={opt.value}
+                          defaultChecked={fallback === opt.value}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="select-none">{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
             if (field.type === "tags") {
               const currentTags = tagValues[field.name] ?? [];
               const currentInput = tagInputs[field.name] ?? "";
@@ -245,24 +299,39 @@ const AdminModal: React.FC<AdminModalProps> = ({
                     className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-[11px] file:font-medium file:text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     onChange={(e) => {
                       const files = e.target.files;
-                      const urls = files
-                        ? Array.from(files).map((file) => URL.createObjectURL(file))
-                        : [];
+                      const list = files ? Array.from(files) : [];
 
-                      setImagePreviews((prev) => {
-                        // Default: multiple true (append). Kalau multiple === false, replace.
-                        if (field.multiple === false) {
-                          return {
-                            ...prev,
-                            [field.name]: urls,
-                          };
-                        }
+                      if (list.length === 0) return;
 
-                        return {
-                          ...prev,
-                          [field.name]: [...(prev[field.name] ?? []), ...urls],
-                        };
-                      });
+                      Promise.all(
+                        list.map(
+                          (file) =>
+                            new Promise<string>((resolve, reject) => {
+                              const reader = new FileReader();
+                              reader.onload = () => resolve(String(reader.result ?? ""));
+                              reader.onerror = () => reject(new Error("Failed to read file"));
+                              reader.readAsDataURL(file);
+                            })
+                        )
+                      )
+                        .then((dataUrls) => {
+                          setImagePreviews((prev) => {
+                            if (field.multiple === false) {
+                              return {
+                                ...prev,
+                                [field.name]: dataUrls,
+                              };
+                            }
+
+                            return {
+                              ...prev,
+                              [field.name]: [...(prev[field.name] ?? []), ...dataUrls],
+                            };
+                          });
+                        })
+                        .catch(() => {
+                          // ignore
+                        });
                     }}
                   />
                   {imagePreviews[field.name] && imagePreviews[field.name].length > 0 && (
@@ -331,7 +400,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
               disabled={isSaving}
               className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSaving ? "Menyimpan..." : "Simpan"}
+              {isSaving ? "Menyimpan..." : submitLabel}
             </button>
           </div>
         </form>

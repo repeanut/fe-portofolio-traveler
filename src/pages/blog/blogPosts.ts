@@ -21,8 +21,18 @@ type AdminBlogArticleItem = {
 const BLOG_ARTICLES_STORAGE_KEY = "admin_blog_articles";
 
 const buildDescriptionFromHtml = (html: string) => {
-  const text = html
-    .replace(/<[^>]*>/g, " ")
+  const text = (() => {
+    if (typeof window !== "undefined" && typeof DOMParser !== "undefined") {
+      try {
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        return (doc.body.textContent ?? "").replace(/\u00A0/g, " ");
+      } catch {
+        // ignore
+      }
+    }
+
+    return html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ");
+  })()
     .replace(/\s+/g, " ")
     .trim();
   if (!text) return "";
@@ -35,6 +45,15 @@ const formatDate = (d: Date) =>
     day: "2-digit",
     year: "numeric",
   });
+
+const isValidImageSrc = (src: string) => {
+  const s = (src ?? "").trim();
+  if (!s) return false;
+  if (s.startsWith("data:image/")) return true;
+  if (s.startsWith("http://") || s.startsWith("https://")) return true;
+  if (s.startsWith("/")) return true;
+  return false;
+};
 
 export const blogPosts: BlogPost[] = [
   {
@@ -207,7 +226,7 @@ export const getBlogPosts = (): BlogPost[] => {
       id: a.id,
       title: a.title,
       description: buildDescriptionFromHtml(a.content),
-      imageSrc: a.cover || "/placeholder-image.png",
+      imageSrc: isValidImageSrc(a.cover) ? a.cover : "/placeholder-image.png",
       category: a.category || "Uncategorized",
       author: "Admin",
       date: formatDate(new Date()),
