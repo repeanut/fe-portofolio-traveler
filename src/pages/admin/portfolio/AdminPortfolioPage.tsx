@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../../components/admin/AdminSidebar";
@@ -30,35 +30,56 @@ interface PortfolioItem extends Record<string, unknown> {
 }
 
 const AdminPortfolioPage: React.FC = () => {
-  const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("portfolio");
+  const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const [portfolioData, setPortfolioData] = useState<PortfolioItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Fetch portfolios from backend API
-  useEffect(() => {
-    fetchPortfolios();
-  }, []);
-
   const fetchPortfolios = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/portfolios?includeUser=true');
-      const result = await response.json();
-      
-      if (result.success) {
-        setPortfolioData(result.data.portfolios.map((portfolio: any) => ({
-          ...portfolio,
-          id: parseInt(portfolio.id) || 0
-        })));
+      const response = await fetch("http://localhost:5000/api/portfolios?includeUser=true");
+      const result = (await response.json()) as unknown;
+
+      if (typeof result !== "object" || result == null) {
+        setError("Failed to fetch portfolios");
+        return;
+      }
+
+      const payload = result as {
+        success?: boolean;
+        message?: string;
+        data?: { portfolios?: Record<string, unknown>[] };
+      };
+
+      if (payload.success) {
+        const raw = payload.data?.portfolios ?? [];
+        const mapped = raw.map((portfolio) => {
+          const idRaw = portfolio.id;
+          const id = typeof idRaw === "string" ? Number.parseInt(idRaw, 10) : Number(idRaw);
+          return {
+            ...(portfolio as unknown as PortfolioItem),
+            id: Number.isFinite(id) ? id : 0,
+          };
+        });
+        setPortfolioData(mapped);
         setError(null);
       } else {
-        setError(result.message || 'Failed to fetch portfolios');
+        setError(payload.message || "Failed to fetch portfolios");
       }
     } catch (err) {
-      setError('Error connecting to backend API');
-      console.error('Error fetching portfolios:', err);
+      setError("Error connecting to backend API");
+      console.error("Error fetching portfolios:", err);
     }
   };
+
+  // Fetch portfolios from backend API
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetchPortfolios();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const columns: Column[] = [
     { header: "Title", accessor: "title", type: "text" },
@@ -98,9 +119,12 @@ const AdminPortfolioPage: React.FC = () => {
       <div className="flex h-screen bg-slate-50 overflow-hidden">
         <AdminSidebar
           active={activeMenu}
+          landingActiveKey="portfolio"
           onNavigate={(key) => {
             setActiveMenu(key);
-            if (key === "chat") {
+            if (key === "dashboard") {
+              navigate("/admin/dashboard");
+            } else if (key === "chat") {
               navigate("/admin/chat");
             } else if (key === "landing") {
               navigate("/admin/landing/hero");
@@ -108,10 +132,28 @@ const AdminPortfolioPage: React.FC = () => {
               navigate("/admin/users");
             } else if (key === "shop") {
               navigate("/admin/shop");
-            } else if (key === "portfolio") {
-              navigate("/admin/portfolio");
+            } else if (key === "transactions") {
+              navigate("/admin/transactions");
             } else if (key === "blog") {
               navigate("/admin/blog");
+            }
+          }}
+          onNavigateLandingSub={(subKey) => {
+            setActiveMenu("landing");
+            if (subKey === "hero") {
+              navigate("/admin/landing/hero");
+            } else if (subKey === "travel") {
+              navigate("/admin/landing/travel-journal");
+            } else if (subKey === "about") {
+              navigate("/admin/landing/about");
+            } else if (subKey === "portfolio") {
+              navigate("/admin/landing/portfolio");
+            } else if (subKey === "certServices") {
+              navigate("/admin/landing/cert-services");
+            } else if (subKey === "experience") {
+              navigate("/admin/landing/experience");
+            } else if (subKey === "faq") {
+              navigate("/admin/landing/faq");
             }
           }}
         />

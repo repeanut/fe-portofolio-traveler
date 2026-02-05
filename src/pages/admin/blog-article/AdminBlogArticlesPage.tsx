@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye } from "lucide-react";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../../components/admin/AdminSidebar";
 import AdminHeader from "../../../components/admin/AdminHeader";
@@ -101,6 +102,107 @@ const BlogEditorModal: React.FC<EditorModalProps> = ({
   );
 };
 
+const normalizeHtmlForPreview = (html: string) => {
+  const raw = String(html ?? "");
+  return raw.replace(/<img\b([^>]*?)\/>|<img\b([^>]*?)>/gi, (match, g1, g2) => {
+    const attrs = String(g1 ?? g2 ?? "");
+    const cleaned = attrs
+      .replace(/\swidth\s*=\s*"[^"]*"/gi, "")
+      .replace(/\sheight\s*=\s*"[^"]*"/gi, "")
+      .replace(/\swidth\s*=\s*'[^']*'/gi, "")
+      .replace(/\sheight\s*=\s*'[^']*'/gi, "");
+
+    const hasStyle = /\sstyle\s*=\s*/i.test(cleaned);
+    if (hasStyle) {
+      return match.replace(
+        /style\s*=\s*(["'])(.*?)\1/i,
+        (_m, q, v) =>
+          `style=${q}${String(v)};width:100% !important;max-width:100% !important;display:block;aspect-ratio:16/9;object-fit:cover;border-radius:1rem !important;${q}`
+      );
+    }
+
+    const closing = match.endsWith("/>") ? " />" : ">";
+    const core = match.startsWith("<img") ? "<img" : "<IMG";
+    return `${core}${cleaned} style="width:100% !important;max-width:100% !important;display:block;aspect-ratio:16/9;object-fit:cover;border-radius:1rem !important;"${closing}`;
+  });
+};
+
+interface PreviewModalProps {
+  isOpen: boolean;
+  article: BlogArticleItem | null;
+  onClose: () => void;
+}
+
+const BlogPreviewModal: React.FC<PreviewModalProps> = ({ isOpen, article, onClose }) => {
+  const normalizedHtml = useMemo(() => {
+    if (!article) return "";
+    return normalizeHtmlForPreview(article.content);
+  }, [article]);
+
+  if (!isOpen || !article) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+      <div className="flex h-[86vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-blue-600">Preview</p>
+            <h2 className="mt-1 truncate text-sm font-semibold text-slate-900">{article.title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Tutup
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <article className="mx-auto max-w-3xl space-y-5">
+            <header>
+              <p className="text-xs font-medium text-sky-700">{article.category || "Uncategorized"}</p>
+              <h1 className="mt-2 text-2xl md:text-3xl font-semibold text-slate-900">{article.title}</h1>
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                <span>Admin</span>
+                <span className="text-slate-300">|</span>
+                <span>{new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}</span>
+                <span className="text-slate-300">|</span>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${
+                  article.status === "publish"
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                    : "bg-amber-50 text-amber-700 ring-amber-200"
+                }`}>
+                  {article.status}
+                </span>
+              </div>
+            </header>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-100">
+              <div className="aspect-[16/9] w-full">
+                <img
+                  src={article.cover || "/placeholder-image.png"}
+                  alt={article.title}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder-image.png";
+                  }}
+                />
+              </div>
+            </div>
+
+            <div
+              className="prose prose-slate max-w-none prose-img:!block prose-img:!w-full prose-img:!max-w-full prose-img:aspect-video prose-img:object-cover prose-img:rounded-2xl prose-img:shadow-sm prose-img:border prose-img:border-slate-100"
+              dangerouslySetInnerHTML={{ __html: normalizedHtml }}
+            />
+          </article>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminBlogArticlesPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("blog");
   const navigate = useNavigate();
@@ -142,6 +244,8 @@ const AdminBlogArticlesPage: React.FC = () => {
   const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [previewArticle, setPreviewArticle] = useState<BlogArticleItem | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [pendingMeta, setPendingMeta] = useState<
     | {
         cover: string;
@@ -155,13 +259,82 @@ const AdminBlogArticlesPage: React.FC = () => {
   const [editorTitle, setEditorTitle] = useState<string | undefined>(undefined);
   const [editorContent, setEditorContent] = useState<string>("");
 
-  const columns: Column[] = [
-    { header: "Cover", accessor: "cover", type: "image" },
-    { header: "Title", accessor: "title", type: "text" },
-    { header: "Category", accessor: "category", type: "text" },
-    { header: "Status", accessor: "status", type: "text" },
-    { header: "Action", accessor: "action", type: "action" },
-  ];
+  const columns: Column[] = useMemo(
+    () => [
+      { header: "Cover", accessor: "cover", type: "image" },
+      { header: "Title", accessor: "title", type: "text" },
+      { header: "Category", accessor: "category", type: "text" },
+      { header: "Status", accessor: "status", type: "text" },
+      {
+        header: "Action",
+        accessor: "action",
+        type: "action",
+        render: (_value, row) => (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                const id = row.id;
+                const found = typeof id === "number" ? articles.find((a) => a.id === id) : null;
+                if (!found) return;
+                setPreviewArticle(found);
+                setIsPreviewOpen(true);
+              }}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-blue-700"
+              title="Preview"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const id = row.id;
+                if (typeof id !== "number") return;
+                const item = articles.find((a) => a.id === id);
+                if (!item) return;
+                setEditingId(id);
+                setPendingMeta({
+                  cover: item.cover,
+                  title: item.title,
+                  category: item.category,
+                  status: item.status,
+                });
+                setEditorTitle(item.title);
+                setEditorContent(item.content);
+                setIsMetaModalOpen(true);
+              }}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-blue-700"
+              title="Edit"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const id = row.id;
+                if (typeof id !== "number") return;
+                try {
+                  setArticles((prev) => prev.filter((a) => a.id !== id));
+                  toast.success("Berhasil", "Artikel berhasil dihapus");
+                } catch {
+                  toast.error("Gagal", "Artikel gagal dihapus");
+                }
+              }}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-red-700"
+              title="Delete"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.92a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m-1.022.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.92a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165M9 5.25V3m0 0V2.25L9 2.25A2.25 2.25 0 0111.25 0h1.5A2.25 2.25 0 0115 2.25V3m-3 0v1.5H9m3 0V3m0 0H9m3 0H9" />
+              </svg>
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [articles, toast]
+  );
 
   const metaFields: AdminModalField[] = useMemo(
     () => [
@@ -185,9 +358,12 @@ const AdminBlogArticlesPage: React.FC = () => {
       },
       {
         name: "status",
-        label: "Status (publish / draft)",
-        type: "text",
-        placeholder: "publish atau draft",
+        label: "Status",
+        type: "radio",
+        options: [
+          { label: "Publish", value: "publish" },
+          { label: "Draft", value: "draft" },
+        ],
       },
     ],
     []
@@ -200,7 +376,9 @@ const AdminBlogArticlesPage: React.FC = () => {
           active={activeMenu}
           onNavigate={(key) => {
             setActiveMenu(key);
-            if (key === "chat") {
+            if (key === "dashboard") {
+              navigate("/admin/dashboard");
+            } else if (key === "chat") {
               navigate("/admin/chat");
             } else if (key === "landing") {
               navigate("/admin/landing/hero");
@@ -240,42 +418,26 @@ const AdminBlogArticlesPage: React.FC = () => {
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
-                onEdit={(id) => {
-                  if (typeof id === "number") {
-                    const item = articles.find((a) => a.id === id);
-                    if (!item) return;
-                    setEditingId(id);
-                    setPendingMeta({
-                      cover: item.cover,
-                      title: item.title,
-                      category: item.category,
-                      status: item.status,
-                    });
-                    setEditorTitle(item.title);
-                    setEditorContent(item.content);
-                    setIsMetaModalOpen(true);
-                  }
-                }}
-                onDelete={(id) => {
-                  if (typeof id === "number") {
-                    try {
-                      setArticles((prev) => prev.filter((a) => a.id !== id));
-                      toast.success("Berhasil", "Artikel berhasil dihapus");
-                    } catch {
-                      toast.error("Gagal", "Artikel gagal dihapus");
-                    }
-                  }
-                }}
               />
             </section>
           </div>
         </div>
+
+        <BlogPreviewModal
+          isOpen={isPreviewOpen}
+          article={previewArticle}
+          onClose={() => {
+            setIsPreviewOpen(false);
+            setPreviewArticle(null);
+          }}
+        />
 
         {/* Modal 1: metadata artikel */}
         <AdminModal
           isOpen={isMetaModalOpen}
           title={editingId ? "Edit Artikel" : "Tambah Artikel"}
           fields={metaFields}
+          submitLabel="Continue"
           initialData={
             editingId != null && pendingMeta
               ? {

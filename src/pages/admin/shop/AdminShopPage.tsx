@@ -230,7 +230,7 @@ const AdminShopPage: React.FC = () => {
       {
         name: "status",
         label: "Status (active / inactive)",
-        type: "select",
+        type: "radio",
         options: [
           { label: "Active", value: "active" },
           { label: "Inactive", value: "inactive" },
@@ -406,7 +406,9 @@ const AdminShopPage: React.FC = () => {
         active={activeMenu}
         onNavigate={(key) => {
           setActiveMenu(key);
-          if (key === "chat") {
+          if (key === "dashboard") {
+            navigate("/admin/dashboard");
+          } else if (key === "chat") {
             navigate("/admin/chat");
           } else if (key === "landing") {
             navigate("/admin/landing/hero");

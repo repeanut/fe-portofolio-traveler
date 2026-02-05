@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 export interface AdminModalField {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select";
+  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select" | "radio";
   options?: Array<{ label: string; value: string }>;
   placeholder?: string;
   // Untuk field image: atur apakah boleh memilih banyak file atau hanya satu.
@@ -19,6 +19,7 @@ interface AdminModalProps {
   onClose: () => void;
   onSubmit: (data: Record<string, unknown>) => void;
   isSaving?: boolean;
+  submitLabel?: string;
 }
 
 const AdminModal: React.FC<AdminModalProps> = ({
@@ -29,6 +30,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
   onClose,
   onSubmit,
   isSaving = false,
+  submitLabel = "Simpan",
 }) => {
   const [imagePreviews, setImagePreviews] = useState<Record<string, string[]>>({});
   const [tagValues, setTagValues] = useState<Record<string, string[]>>({});
@@ -188,6 +190,34 @@ const AdminModal: React.FC<AdminModalProps> = ({
                       </option>
                     ))}
                   </select>
+                </div>
+              );
+            }
+
+            if (field.type === "radio") {
+              const current = String((initialData?.[field.name] as string) ?? "");
+              const options = field.options ?? [];
+              const fallback = current || options[0]?.value || "";
+
+              return (
+                <div key={field.name} className="space-y-2">
+                  <label className="block text-[11px] font-medium text-slate-700">
+                    {field.label}
+                  </label>
+                  <div className="flex flex-wrap items-center gap-5">
+                    {options.map((opt) => (
+                      <label key={opt.value} className="inline-flex items-center gap-2 text-[11px] text-slate-800">
+                        <input
+                          type="radio"
+                          name={field.name}
+                          value={opt.value}
+                          defaultChecked={fallback === opt.value}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="select-none">{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               );
             }
@@ -370,7 +400,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
               disabled={isSaving}
               className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSaving ? "Menyimpan..." : "Simpan"}
+              {isSaving ? "Menyimpan..." : submitLabel}
             </button>
           </div>
         </form>

@@ -27,30 +27,51 @@ const AdminUserListPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Fetch users from backend API
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/users');
-      const result = await response.json();
-      
-      if (result.success) {
-        setUserData(result.data.users.map((user: any) => ({
-          ...user,
-          id: parseInt(user.id) || 0
-        })));
+      const response = await fetch("http://localhost:5000/api/admin/users");
+      const result = (await response.json()) as unknown;
+
+      if (typeof result !== "object" || result == null) {
+        setError("Failed to fetch users");
+        return;
+      }
+
+      const payload = result as {
+        success?: boolean;
+        message?: string;
+        data?: { users?: Record<string, unknown>[] };
+      };
+
+      if (payload.success) {
+        const rawUsers = payload.data?.users ?? [];
+        const mapped = rawUsers.map((user) => {
+          const idRaw = user.id;
+          const id = typeof idRaw === "string" ? Number.parseInt(idRaw, 10) : Number(idRaw);
+          return {
+            ...(user as unknown as UserItem),
+            id: Number.isFinite(id) ? id : 0,
+          };
+        });
+
+        setUserData(mapped);
         setError(null);
       } else {
-        setError(result.message || 'Failed to fetch users');
+        setError(payload.message || "Failed to fetch users");
       }
     } catch (err) {
-      setError('Error connecting to backend API');
-      console.error('Error fetching users:', err);
+      setError("Error connecting to backend API");
+      console.error("Error fetching users:", err);
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetchUsers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const columns: Column[] = [
     { header: "Username", accessor: "username", type: "text" },
@@ -76,7 +97,7 @@ const AdminUserListPage: React.FC = () => {
       const result = await response.json();
       
       if (result.success) {
-        fetchUsers(); // Refresh the list
+        fetchUsers();
       } else {
         setError(result.message || 'Failed to delete user');
       }
@@ -93,7 +114,9 @@ const AdminUserListPage: React.FC = () => {
           active={activeMenu}
           onNavigate={(key) => {
             setActiveMenu(key);
-            if (key === "chat") {
+            if (key === "dashboard") {
+              navigate("/admin/dashboard");
+            } else if (key === "chat") {
               navigate("/admin/chat");
             } else if (key === "landing") {
               navigate("/admin/landing/hero");

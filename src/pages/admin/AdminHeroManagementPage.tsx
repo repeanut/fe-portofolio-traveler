@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
@@ -6,12 +6,227 @@ import AdminHeader from "../../components/admin/AdminHeader";
 import AdminTableHeader from "../../components/admin/AdminTableHeader";
 import AdminTable from "../../components/admin/AdminTable";
 import type { Column } from "../../components/admin/AdminTable";
-import AdminModal, {
-  type AdminModalField,
-} from "../../components/admin/AdminModal";
+import AdminModal, { type AdminModalField } from "../../components/admin/AdminModal";
 import InitialShimmer from "../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../components/ui/skeletons";
 import { useAdminToast } from "../../hooks/useAdminToast";
+
+const readFilesAsDataUrls = async (files: File[]) => {
+  return Promise.all(
+    files.map(
+      (file) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result ?? ""));
+          reader.onerror = () => reject(new Error("Failed to read file"));
+          reader.readAsDataURL(file);
+        })
+    )
+  );
+};
+
+type HeroContentModalProps = {
+  isOpen: boolean;
+  mode: "create" | "edit";
+  initialDescription: string;
+  initialBadge: string;
+  initialBrands: string[];
+  onClose: () => void;
+  onSubmit: (data: { description: string; badge: string; brands: string[] }) => void;
+};
+
+const HeroContentModal: React.FC<HeroContentModalProps> = ({
+  isOpen,
+  mode,
+  initialDescription,
+  initialBadge,
+  initialBrands,
+  onClose,
+  onSubmit,
+}) => {
+  const [description, setDescription] = useState(initialDescription);
+  const [badge, setBadge] = useState(initialBadge);
+  const [brands, setBrands] = useState<string[]>(initialBrands);
+  const addInputRef = useRef<HTMLInputElement | null>(null);
+  const replaceInputRef = useRef<HTMLInputElement | null>(null);
+  const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setDescription(initialDescription);
+    setBadge(initialBadge);
+    setBrands(initialBrands);
+    setReplaceIndex(null);
+  }, [initialBadge, initialBrands, initialDescription, isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 p-4">
+      <div className="w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h2 className="text-sm font-semibold text-slate-900">
+            {mode === "edit" ? "Edit Hero Content" : "Tambah Hero Content"}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
+            <span className="sr-only">Close</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="h-4 w-4"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75l10.5 10.5m0-10.5l-10.5 10.5" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="grid gap-6 px-5 py-4 md:grid-cols-2 md:divide-x md:divide-slate-200">
+          <div className="space-y-6 md:pr-8">
+            <div className="space-y-2">
+              <label className="block text-[11px] font-medium text-slate-700">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter hero text..."
+                className="h-28 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-[11px] font-medium text-slate-700">Badge</label>
+              <input
+                value={badge}
+                onChange={(e) => setBadge(e.target.value)}
+                placeholder="Enter badge label..."
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4 md:pl-8">
+            <button
+              type="button"
+              onClick={() => addInputRef.current?.click()}
+              className="h-10 w-full rounded-lg bg-slate-100 text-[11px] font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+            >
+              + Add Logo Brands
+            </button>
+            <input
+              ref={addInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={async (e) => {
+                const list = e.target.files ? Array.from(e.target.files) : [];
+                if (list.length === 0) return;
+                try {
+                  const dataUrls = await readFilesAsDataUrls(list);
+                  setBrands((prev) => [...prev, ...dataUrls].slice(0, 12));
+                } catch {
+                  // ignore
+                } finally {
+                  e.currentTarget.value = "";
+                }
+              }}
+            />
+            <input
+              ref={replaceInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const list = e.target.files ? Array.from(e.target.files) : [];
+                if (list.length === 0) return;
+                if (replaceIndex == null) return;
+                try {
+                  const dataUrls = await readFilesAsDataUrls([list[0]]);
+                  setBrands((prev) => prev.map((x, idx) => (idx === replaceIndex ? dataUrls[0] : x)));
+                } catch {
+                  // ignore
+                } finally {
+                  setReplaceIndex(null);
+                  e.currentTarget.value = "";
+                }
+              }}
+            />
+
+            <div className="space-y-3">
+              {brands.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-[11px] text-slate-500">
+                  Belum ada logo brand.
+                </div>
+              ) : (
+                brands.map((src, idx) => (
+                  <div key={`${src}-${idx}`} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 overflow-hidden rounded-xl border border-slate-100 bg-white">
+                        <img src={src} alt="Brand" className="h-full w-full object-contain" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-semibold text-slate-900 truncate">Brand Logo {idx + 1}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReplaceIndex(idx);
+                          replaceInputRef.current?.click();
+                        }}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100"
+                        aria-label="Edit"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 013.182 3.182L7.125 20.588l-4.5 1.125 1.125-4.5L16.862 4.487z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBrands((prev) => prev.filter((_, i) => i !== idx))}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100"
+                        aria-label="Delete"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12m-9 0V5a1 1 0 011-1h4a1 1 0 011 1v2m1 0l-1 14a2 2 0 01-2 2H9a2 2 0 01-2-2L6 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onSubmit({ description, badge, brands })}
+            className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-700"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AdminHeroManagementPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
@@ -98,30 +313,6 @@ const AdminHeroManagementPage: React.FC = () => {
     { header: "Action", accessor: "action", type: "action" },
   ];
 
-  // Modal field configs
-  const heroFields: AdminModalField[] = useMemo(
-    () => [
-      {
-        name: "description",
-        label: "Description",
-        type: "textarea",
-        placeholder: "Masukkan teks hero...",
-      },
-      {
-        name: "badge",
-        label: "Badge",
-        type: "text",
-        placeholder: "Misal: Digital Nomad & Creative Strategist",
-      },
-      {
-        name: "brands",
-        label: "Featured Brands Images",
-        type: "image",
-      },
-    ],
-    []
-  );
-
   const heroImageFields: AdminModalField[] = useMemo(
     () => [
       {
@@ -143,7 +334,9 @@ const AdminHeroManagementPage: React.FC = () => {
           landingActiveKey="hero"
           onNavigate={(key) => {
             setActiveMenu(key);
-            if (key === "chat") {
+            if (key === "dashboard") {
+              navigate("/admin/dashboard");
+            } else if (key === "chat") {
               navigate("/admin/chat");
             } else if (key === "landing") {
               navigate("/admin/landing/hero");
@@ -277,24 +470,29 @@ const AdminHeroManagementPage: React.FC = () => {
         </div>
 
         {/* Hero text / brands modal */}
-        <AdminModal
+        <HeroContentModal
           isOpen={isHeroModalOpen}
-          title={editingHeroId ? "Edit Hero" : "Tambah Hero"}
-          fields={heroFields}
-          initialData={
+          mode={editingHeroId != null ? "edit" : "create"}
+          initialDescription={
             editingHeroId != null
-              ? (heroBrandsData.find((item) => item.id === editingHeroId) as
-                  | Record<string, unknown>
-                  | undefined)
-              : undefined
+              ? heroBrandsData.find((item) => item.id === editingHeroId)?.description ?? ""
+              : ""
+          }
+          initialBadge={
+            editingHeroId != null
+              ? heroBrandsData.find((item) => item.id === editingHeroId)?.badge ?? ""
+              : ""
+          }
+          initialBrands={
+            editingHeroId != null
+              ? heroBrandsData.find((item) => item.id === editingHeroId)?.brands ?? []
+              : []
           }
           onClose={() => {
             setIsHeroModalOpen(false);
             setEditingHeroId(null);
           }}
           onSubmit={(data) => {
-            const brands = (data.brands as string[] | undefined) ?? [];
-
             try {
               if (editingHeroId != null) {
                 setHeroBrandsData((prev) =>
@@ -302,9 +500,9 @@ const AdminHeroManagementPage: React.FC = () => {
                     item.id === editingHeroId
                       ? {
                           ...item,
-                          description: (data.description as string) || item.description,
-                          badge: (data.badge as string) || item.badge,
-                          brands: brands.length > 0 ? brands : item.brands,
+                          description: data.description || item.description,
+                          badge: data.badge || item.badge,
+                          brands: data.brands.length > 0 ? data.brands : item.brands,
                         }
                       : item
                   )
@@ -321,9 +519,9 @@ const AdminHeroManagementPage: React.FC = () => {
                     ...prev,
                     {
                       id: nextId,
-                      description: (data.description as string) || "",
-                      badge: (data.badge as string) || "",
-                      brands,
+                      description: data.description || "",
+                      badge: data.badge || "",
+                      brands: data.brands,
                     },
                   ];
                 });
