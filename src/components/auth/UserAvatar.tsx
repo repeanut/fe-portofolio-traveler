@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
 
+const readStorageValue = (key: string) => {
+  if (typeof window === 'undefined') return null;
+  const v = localStorage.getItem(key);
+  if (!v) return null;
+  const trimmed = v.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+  return trimmed;
+};
+
 interface UserAvatarProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -16,30 +25,40 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   const [authProvider, setAuthProvider] = useState<string>('');
 
   useEffect(() => {
-    // Get user data from localStorage
-    const storedAvatar = localStorage.getItem('userAvatarUrl');
-    const storedName = localStorage.getItem('userName') || '';
-    const storedProvider = localStorage.getItem('authProvider') || '';
-    
-    setUserName(storedName);
-    setAuthProvider(storedProvider);
-    
-    // Set avatar URL based on provider
-    if (storedAvatar && storedProvider === 'google') {
-      // For Google users, use the Google profile picture
-      setAvatarUrl(storedAvatar);
-    } else if (storedAvatar && storedProvider === 'manual') {
-      // For manual users, use uploaded profile picture
-      setAvatarUrl(storedAvatar);
-    } else if (storedProvider === 'google') {
-      // For Google users without photo, use default Google avatar
-      const googleAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(storedName)}&background=4285f4&color=fff&size=128&bold=true&format=png`;
-      setAvatarUrl(googleAvatarUrl);
-    } else {
-      // For manual users without photo, use generic avatar
-      const genericAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(storedName)}&background=64748b&color=fff&size=128&bold=true&format=png`;
-      setAvatarUrl(genericAvatarUrl);
-    }
+    const syncFromStorage = () => {
+      const storedAvatar = readStorageValue('userAvatarUrl');
+      const storedName = readStorageValue('userName') || '';
+      const storedProvider = readStorageValue('authProvider') || '';
+
+      setUserName(storedName);
+      setAuthProvider(storedProvider);
+
+      if (storedAvatar && storedProvider === 'google') {
+        setAvatarUrl(storedAvatar);
+      } else if (storedAvatar && storedProvider === 'manual') {
+        setAvatarUrl(storedAvatar);
+      } else if (storedProvider === 'google') {
+        const googleAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(storedName)}&background=4285f4&color=fff&size=128&bold=true&format=png`;
+        setAvatarUrl(googleAvatarUrl);
+      } else {
+        const genericAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(storedName)}&background=64748b&color=fff&size=128&bold=true&format=png`;
+        setAvatarUrl(genericAvatarUrl);
+      }
+    };
+
+    syncFromStorage();
+
+    window.addEventListener('auth:changed', syncFromStorage);
+    window.addEventListener('storage', syncFromStorage);
+    window.addEventListener('focus', syncFromStorage);
+    document.addEventListener('visibilitychange', syncFromStorage);
+
+    return () => {
+      window.removeEventListener('auth:changed', syncFromStorage);
+      window.removeEventListener('storage', syncFromStorage);
+      window.removeEventListener('focus', syncFromStorage);
+      document.removeEventListener('visibilitychange', syncFromStorage);
+    };
   }, []);
 
   const sizeClasses = {

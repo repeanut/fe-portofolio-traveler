@@ -148,7 +148,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 ...(isSignup && {
                     username: `${normalizedFirstName.toLowerCase()}${normalizedLastName.toLowerCase()}`,
                     displayName: `${normalizedFirstName} ${normalizedLastName}`.trim(),
-                    password: normalizedPassword
+                    password: normalizedPassword,
+                    ...(avatarUrl ? { profilePicture: avatarUrl } : {})
                 }),
                 ...(!isSignup && {
                     password: normalizedPassword
@@ -178,9 +179,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 localStorage.setItem('isAuthenticated', 'true');
                 localStorage.setItem('authProvider', 'manual');
                 
-                if (result.data.user.profilePicture) {
-                    localStorage.setItem('userAvatarUrl', result.data.user.profilePicture);
-                }
+                const nextAvatar = result.data.user.profilePicture || avatarUrl;
+                if (nextAvatar) localStorage.setItem('userAvatarUrl', nextAvatar);
                 
                 // Dispatch auth change event
                 window.dispatchEvent(new Event('auth:changed'));
