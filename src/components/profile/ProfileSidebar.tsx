@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
 import { Camera, Hash, LogOut, Mail } from 'lucide-react';
 
+const DEFAULT_AVATAR_URL = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300';
+
 type UserProfile = {
     name: string;
     email: string;
@@ -40,7 +42,14 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ profile, onPickAvatar, 
                 <div className="flex flex-col items-center text-center">
                     <div className="relative h-24 w-24">
                         <div className="h-24 w-24 rounded-full overflow-hidden bg-slate-200">
-                            <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
+                            <img
+                                src={profile.avatarUrl || DEFAULT_AVATAR_URL}
+                                alt={profile.name}
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.src = DEFAULT_AVATAR_URL;
+                                }}
+                            />
                         </div>
                         <input
                             ref={avatarInputRef}

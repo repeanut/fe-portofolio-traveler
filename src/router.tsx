@@ -39,7 +39,7 @@ export const Router = () => {
         const fromPath = displayLocation.pathname;
         const toPath = location.pathname;
         const isTransition = fromPath !== toPath;
-        const involvesAi = fromPath.startsWith("/ai-chatbot") || toPath.startsWith("/ai-chatbot");
+        const involvesAi = toPath.startsWith("/ai-chatbot");
 
         if (!isTransition || !involvesAi) return;
 
