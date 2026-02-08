@@ -4,11 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import ChatContainer, { type ChatContainerHandle, type Message } from '../../../components/AIchatbot/ChatContainer';
 import ChatHistory from '../../../components/AIchatbot/ChatHistory';
 import AuthModal from '../../../components/auth/AuthModal';
-import UserAvatar from '../../../components/auth/UserAvatar';
+
+const DEFAULT_AVATAR_URL = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300';
+
+const readStorageValue = (key: string) => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem(key);
+    if (!v) return null;
+    const trimmed = v.trim();
+    if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+    return trimmed;
+};
 
 const sampleHistoryItems = [
     { id: '1', title: 'How to get fit without doing an...', timestamp: '2m ago' },
-    { id: '2', title: 'Hacking FBI Server with ras...', timestamp: '2m ago' },
+    { id: '2', title: 'How can i make my hair grow fast', timestamp: '5m ago' },
     { id: '3', title: 'Compsci SICP Tutorial course', timestamp: '2m ago' },
     { id: '4', title: 'Proxy failure troubleshooting', timestamp: '2m ago' },
     { id: '5', title: 'Wake me up when september e...', timestamp: '2m ago' },
@@ -57,17 +67,17 @@ const initialChatMessages: Message[] = [
 const AIChatbotPage: React.FC = () => {
     const navigate = useNavigate();
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        return typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
+        return typeof window !== 'undefined' && readStorageValue('isAuthenticated') === 'true';
     });
     const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(() => {
-        return typeof window !== 'undefined' ? localStorage.getItem('userAvatarUrl') : null;
+        return typeof window !== 'undefined' ? readStorageValue('userAvatarUrl') : null;
     });
 
     useEffect(() => {
         const syncAuthFromStorage = () => {
-            const authed = typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
+            const authed = typeof window !== 'undefined' && readStorageValue('isAuthenticated') === 'true';
             setIsAuthenticated(authed);
-            const avatarUrl = typeof window !== 'undefined' ? localStorage.getItem('userAvatarUrl') : null;
+            const avatarUrl = typeof window !== 'undefined' ? readStorageValue('userAvatarUrl') : null;
             setUserAvatarUrl(avatarUrl);
         };
 
@@ -86,23 +96,16 @@ const AIChatbotPage: React.FC = () => {
         };
     }, []);
 
-    // Force re-render when auth state changes
-    useEffect(() => {
-        const handleAuthChange = () => {
-            const authed = typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
-            setIsAuthenticated(authed);
-        };
-
-        window.addEventListener('auth:changed', handleAuthChange);
-        return () => window.removeEventListener('auth:changed', handleAuthChange);
-    }, []);
-
     const handleLogout = () => {
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('userName');
         localStorage.removeItem('userAvatarUrl');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authProvider');
         setIsAuthenticated(false);
         setUserAvatarUrl(null);
+        window.dispatchEvent(new Event('auth:changed'));
     };
     const [historyItems, setHistoryItems] = useState(() => sampleHistoryItems);
     const [activeHistoryId, setActiveHistoryId] = useState<string | undefined>(() => initialChatId);
@@ -276,7 +279,7 @@ const AIChatbotPage: React.FC = () => {
         syncChatViewForMode(chatMode);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
+   
     return (
         <div className={`fixed inset-0 overflow-hidden ${pageClasses}`}>
             <div
@@ -340,11 +343,11 @@ const AIChatbotPage: React.FC = () => {
 
                         <div className={`w-10 h-10 rounded-full overflow-hidden border mb-1 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
                             <img
-                                src={userAvatarUrl || "https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300"}
+                                src={userAvatarUrl || DEFAULT_AVATAR_URL}
                                 alt="User"
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                    e.currentTarget.src = "https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300";
+                                    e.currentTarget.src = DEFAULT_AVATAR_URL;
                                 }}
                             />
                         </div>
@@ -454,28 +457,6 @@ const AIChatbotPage: React.FC = () => {
                 </section>
             </div>
 
-            {/* User Profile - Bottom Left Corner */}
-            {localStorage.getItem('isAuthenticated') === 'true' ? (
-                <div className="fixed bottom-6 left-6 z-50 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-gray-200 dark:border-slate-700">
-                    <UserAvatar size="sm" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                        {localStorage.getItem('userName')}
-                    </span>
-                </div>
-            ) : (
-                <div className="fixed bottom-6 left-6 z-50">
-                    <button
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors shadow-lg ${
-                            isDark 
-                                ? 'bg-sky-600 text-white hover:bg-sky-700' 
-                                : 'bg-sky-500 text-white hover:bg-sky-600'
-                        }`}
-                    >
-                        Login
-                    </button>
-                </div>
-            )}
-
             {!isAuthenticated && (
                 <>
                     {/* Back button on transparent overlay to return to landing page */}
@@ -493,7 +474,11 @@ const AIChatbotPage: React.FC = () => {
                         open
                         mode="signup"
                         closable={false}
-                        onSuccess={() => setIsAuthenticated(true)}
+                        onSuccess={() => {
+                            setIsAuthenticated(true);
+                            setUserAvatarUrl(readStorageValue('userAvatarUrl'));
+                            window.dispatchEvent(new Event('auth:changed'));
+                        }}
                     />
                 </>
             )}

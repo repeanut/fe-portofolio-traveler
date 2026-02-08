@@ -3,6 +3,17 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from './button';
 
+const DEFAULT_AVATAR_URL = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300';
+
+const readStorageValue = (key: string) => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem(key);
+    if (!v) return null;
+    const trimmed = v.trim();
+    if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+    return trimmed;
+};
+
 type NavbarShopProps = {
     onSignUpClick?: () => void;
 };
@@ -17,9 +28,9 @@ const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
     useEffect(() => {
         const checkAuth = () => {
             if (typeof window === 'undefined') return;
-            setIsAuthenticated(localStorage.getItem('isAuthenticated') === 'true');
-            setUserEmail(localStorage.getItem('userEmail'));
-            setUserAvatarUrl(localStorage.getItem('userAvatarUrl'));
+            setIsAuthenticated(readStorageValue('isAuthenticated') === 'true');
+            setUserEmail(readStorageValue('userEmail'));
+            setUserAvatarUrl(readStorageValue('userAvatarUrl'));
         };
 
         checkAuth();
@@ -101,6 +112,9 @@ const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
                                     src={userAvatarUrl}
                                     alt={userEmail ? `Avatar ${userEmail}` : 'User avatar'}
                                     className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.src = DEFAULT_AVATAR_URL;
+                                    }}
                                 />
                             ) : (
                                 <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-700 text-sm font-semibold">

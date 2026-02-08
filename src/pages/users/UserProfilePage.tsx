@@ -20,6 +20,17 @@ type UserProfile = {
     avatarUrl: string;
 };
 
+const DEFAULT_AVATAR_URL = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300';
+
+const readStorageValue = (key: string) => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem(key);
+    if (!v) return null;
+    const trimmed = v.trim();
+    if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+    return trimmed;
+};
+
 type UserOrder = {
     id: string;
     status: OrderStatus;
@@ -54,15 +65,14 @@ const UserProfilePage: React.FC = () => {
             name: 'Rose Seravina Alveric',
             email: 'roseseravina@gmail.com',
             password: 'password',
-            avatarUrl:
-                'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300',
+            avatarUrl: DEFAULT_AVATAR_URL,
         };
 
         if (typeof window === 'undefined') return fallback;
 
-        const savedAvatar = localStorage.getItem('userAvatarUrl');
-        const savedEmail = localStorage.getItem('userEmail');
-        const savedName = localStorage.getItem('userName');
+        const savedAvatar = readStorageValue('userAvatarUrl');
+        const savedEmail = readStorageValue('userEmail');
+        const savedName = readStorageValue('userName');
         
         return {
             ...fallback,
@@ -92,15 +102,15 @@ const UserProfilePage: React.FC = () => {
     // Listen for auth changes and update profile
     useEffect(() => {
         const handleAuthChange = () => {
-            const savedName = localStorage.getItem('userName');
-            const savedEmail = localStorage.getItem('userEmail');
-            const savedAvatar = localStorage.getItem('userAvatarUrl');
+            const savedName = readStorageValue('userName');
+            const savedEmail = readStorageValue('userEmail');
+            const savedAvatar = readStorageValue('userAvatarUrl');
             
             setProfile(prev => ({
                 ...prev,
                 name: savedName || prev.name,
                 email: savedEmail || prev.email,
-                avatarUrl: savedAvatar || prev.avatarUrl,
+                avatarUrl: savedAvatar || prev.avatarUrl || DEFAULT_AVATAR_URL,
             }));
         };
 
