@@ -207,7 +207,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
         completeAuth();
     };
 
-<<<<<<< Updated upstream
+    /*
     const handleBackendAuth = async () => {
         const normalizedEmail = (email || '').trim();
         const normalizedPassword = (password || '').trim();
@@ -299,6 +299,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
             alert('Authentication failed. Please try again.');
         }
     };
+    */
 
     // Auto-open signup for all users (moved after function definitions)
     useEffect(() => {
