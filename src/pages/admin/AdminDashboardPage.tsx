@@ -443,7 +443,7 @@ const AdminDashboardPage: React.FC = () => {
       tooltip: {
         shared: true,
         intersect: false,
-        custom: ({ dataPointIndex }) => {
+        custom: ({ dataPointIndex }: { dataPointIndex: number }) => {
           const label = monthlyIncome.categories[dataPointIndex] ?? "";
           const amount = monthlyIncome.amounts[dataPointIndex] ?? 0;
           const rupiah = formatRupiah(amount);

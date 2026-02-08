@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import LandingPage from "./pages/guest/landingpage/landingpage";
 import AIChatbotPage from "./pages/users/AIchatbot/AIchatbotPage";
+import AIChatbotDemo from "./pages/AIChatbotDemo";
 import WorkPage from "./pages/work/workPage";
 import ShopPage from "./pages/shop/shopPage";
 import ShopDetailPage from './pages/shop/shopDetailPage';
 import ShopPaymentPage from './pages/shop/shopPaymentPage';
+import PaymentPendingPage from './pages/shop/paymentPendingPage';
 import SuccessPayment from "./components/payments/SuccessPayment";
 import UserProfilePage from "./pages/users/UserProfilePage";
 import BlogPage from "./pages/blog/BlogPage";
@@ -85,8 +87,11 @@ export const Router = () => {
                 <Route path="/work/shop" element={<ShopPage />} />
                 <Route path="/work/shop/:id" element={<ShopDetailPage />} />
                 <Route path="/shop/payment" element={<ShopPaymentPage />} />
+                <Route path="/shop/payment/pending" element={<PaymentPendingPage />} />
                 <Route path="/shop/payment/payment-success" element={<SuccessPayment />} />
                 <Route path="/ai-chatbot" element={<AIChatbotPage />} />
+                <Route path="/users/AIchatbot" element={<AIChatbotPage />} />
+                <Route path="/ai-chatbot-demo" element={<AIChatbotDemo />} />
                 <Route path="/profile" element={<UserProfilePage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:id" element={<BlogDetailPage />} />

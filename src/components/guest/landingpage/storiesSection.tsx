@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, X, Heart, Send, MoreHorizontal } from 'lucide-react'
+import { useConnectionHealth } from '../../../hooks/useConnectionHealth'
 
 interface StoryItem {
     id: number
@@ -23,21 +24,44 @@ const StoriesSection: React.FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [retryCount, setRetryCount] = useState(0)
+    const maxRetries = 3;
+    
+    const { isOnline } = useConnectionHealth('http://localhost:5000/api/health', 30000);
 
-    // Fetch travel journals from API
+    // Fetch travel journals from API with smart retry logic
     useEffect(() => {
-        fetchTravelJournals();
+        if (isOnline()) {
+            fetchTravelJournals();
+        }
         
-        // Auto-refresh every minute to update timestamps
-        const interval = setInterval(fetchTravelJournals, 60000);
-        
-        return () => clearInterval(interval);
-    }, []);
+        // Only set up interval if connection is healthy
+        if (isOnline()) {
+            const interval = setInterval(() => {
+                if (isOnline()) {
+                    fetchTravelJournals();
+                }
+            }, 60000);
+            
+            return () => {
+                clearInterval(interval);
+            };
+        }
+    }, [isOnline]);
 
     const fetchTravelJournals = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:5000/api/travel-journal');
+            setError(null);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            const response = await fetch('http://localhost:5000/api/travel-journal', {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -67,32 +91,46 @@ const StoriesSection: React.FC = () => {
             }
         } catch (err: any) {
             const errorMessage = err.message || 'Error connecting to backend API';
-            setError(errorMessage);
-            console.error('Error fetching travel journals:', err);
             
-            // Fallback to hardcoded data if API fails
-            setHighlights([
-                {
-                    id: 1,
-                    label: 'Bali',
-                    coverImage: '/foto 2.jpg',
-                    timestamp: '54w',
-                    stories: [
-                        { id: 101, type: 'image', url: '/foto 2.jpg' },
-                        { id: 102, type: 'image', url: '/foto 5.jpg' },
-                        { id: 103, type: 'image', url: '/foto 7.jpg' }
-                    ]
-                },
-                {
-                    id: 2,
-                    label: 'Tokyo',
-                    coverImage: '/foto 1.jpg',
-                    timestamp: '12w',
-                    stories: [
-                        { id: 201, type: 'image', url: '/foto 1.jpg' }
-                    ]
-                }
-            ]);
+            // Only show error if we haven't exceeded retry limit
+            if (retryCount < maxRetries) {
+                setRetryCount(prev => prev + 1);
+                console.warn(`Retry attempt ${retryCount + 1}/${maxRetries} for travel journals`);
+                
+                // Exponential backoff retry
+                setTimeout(() => {
+                    if (isOnline()) {
+                        fetchTravelJournals();
+                    }
+                }, Math.pow(2, retryCount) * 1000);
+            } else {
+                setError(errorMessage);
+                console.error('Error fetching travel journals:', err);
+                
+                // Fallback to hardcoded data if API fails after retries
+                setHighlights([
+                    {
+                        id: 1,
+                        label: 'Bali',
+                        coverImage: '/foto 2.jpg',
+                        timestamp: '54w',
+                        stories: [
+                            { id: 101, type: 'image', url: '/foto 2.jpg' },
+                            { id: 102, type: 'image', url: '/foto 5.jpg' },
+                            { id: 103, type: 'image', url: '/foto 7.jpg' }
+                        ]
+                    },
+                    {
+                        id: 2,
+                        label: 'Tokyo',
+                        coverImage: '/foto 1.jpg',
+                        timestamp: '12w',
+                        stories: [
+                            { id: 201, type: 'image', url: '/foto 1.jpg' }
+                        ]
+                    }
+                ]);
+            }
         } finally {
             setLoading(false);
         }

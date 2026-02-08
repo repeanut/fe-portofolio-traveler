@@ -532,12 +532,6 @@ const AdminTravelJournalPage: React.FC = () => {
                   totalPages={1}
                   onPageChange={() => {}}
                   onItemsPerPageChange={() => {}}
-                  onPreview={(id) => {
-                    if (typeof id === "number") {
-                      // Open travel journal in main page
-                      window.open(`/#stories?highlight=${id}`, '_blank');
-                    }
-                  }}
                   onEdit={(id) => {
                     if (typeof id === "number") {
                       setEditingId(id);

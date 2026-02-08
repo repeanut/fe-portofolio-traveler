@@ -70,7 +70,7 @@ const PayPalPayment: React.FC<PayPalPaymentProps> = ({
             },
 
             // Create order
-            createOrder: (data: any, actions: any) => {
+            createOrder: (_data: any, actions: any) => {
                 return actions.order.create({
                     purchase_units: [{
                         amount: {

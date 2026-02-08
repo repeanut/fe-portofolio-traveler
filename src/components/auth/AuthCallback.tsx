@@ -10,7 +10,6 @@ const AuthCallback: React.FC = () => {
             const urlParams = new URLSearchParams(location.search);
             const token = urlParams.get('token');
             const user = urlParams.get('user');
-            const action = urlParams.get('action');
             const auth = urlParams.get('auth');
             const loginPage = urlParams.get('login_page');
 

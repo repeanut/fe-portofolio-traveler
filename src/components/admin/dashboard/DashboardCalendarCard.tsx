@@ -251,7 +251,7 @@ const DashboardCalendarCard: React.FC<DashboardCalendarCardProps> = ({ recentOrd
                           ),
                       }}
                       modifiers={{
-                        hasOrder: (date) => orderDateSet.has(date.toISOString().slice(0, 10)),
+                        hasOrder: (date: Date) => orderDateSet.has(date.toISOString().slice(0, 10)),
                       }}
                       modifiersClassNames={{
                         hasOrder:

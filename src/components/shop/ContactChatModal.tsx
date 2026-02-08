@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import ChatContainer from '../AIchatbot/ChatContainer';
+import UserChat from '../AIchatbot/UserChat';
 
 export type ContactChatModalProps = {
     open: boolean;
@@ -72,7 +72,8 @@ const ContactChatModal: React.FC<ContactChatModalProps> = ({ open, onClose }) =>
                             />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-900">Message Rizqi</p>
+                            <p className="text-sm font-semibold text-slate-900">Customer Support</p>
+                            <p className="text-xs text-slate-500">Real-time chat</p>
                         </div>
                     </div>
                     <button
@@ -86,13 +87,7 @@ const ContactChatModal: React.FC<ContactChatModalProps> = ({ open, onClose }) =>
                 </header>
 
                 <div className="h-[480px] border-t border-slate-200 bg-white">
-                    <ChatContainer
-                        showActions={false}
-                        showHeader={false}
-                        senderRole="user"
-                        chatMode="cs"
-                        theme="light"
-                    />
+                    <UserChat theme="light" />
                 </div>
             </div>
         </div>

@@ -5,11 +5,10 @@ import FooterSection from '../../components/ui/footer';
 import type { ShopItem } from '../../components/ui/shopCards';
 import type { OrderPackage } from '../../components/order/sidebarOrder';
 import OrderDetails from '../../components/payments/OrderDetails';
-import PaymentMethods from '../../components/payments/PaymentMethods';
+import MidtransPayment from '../../components/payments/MidtransPayment';
 import TotalPayment from '../../components/payments/TotalPayment';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
-import paymentService from '../../services/payment.service';
 
 interface PaymentLocationState {
     item?: ShopItem;
@@ -45,9 +44,6 @@ const ShopPaymentPage: React.FC = () => {
     const item = state?.item ?? fallbackItem;
     const orderPackage = state?.orderPackage ?? fallbackPackage;
     const [quantity] = useState<number>(state?.quantity && state.quantity > 0 ? state.quantity : 1);
-    const [selectedPaymentMethodLabel, setSelectedPaymentMethodLabel] = useState<string | null>(null);
-    const [paymentData, setPaymentData] = useState<any>(null);
-    const [isProcessing, setIsProcessing] = useState(false);
 
     const unitPrice = orderPackage.price;
     const subtotal = useMemo(() => unitPrice * quantity, [unitPrice, quantity]);
@@ -59,99 +55,41 @@ const ShopPaymentPage: React.FC = () => {
 
     const total = subtotal + serviceFee;
 
-    const handlePaymentDataChange = (data: any) => {
-        setPaymentData(data);
+    const handleMidtransSuccess = (response: any) => {
+        navigate('/shop/payment/payment-success', {
+            state: {
+                subtotal,
+                serviceFee,
+                total,
+                itemTitle: item.title,
+                orderPackageTitle: orderPackage.title,
+                deliveryLabel: orderPackage.deliveryLabel,
+                quantity,
+                paymentMethodLabel: 'Midtrans',
+                paymentId: response.data?.transaction_id
+            },
+        });
     };
 
-    const handlePayPalPayment = async (paymentId: string) => {
-        setIsProcessing(true);
-        try {
-            const paymentRequest = {
-                method: 'paypal',
-                amount: total,
-                currency: 'USD',
-                description: `${item.title} - ${orderPackage.title}`,
-                customerInfo: {
-                    name: 'PayPal User',
-                    email: 'user@example.com',
-                    phone: '+1234567890'
-                },
-                paypalPaymentId: paymentId
-            };
-
-            const response = await paymentService.processPayment(paymentRequest);
-            
-            if (response.success) {
-                navigate('/shop/payment/payment-success', {
-                    state: {
-                        subtotal,
-                        serviceFee,
-                        total,
-                        itemTitle: item.title,
-                        orderPackageTitle: orderPackage.title,
-                        deliveryLabel: orderPackage.deliveryLabel,
-                        quantity,
-                        paymentMethodLabel: 'PayPal',
-                        paymentId: response.data?.paymentId
-                    },
-                });
-            } else {
-                alert('Pembayaran gagal: ' + response.message);
-            }
-        } catch (error: any) {
-            console.error('PayPal payment error:', error);
-            alert('Terjadi kesalahan saat memproses pembayaran PayPal: ' + error.message);
-        } finally {
-            setIsProcessing(false);
-        }
+    const handleMidtransError = (error: Error) => {
+        console.error('Midtrans payment error:', error);
+        alert('Pembayaran gagal: ' + error.message);
     };
 
-    const handlePayment = async () => {
-        if (!paymentData?.isValid) {
-            alert('Silakan lengkapi detail pembayaran terlebih dahulu.');
-            return;
-        }
-
-        setIsProcessing(true);
-        try {
-            const paymentRequest = {
-                method: paymentData.method === 'paypal' ? 'credit_card' : paymentData.method,
-                amount: total,
-                currency: 'USD',
-                description: `${item.title} - ${orderPackage.title}`,
-                customerInfo: {
-                    name: paymentData.cardDetails?.cardholderName,
-                    email: 'user@example.com',
-                    phone: '+1234567890',
-                    cardDetails: paymentData.cardDetails
-                }
-            };
-
-            const response = await paymentService.processPayment(paymentRequest);
-            
-            if (response.success) {
-                navigate('/shop/payment/payment-success', {
-                    state: {
-                        subtotal,
-                        serviceFee,
-                        total,
-                        itemTitle: item.title,
-                        orderPackageTitle: orderPackage.title,
-                        deliveryLabel: orderPackage.deliveryLabel,
-                        quantity,
-                        paymentMethodLabel: selectedPaymentMethodLabel,
-                        paymentId: response.data?.paymentId
-                    },
-                });
-            } else {
-                alert('Pembayaran gagal: ' + response.message);
-            }
-        } catch (error: any) {
-            console.error('Payment error:', error);
-            alert('Terjadi kesalahan saat memproses pembayaran: ' + error.message);
-        } finally {
-            setIsProcessing(false);
-        }
+    const handleMidtransPending = (response: any) => {
+        navigate('/shop/payment/pending', {
+            state: {
+                subtotal,
+                serviceFee,
+                total,
+                itemTitle: item.title,
+                orderPackageTitle: orderPackage.title,
+                deliveryLabel: orderPackage.deliveryLabel,
+                quantity,
+                paymentMethodLabel: 'Midtrans',
+                paymentId: response.data?.transaction_id
+            },
+        });
     };
 
     return (
@@ -170,12 +108,26 @@ const ShopPaymentPage: React.FC = () => {
                                     quantity={quantity}
                                     subtotal={subtotal}
                                 />
-                                <PaymentMethods 
-                                    onPaymentMethodChange={setSelectedPaymentMethodLabel}
-                                    onPaymentDataChange={handlePaymentDataChange}
-                                    onPayPalPayment={handlePayPalPayment}
+                                <MidtransPayment
                                     amount={total}
-                                    description={`${item.title} - ${orderPackage.title}`}
+                                    customerDetails={{
+                                        firstName: 'User',
+                                        lastName: 'Name',
+                                        email: 'user@example.com',
+                                        phone: '+628123456789'
+                                    }}
+                                    itemDetails={[
+                                        {
+                                            id: String(item.id || 'item-1'),
+                                            price: unitPrice,
+                                            quantity: quantity,
+                                            name: `${item.title} - ${orderPackage.title}`,
+                                            category: 'travel-package'
+                                        }
+                                    ]}
+                                    onSuccess={handleMidtransSuccess}
+                                    onError={handleMidtransError}
+                                    onPending={handleMidtransPending}
                                 />
                             </div>
 
@@ -188,10 +140,7 @@ const ShopPaymentPage: React.FC = () => {
                                     orderPackageTitle={orderPackage.title}
                                     deliveryLabel={orderPackage.deliveryLabel}
                                     quantity={quantity}
-                                    paymentMethodLabel={selectedPaymentMethodLabel}
-                                    onPayment={handlePayment}
-                                    isProcessing={isProcessing}
-                                    canPay={paymentData?.isValid || false}
+                                    paymentMethodLabel="Midtrans"
                                 />
                             </aside>
                         </div>

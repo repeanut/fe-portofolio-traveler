@@ -34,6 +34,7 @@ interface ChatContainerProps {
     onChatModeChange?: (mode: ChatMode) => void;
     theme?: 'light' | 'dark';
     onMessagesChange?: (messages: Message[]) => void;
+    onSendMessage?: (message: string) => void;
 }
 
 const faqOptions = [
@@ -54,7 +55,18 @@ const aiResponses: Record<string, string> = {
         'Durasi tergantung jenis dan kompleksitas project. Copywriting sederhana 2-3 hari, sedangkan project besar bisa 1-2 minggu. Kita akan diskusikan timeline bersama.',
 };
 
-const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onClearChat, showActions = true, showHeader = true, senderRole = 'user', initialMessages, chatMode: chatModeProp, onChatModeChange, theme = 'light', onMessagesChange }, ref) => {
+const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
+    onClearChat,
+    showActions = true,
+    showHeader = true,
+    senderRole = 'user',
+    initialMessages,
+    chatMode: chatModeProp,
+    onChatModeChange,
+    theme = 'light',
+    onMessagesChange,
+    onSendMessage,
+}, ref) => {
     const isDark = theme === 'dark';
     const onMessagesChangeRef = useRef<ChatContainerProps['onMessagesChange']>(onMessagesChange);
     const getCurrentTime = useCallback(() => {
@@ -173,6 +185,12 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
             timestamp: getCurrentTime(),
         };
         setMessages(prev => [...prev, outgoingMessage]);
+
+        // Call external onSendMessage if provided
+        if (onSendMessage) {
+            onSendMessage(message);
+            return;
+        }
 
         if (senderRole === 'admin') {
             return;
@@ -304,5 +322,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
         </div>
     );
 });
+
+ChatContainer.displayName = 'ChatContainer';
 
 export default ChatContainer;

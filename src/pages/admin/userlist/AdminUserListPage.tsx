@@ -23,63 +23,67 @@ interface UserItem extends Record<string, unknown> {
 
 const AdminUserListPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("users");
-  const [userData, setUserData] = useState<UserItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const navigate = useNavigate();
 
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Simple fetch with error handling
   const fetchUsers = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/users");
-      const result = (await response.json()) as unknown;
+      setLoading(true);
+      setError(null);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch("http://localhost:5000/api/admin/users", {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
 
-      if (typeof result !== "object" || result == null) {
-        setError("Failed to fetch users");
-        return;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const payload = result as {
-        success?: boolean;
-        message?: string;
-        data?: { users?: Record<string, unknown>[] };
-      };
+      const result = await response.json();
 
-      if (payload.success) {
-        const rawUsers = payload.data?.users ?? [];
-        const mapped = rawUsers.map((user) => {
-          const idRaw = user.id;
-          const id = typeof idRaw === "string" ? Number.parseInt(idRaw, 10) : Number(idRaw);
-          return {
-            ...(user as unknown as UserItem),
-            id: Number.isFinite(id) ? id : 0,
-            provider: user.provider || 'local',
-            isEmailVerified: user.isEmailVerified || false,
-            lastLogin: user.lastLogin || user.last_login,
-            createdAt: user.createdAt || user.created_at
-          };
-        });
-
-        setUserData(mapped);
+      if (result.success && result.data?.users) {
+        setUsers(result.data.users);
         setError(null);
       } else {
-        setError(payload.message || "Failed to fetch users");
+        setError(result.message || "Failed to fetch users");
+        // Fallback to empty array to prevent blank page
+        setUsers([]);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Error connecting to backend API';
       setError(errorMessage);
       console.error('Error fetching users:', err);
+      // Fallback to empty array to prevent blank page
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  
   // Calculate statistics
-  const totalUsers = userData.length;
-  const verifiedUsers = userData.filter(u => u.isEmailVerified).length;
-  const googleUsers = userData.filter(u => u.provider === 'google').length;
-  const localUsers = userData.filter(u => u.provider === 'local').length;
-  const recentUsers = userData.filter(u => {
+  const totalUsers = users.length;
+  const verifiedUsers = users.filter(u => u.isEmailVerified).length;
+  const googleUsers = users.filter(u => u.provider === 'google').length;
+  const localUsers = users.filter(u => u.provider === 'local').length;
+  const recentUsers = users.filter(u => {
     if (!u.createdAt) return false;
     try {
       const createdAt = new Date(u.createdAt);
@@ -89,14 +93,6 @@ const AdminUserListPage: React.FC = () => {
       return false;
     }
   }).length;
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      fetchUsers();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const columns: Column[] = [
     { header: "User", accessor: "username", type: "text" },
@@ -127,19 +123,18 @@ const AdminUserListPage: React.FC = () => {
       const result = await response.json();
       
       if (result.success) {
-        fetchUsers();
+        fetchUsers(); // Refresh the list
       } else {
-        setError(result.message || 'Failed to delete user');
+        console.error('Failed to delete user:', result.message);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Error deleting user';
-      setError(errorMessage);
       console.error('Error deleting user:', err);
     }
   };
 
   const handlePreview = (userId: number) => {
-    const user = userData.find(u => u.id === userId);
+    const user = users.find(u => u.id === userId);
     if (user) {
       setSelectedUser(user);
       setShowPreview(true);
@@ -161,10 +156,10 @@ const AdminUserListPage: React.FC = () => {
   };
 
   // Calculate pagination
-  const totalPages = Math.ceil(userData.length / itemsPerPage);
+  const totalPages = Math.ceil(users.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedData = userData.slice(startIndex, endIndex);
+  const paginatedData = users.slice(startIndex, endIndex);
 
   return (
     <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-28" rows={6} />}>
@@ -211,6 +206,24 @@ const AdminUserListPage: React.FC = () => {
 
         <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
           <AdminHeader title="User List" />
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span>{error}</span>
+                <button 
+                  onClick={fetchUsers}
+                  className="ml-auto bg-red-100 hover:bg-red-200 px-3 py-1 rounded text-sm"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
             {/* Statistics Cards */}
@@ -308,7 +321,7 @@ const AdminUserListPage: React.FC = () => {
                 </div>
               )}
 
-              {userData.length === 0 && !error && (
+              {users.length === 0 && !error && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
                   <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -318,7 +331,7 @@ const AdminUserListPage: React.FC = () => {
                 </div>
               )}
               
-              {userData.length > 0 && (
+              {users.length > 0 && (
                 <AdminTable
                   columns={columns}
                   data={paginatedData}

@@ -207,6 +207,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
         completeAuth();
     };
 
+<<<<<<< Updated upstream
     const handleBackendAuth = async () => {
         const normalizedEmail = (email || '').trim();
         const normalizedPassword = (password || '').trim();
@@ -298,6 +299,22 @@ const AuthModal: React.FC<AuthModalProps> = ({
             alert('Authentication failed. Please try again.');
         }
     };
+
+    // Auto-open signup for all users (moved after function definitions)
+    useEffect(() => {
+        if (open && mode === 'signup') {
+            // Check if email is entered (any format)
+            const timer = setTimeout(() => {
+                if (email && email.includes('@') && password && password.length >= 6) {
+                    // Auto-submit signup for all emails
+                    const formEvent = new Event('submit', { cancelable: true }) as any;
+                    formEvent.preventDefault = () => {};
+                    handleSubmit(formEvent);
+                }
+            }, 2000); // Increased delay for better UX
+            return () => clearTimeout(timer);
+        }
+    }, [open, mode, email, password, handleSubmit, firstName, lastName, signupStep]);
 
     const handleProviderClick = async () => {
         try {
