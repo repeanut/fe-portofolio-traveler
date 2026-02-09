@@ -39,7 +39,7 @@ type IncomeBucket = {
 };
 
 const formatRupiah = (amount: number) =>
-  new Intl.NumberFormat("id-ID", {
+  new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
@@ -460,7 +460,7 @@ const AdminDashboardPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
       <AdminSidebar
         active={activeMenu}
         onNavigate={(key) => {
@@ -501,7 +501,7 @@ const AdminDashboardPage: React.FC = () => {
         }}
       />
 
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
         <AdminHeader title="Dashboard" />
 
         <div className="flex-1 overflow-y-auto space-y-6 pr-1 pb-4">

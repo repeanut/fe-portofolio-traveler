@@ -123,11 +123,11 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange, 
                     {activeMethod === 'card' ? (
                         <>
                             <div>
-                                <p className="mb-2 text-xs font-medium text-gray-700">Pilih metode kartu</p>
+                                <p className="mb-2 text-xs font-medium text-gray-700">Select a card method</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
                                     {[{ id: 'paypal', label: 'PayPal', helper: 'Credit / Debit Card', logo: '/icon-paypal.png' },
-                                    { id: 'bri', label: 'Bank BRI', helper: 'Kartu kredit / debit' },
-                                    { id: 'bca', label: 'Bank BCA', helper: 'Kartu kredit / debit' },
+                                    { id: 'bri', label: 'Bank BRI', helper: 'Credit / debit card' },
+                                    { id: 'bca', label: 'Bank BCA', helper: 'Credit / debit card' },
                                     ].map((card) => (
                                         <button
                                             key={card.id}
@@ -256,14 +256,14 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodChange, 
                                 </div>
                             ) : (
                                 <p className="text-[11px] text-gray-500">
-                                    Silakan pilih kartu terlebih dahulu untuk melanjutkan pembayaran.
+                                    Please select a card first to continue with the payment.
                                 </p>
                             )}
                         </>
                     ) : (
                         <>
                             <div>
-                                <p className="mb-2 text-xs font-medium text-gray-700">Pilih e-wallet atau QRIS</p>
+                                <p className="mb-2 text-xs font-medium text-gray-700">Select an e-wallet or QR code</p>
                                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                                     {[{ id: 'gopay', label: 'GoPay' },
                                     { id: 'qris', label: 'QRIS' },

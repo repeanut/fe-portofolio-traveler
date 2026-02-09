@@ -83,19 +83,19 @@ const AdminCertServicesPage: React.FC = () => {
         name: "title",
         label: "Title",
         type: "text",
-        placeholder: "Masukkan judul sertifikasi...",
+        placeholder: "Enter certification title...",
       },
       {
         name: "subtitle",
-        label: "Subtitle (opsional)",
+        label: "Subtitle (optional)",
         type: "text",
-        placeholder: "Level atau keterangan lain...",
+        placeholder: "Level or additional details...",
       },
       {
         name: "organization",
         label: "Organization / Company",
         type: "text",
-        placeholder: "Nama organisasi / perusahaan...",
+        placeholder: "Organization / company name...",
       },
     ],
     []
@@ -107,14 +107,14 @@ const AdminCertServicesPage: React.FC = () => {
         name: "name",
         label: "Service",
         type: "text",
-        placeholder: "Masukkan nama layanan...",
+        placeholder: "Enter service name...",
       },
     ],
     []
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
       <AdminSidebar
         active={activeMenu}
         landingActiveKey="certServices"
@@ -159,7 +159,7 @@ const AdminCertServicesPage: React.FC = () => {
         }}
       />
 
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
         <AdminHeader title="Certifications Management" />
 
         <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -191,9 +191,9 @@ const AdminCertServicesPage: React.FC = () => {
                 if (typeof id === "number") {
                   try {
                     setCertData((prev) => prev.filter((item) => item.id !== id));
-                    toast.success("Berhasil", "Certification berhasil dihapus");
+                    toast.success("Success", "Certification deleted successfully");
                   } catch {
-                    toast.error("Gagal", "Certification gagal dihapus");
+                    toast.error("Error", "Failed to delete certification");
                   }
                 }
               }}
@@ -231,9 +231,9 @@ const AdminCertServicesPage: React.FC = () => {
                 if (typeof id === "number") {
                   try {
                     setServicesData((prev) => prev.filter((item) => item.id !== id));
-                    toast.success("Berhasil", "Service berhasil dihapus");
+                    toast.success("Success", "Service deleted successfully");
                   } catch {
-                    toast.error("Gagal", "Service gagal dihapus");
+                    toast.error("Error", "Failed to delete service");
                   }
                 }
               }}
@@ -245,7 +245,7 @@ const AdminCertServicesPage: React.FC = () => {
       {/* Certification modal */}
       <AdminModal
         isOpen={isCertModalOpen}
-        title={editingCertId ? "Edit Certification" : "Tambah Certification"}
+        title={editingCertId ? "Edit Certification" : "Add Certification"}
         fields={certFields}
         initialData={
           editingCertId != null
@@ -280,7 +280,7 @@ const AdminCertServicesPage: React.FC = () => {
                     : item
                 )
               );
-              toast.success("Berhasil", "Certification berhasil diperbarui");
+              toast.success("Success", "Certification updated successfully");
             } else {
               setCertData((prev) => {
                 const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -295,13 +295,13 @@ const AdminCertServicesPage: React.FC = () => {
                   },
                 ];
               });
-              toast.success("Berhasil", "Certification berhasil ditambahkan");
+              toast.success("Success", "Certification added successfully");
             }
 
             setIsCertModalOpen(false);
             setEditingCertId(null);
           } catch {
-            toast.error("Gagal", "Perubahan certification gagal disimpan");
+            toast.error("Error", "Failed to save certification changes");
           }
         }}
       />
@@ -309,7 +309,7 @@ const AdminCertServicesPage: React.FC = () => {
       {/* Service modal */}
       <AdminModal
         isOpen={isServiceModalOpen}
-        title={editingServiceId ? "Edit Service" : "Tambah Service"}
+        title={editingServiceId ? "Edit Service" : "Add Service"}
         fields={serviceFields}
         initialData={
           editingServiceId != null
@@ -337,7 +337,7 @@ const AdminCertServicesPage: React.FC = () => {
                     : item
                 )
               );
-              toast.success("Berhasil", "Service berhasil diperbarui");
+              toast.success("Success", "Service updated successfully");
             } else {
               setServicesData((prev) => {
                 const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -349,13 +349,13 @@ const AdminCertServicesPage: React.FC = () => {
                   },
                 ];
               });
-              toast.success("Berhasil", "Service berhasil ditambahkan");
+              toast.success("Success", "Service added successfully");
             }
 
             setIsServiceModalOpen(false);
             setEditingServiceId(null);
           } catch {
-            toast.error("Gagal", "Perubahan service gagal disimpan");
+            toast.error("Error", "Failed to save service changes");
           }
         }}
       />

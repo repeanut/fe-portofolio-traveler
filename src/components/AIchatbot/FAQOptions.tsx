@@ -15,10 +15,10 @@ interface FAQOptionsProps {
 
 const FAQOptions: React.FC<FAQOptionsProps> = ({ options, onSelectFAQ, onSelectCS, timestamp }) => {
     return (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 max-w-md">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 w-full max-w-full sm:max-w-md">
             {/* Greeting Message */}
             <p className="text-gray-800 text-base leading-relaxed mb-6 font-medium">
-                Halo! Terima kasih atas minat Anda! Ingin tahu lebih banyak tentang layanan kami? Saya punya semua informasi yang Anda butuhkan — tinggal tanya saja!
+                Hi! Thanks for your interest! Want to learn more about our services? I have all the information you need — just ask!
             </p>
 
             {/* FAQ Options as Interactive Buttons */}
@@ -32,7 +32,7 @@ const FAQOptions: React.FC<FAQOptionsProps> = ({ options, onSelectFAQ, onSelectC
                         <div className="w-8 h-8 rounded-full bg-sky-100 group-hover:bg-sky-200 flex items-center justify-center flex-shrink-0 transition-colors">
                             <MessageCircle className="w-4 h-4 text-sky-500" />
                         </div>
-                        <span className="text-sky-600 group-hover:text-sky-700 text-sm font-medium transition-colors">
+                        <span className="text-sky-600 group-hover:text-sky-700 text-sm font-medium transition-colors break-words">
                             {option.question}
                         </span>
                     </button>
@@ -41,8 +41,8 @@ const FAQOptions: React.FC<FAQOptionsProps> = ({ options, onSelectFAQ, onSelectC
 
             {/* Footer with timestamp */}
             <div className="flex items-center justify-between text-xs text-gray-400 mb-4 px-1">
-                <span>Dikirim oleh Asisten AI</span>
-                <span>{timestamp || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span>Sent by AI Assistant</span>
+                <span>{timestamp || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
 
             {/* Chat with CS Button */}
@@ -51,7 +51,7 @@ const FAQOptions: React.FC<FAQOptionsProps> = ({ options, onSelectFAQ, onSelectC
                 className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-full hover:from-rose-600 hover:to-rose-700 transition-all duration-200 text-xs shadow-md hover:shadow-lg transform hover:scale-[1.02]"
             >
                 <MessageSquare className="w-5 h-5" />
-                <span>Chat dengan Penjual</span>
+                <span>Chat with Seller</span>
             </button>
         </div>
     );

@@ -105,14 +105,14 @@ const AdminPortfolioPage: React.FC = () => {
         name: "description",
         label: "Description",
         type: "textarea",
-        placeholder: "Tuliskan deskripsi singkat project...",
+        placeholder: "Write a short project description...",
       },
     ],
     []
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
       <AdminSidebar
         active={activeMenu}
         landingActiveKey="portfolio"
@@ -160,7 +160,7 @@ const AdminPortfolioPage: React.FC = () => {
         }}
       />
 
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
         <AdminHeader title="Portfolio Management" />
 
         <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -190,9 +190,9 @@ const AdminPortfolioPage: React.FC = () => {
                 if (typeof id === "number") {
                   try {
                     setPortfolioData((prev) => prev.filter((item) => item.id !== id));
-                    toast.success("Berhasil", "Portfolio berhasil dihapus");
+                    toast.success("Success", "Portfolio item deleted successfully");
                   } catch {
-                    toast.error("Gagal", "Portfolio gagal dihapus");
+                    toast.error("Error", "Failed to delete portfolio item");
                   }
                 }
               }}
@@ -203,7 +203,7 @@ const AdminPortfolioPage: React.FC = () => {
 
       <AdminModal
         isOpen={isModalOpen}
-        title={editingId ? "Edit Portfolio" : "Tambah Portfolio"}
+        title={editingId ? "Edit Portfolio" : "Add Portfolio"}
         fields={modalFields}
         initialData={
           editingId != null
@@ -218,7 +218,7 @@ const AdminPortfolioPage: React.FC = () => {
         }}
         onSubmit={(data) => {
           const imagesRaw = (data.images as string[] | undefined) ?? [];
-          const images = imagesRaw.slice(0, 2); // batasi max 2 foto
+          const images = imagesRaw.slice(0, 2); // limit to max 2 images
           const tags = (data.tags as string[] | undefined) ?? [];
           const description = (data.description as string) || "";
 
@@ -236,7 +236,7 @@ const AdminPortfolioPage: React.FC = () => {
                     : item
                 )
               );
-              toast.success("Berhasil", "Portfolio berhasil diperbarui");
+              toast.success("Success", "Portfolio item updated successfully");
             } else {
               setPortfolioData((prev) => {
                 const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -250,13 +250,13 @@ const AdminPortfolioPage: React.FC = () => {
                   },
                 ];
               });
-              toast.success("Berhasil", "Portfolio berhasil ditambahkan");
+              toast.success("Success", "Portfolio item added successfully");
             }
 
             setIsModalOpen(false);
             setEditingId(null);
           } catch {
-            toast.error("Gagal", "Perubahan portfolio gagal disimpan");
+            toast.error("Error", "Failed to save portfolio changes");
           }
         }}
       />

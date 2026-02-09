@@ -20,13 +20,13 @@ export type SidebarOrderProps = {
 const SidebarOrder: React.FC<SidebarOrderProps> = ({ open, selectedPackage, onClose, onContinue }) => {
     const [quantity, setQuantity] = useState(1);
 
-    // Harga per paket
+    // Price per package
     const formattedPrice = useMemo(() => {
         if (!selectedPackage) return '$0';
         return `$${selectedPackage.price}`;
     }, [selectedPackage]);
 
-    // Total harga berdasarkan quantity
+    // Total price based on quantity
     const totalPrice = useMemo(() => {
         if (!selectedPackage) return '$0';
         return `$${selectedPackage.price * quantity}`;

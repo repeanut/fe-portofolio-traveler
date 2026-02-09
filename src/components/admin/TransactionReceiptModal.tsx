@@ -49,22 +49,22 @@ const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = ({
   if (!isOpen || !transaction) return null;
 
   const paymentLabel: Record<ReceiptPaymentMethod, string> = {
-    bank_transfer: "Transfer Bank",
+    bank_transfer: "Bank transfer",
     qris: "QRIS",
-    credit_card: "Kartu Kredit",
+    credit_card: "Credit card",
     ewallet: "E-Wallet",
   };
 
   const statusMap: Record<ReceiptTransactionStatus, { label: string; cls: string }> = {
-    paid: { label: "Selesai", cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-    processing: { label: "Dalam Proses", cls: "bg-blue-50 text-blue-700 border-blue-100" },
+    paid: { label: "Completed", cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+    processing: { label: "Processing", cls: "bg-blue-50 text-blue-700 border-blue-100" },
     refunded: { label: "Refund", cls: "bg-amber-50 text-amber-800 border-amber-100" },
-    cancelled: { label: "Dibatalkan", cls: "bg-rose-50 text-rose-700 border-rose-100" },
+    cancelled: { label: "Cancelled", cls: "bg-rose-50 text-rose-700 border-rose-100" },
   };
 
   const statusMeta = statusMap[transaction.status] ?? statusMap.processing;
 
-  const paidLabel = transaction.paidStatus === "paid" ? "Lunas" : "Belum";
+  const paidLabel = transaction.paidStatus === "paid" ? "Paid" : "Unpaid";
   const totalBayar = transaction.grossAmount + transaction.adminFee;
 
   return createPortal(
@@ -78,8 +78,8 @@ const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = ({
               <FileText className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-900">Detail Pesanan</p>
-              <p className="mt-1 text-[11px] text-slate-500">No Resi: {transaction.trxCode}</p>
+              <p className="text-xs font-semibold text-slate-900">Order Details</p>
+              <p className="mt-1 text-[11px] text-slate-500">Receipt No: {transaction.trxCode}</p>
             </div>
           </div>
 
@@ -95,16 +95,16 @@ const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = ({
         <div className="px-5 py-4">
           <div className="rounded-xl border border-slate-200 bg-white">
             <div className="border-b border-slate-200 px-4 py-3">
-              <p className="text-[11px] font-semibold text-slate-900">Info Pengiriman</p>
+              <p className="text-[11px] font-semibold text-slate-900">Shipping info</p>
             </div>
 
             <div className="px-4 py-3 space-y-2">
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Kode Order</p>
+                <p className="text-[11px] text-slate-500">Order code</p>
                 <p className="text-[11px] font-semibold text-slate-900">{transaction.orderCode}</p>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Pembeli</p>
+                <p className="text-[11px] text-slate-500">Buyer</p>
                 <p className="text-[11px] font-semibold text-slate-900">{transaction.buyerName}</p>
               </div>
               <div className="flex items-center justify-between gap-4">
@@ -112,7 +112,7 @@ const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = ({
                 <p className="text-[11px] font-semibold text-slate-900">{transaction.buyerEmail}</p>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Penyedia</p>
+                <p className="text-[11px] text-slate-500">Provider</p>
                 <div className="text-right">
                   <p className="text-[11px] font-semibold text-slate-900">{transaction.sellerName}</p>
                   <p className="mt-1 text-[11px] text-slate-600 whitespace-normal break-words line-clamp-4">
@@ -125,25 +125,25 @@ const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = ({
 
           <div className="mt-4 rounded-xl border border-slate-200 bg-white">
             <div className="border-b border-slate-200 px-4 py-3">
-              <p className="text-[11px] font-semibold text-slate-900">Rincian Pembayaran</p>
+              <p className="text-[11px] font-semibold text-slate-900">Payment details</p>
             </div>
 
             <div className="px-4 py-3 space-y-2">
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Metode Pembayaran</p>
+                <p className="text-[11px] text-slate-500">Payment method</p>
                 <p className="text-[11px] font-semibold text-slate-900">{paymentLabel[transaction.paymentMethod]}</p>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Status Pembayaran</p>
+                <p className="text-[11px] text-slate-500">Payment status</p>
                 <p className="text-[11px] font-semibold text-slate-900">{paidLabel}</p>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Tanggal</p>
+                <p className="text-[11px] text-slate-500">Date</p>
                 <p className="text-[11px] font-semibold text-slate-900">{transaction.date}</p>
               </div>
 
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Status Pesanan</p>
+                <p className="text-[11px] text-slate-500">Order status</p>
                 {statusControl ? (
                   <div>{statusControl}</div>
                 ) : (
@@ -156,18 +156,18 @@ const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = ({
               <div className="my-3 border-t border-dashed border-slate-200" />
 
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Total Harga</p>
+                <p className="text-[11px] text-slate-500">Subtotal</p>
                 <p className="text-[11px] font-semibold text-slate-900">{formatCurrency(transaction.grossAmount)}</p>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] text-slate-500">Biaya Admin</p>
+                <p className="text-[11px] text-slate-500">Admin fee</p>
                 <p className="text-[11px] font-semibold text-slate-900">{formatCurrency(transaction.adminFee)}</p>
               </div>
 
               <div className="my-3 border-t border-dashed border-slate-200" />
 
               <div className="flex items-center justify-between gap-4">
-                <p className="text-[11px] font-semibold text-slate-900">Total Bayar</p>
+                <p className="text-[11px] font-semibold text-slate-900">Total</p>
                 <p className="text-sm font-semibold text-slate-900">{formatCurrency(totalBayar)}</p>
               </div>
             </div>

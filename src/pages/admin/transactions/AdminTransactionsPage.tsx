@@ -44,7 +44,7 @@ const DEFAULT_TRANSACTIONS: TransactionRow[] = [
     buyerName: "John Doe",
     buyerEmail: "john@example.com",
     sellerName: "Khan Ahsam",
-    sellerService: "SEO content writer untuk penulisan artikel",
+    sellerService: "SEO content writer for article writing",
     grossAmount: 843750,
     adminFee: 84375,
     netAmount: 759375,
@@ -60,7 +60,7 @@ const DEFAULT_TRANSACTIONS: TransactionRow[] = [
     buyerName: "Sarah Wilson",
     buyerEmail: "sarah@example.com",
     sellerName: "Design Studio",
-    sellerService: "Desain logo profesional",
+    sellerService: "Professional logo design",
     grossAmount: 2250000,
     adminFee: 225000,
     netAmount: 2025000,
@@ -76,7 +76,7 @@ const DEFAULT_TRANSACTIONS: TransactionRow[] = [
     buyerName: "Michael Chen",
     buyerEmail: "michael@example.com",
     sellerName: "WebDev Pro",
-    sellerService: "Pengembangan website landing page",
+    sellerService: "Landing page website development",
     grossAmount: 7500000,
     adminFee: 750000,
     netAmount: 6750000,
@@ -92,7 +92,7 @@ const DEFAULT_TRANSACTIONS: TransactionRow[] = [
     buyerName: "Emma Johnson",
     buyerEmail: "emma@example.com",
     sellerName: "Social Media Expert",
-    sellerService: "Manajemen media sosial (1 bulan)",
+    sellerService: "Social media management (1 month)",
     grossAmount: 1125000,
     adminFee: 112500,
     netAmount: 1012500,
@@ -124,7 +124,7 @@ const DEFAULT_TRANSACTIONS: TransactionRow[] = [
     buyerName: "Lisa Anderson",
     buyerEmail: "lisa@example.com",
     sellerName: "SEO Specialist",
-    sellerService: "Optimasi SEO on-page",
+    sellerService: "On-page SEO optimization",
     grossAmount: 1800000,
     adminFee: 180000,
     netAmount: 1620000,
@@ -155,10 +155,10 @@ const StatusDropdownCell: React.FC<{
   setCurrentPage,
 }) => {
   const map: Record<TransactionStatus, { label: string; cls: string }> = {
-    paid: { label: "Selesai", cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-    processing: { label: "Dalam Proses", cls: "bg-blue-50 text-blue-700 border-blue-100" },
+    paid: { label: "Completed", cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+    processing: { label: "Processing", cls: "bg-blue-50 text-blue-700 border-blue-100" },
     refunded: { label: "Refund", cls: "bg-amber-50 text-amber-800 border-amber-100" },
-    cancelled: { label: "Dibatalkan", cls: "bg-rose-50 text-rose-700 border-rose-100" },
+    cancelled: { label: "Cancelled", cls: "bg-rose-50 text-rose-700 border-rose-100" },
   };
 
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -215,10 +215,10 @@ const StatusDropdownCell: React.FC<{
           >
             {(
               [
-                { label: "Dalam Proses", value: "processing" as const },
-                { label: "Selesai", value: "paid" as const },
+                { label: "Processing", value: "processing" as const },
+                { label: "Completed", value: "paid" as const },
                 { label: "Refund", value: "refunded" as const },
-                { label: "Dibatalkan", value: "cancelled" as const },
+                { label: "Cancelled", value: "cancelled" as const },
               ] as const
             ).map((opt) => (
               <button
@@ -245,13 +245,13 @@ const StatusDropdownCell: React.FC<{
 
 const formatRupiah = (value: number) => {
   try {
-    return new Intl.NumberFormat("id-ID", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "IDR",
       maximumFractionDigits: 0,
     }).format(value);
   } catch {
-    return `Rp ${value.toLocaleString("id-ID")}`;
+    return `Rp ${value.toLocaleString("en-US")}`;
   }
 };
 
@@ -437,9 +437,9 @@ const AdminTransactionsPage: React.FC = () => {
             };
           })
         );
-        toast.success("Berhasil", "Status transaksi berhasil diperbarui");
+        toast.success("Success", "Transaction status updated successfully");
       } catch {
-        toast.error("Gagal", "Status transaksi gagal diperbarui");
+        toast.error("Error", "Failed to update transaction status");
       }
     },
     [toast]
@@ -529,7 +529,7 @@ const AdminTransactionsPage: React.FC = () => {
         ),
       },
       {
-        header: "Pembeli",
+        header: "Buyer",
         accessor: "buyerName",
         type: "text",
         render: (value, row) => (
@@ -540,7 +540,7 @@ const AdminTransactionsPage: React.FC = () => {
         ),
       },
       {
-        header: "Penyedia",
+        header: "Provider",
         accessor: "sellerName",
         type: "textarea",
         render: (value, row) => (
@@ -553,7 +553,7 @@ const AdminTransactionsPage: React.FC = () => {
         ),
       },
       {
-        header: "Nominal",
+        header: "Amount",
         accessor: "grossAmount",
         type: "text",
         render: (value, row) => {
@@ -564,8 +564,8 @@ const AdminTransactionsPage: React.FC = () => {
           return (
             <div className="min-w-[160px]">
               <div className="text-[11px] font-semibold text-slate-800">{formatRupiah(totalBayar)}</div>
-              <div className="mt-0.5 text-[10px] text-slate-400">Harga: {formatRupiah(gross)}</div>
-              <div className="mt-0.5 text-[10px] text-slate-400">Biaya Admin: {formatRupiah(adminFee)}</div>
+              <div className="mt-0.5 text-[10px] text-slate-400">Subtotal: {formatRupiah(gross)}</div>
+              <div className="mt-0.5 text-[10px] text-slate-400">Admin fee: {formatRupiah(adminFee)}</div>
             </div>
           );
         },
@@ -592,7 +592,7 @@ const AdminTransactionsPage: React.FC = () => {
         },
       },
       {
-        header: "Pembayaran",
+        header: "Payment",
         accessor: "paymentMethod",
         type: "text",
         render: (value, row) => {
@@ -600,9 +600,9 @@ const AdminTransactionsPage: React.FC = () => {
           const paid = String(row.paidStatus ?? "unpaid") === "paid";
 
           const methodLabel: Record<PaymentMethod, string> = {
-            bank_transfer: "Transfer Bank",
+            bank_transfer: "Bank transfer",
             qris: "QRIS",
-            credit_card: "Kartu Kredit",
+            credit_card: "Credit card",
             ewallet: "E-Wallet",
           };
 
@@ -615,21 +615,21 @@ const AdminTransactionsPage: React.FC = () => {
                     paid ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"
                   }`}
                 >
-                  {paid ? "Lunas" : "Belum"}
+                  {paid ? "Paid" : "Unpaid"}
                 </span>
               </div>
             </div>
           );
         },
       },
-      { header: "Tanggal", accessor: "date", type: "date" },
+      { header: "Date", accessor: "date", type: "date" },
     ],
     [openStatusId, updateTransactionStatus]
   );
 
   return (
-    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-44" rows={7} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-44" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
         <AdminSidebar
           active={activeMenu}
           onNavigate={(key) => {
@@ -670,16 +670,15 @@ const AdminTransactionsPage: React.FC = () => {
           }}
         />
 
-        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
           <div>
-            <AdminHeader title="Manajemen Transaksi" />
-            <p className="-mt-4 text-xs text-slate-500">Kelola semua transaksi dan pembayaran</p>
+            <AdminHeader title="Transaction Management" />
           </div>
 
           <div className="mt-4 flex-1 overflow-y-auto space-y-4 pr-1">
             <section className="rounded-2xl border border-slate-100 bg-white shadow-xs p-4">
               <AdminTableHeader
-                placeholder="Cari transaksi, pembeli, penyedia..."
+                placeholder="Search transactions, buyers, providers..."
                 onSearchChange={(value) => {
                   setSearch(value);
                   setCurrentPage(1);
@@ -698,14 +697,14 @@ const AdminTransactionsPage: React.FC = () => {
                       >
                         <span className="whitespace-nowrap">
                           {statusFilter === "all"
-                            ? "Semua Status"
+                            ? "All statuses"
                             : statusFilter === "paid"
-                              ? "Selesai"
+                              ? "Completed"
                               : statusFilter === "processing"
-                                ? "Dalam Proses"
+                                ? "Processing"
                                 : statusFilter === "refunded"
                                   ? "Refund"
-                                  : "Dibatalkan"}
+                                  : "Cancelled"}
                         </span>
                         <ChevronDown className="h-4 w-4 text-slate-500" />
                       </button>
@@ -714,11 +713,11 @@ const AdminTransactionsPage: React.FC = () => {
                         <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white shadow-lg p-2 z-30">
                           {(
                             [
-                              { label: "Semua Status", value: "all" as const },
-                              { label: "Selesai", value: "paid" as const },
-                              { label: "Dalam Proses", value: "processing" as const },
+                              { label: "All statuses", value: "all" as const },
+                              { label: "Completed", value: "paid" as const },
+                              { label: "Processing", value: "processing" as const },
                               { label: "Refund", value: "refunded" as const },
-                              { label: "Dibatalkan", value: "cancelled" as const },
+                              { label: "Cancelled", value: "cancelled" as const },
                             ] as const
                           ).map((opt) => (
                             <button
@@ -753,12 +752,12 @@ const AdminTransactionsPage: React.FC = () => {
                       >
                         <span className="whitespace-nowrap">
                           {rangeFilter === "7d"
-                            ? "7 Hari Terakhir"
+                            ? "Last 7 days"
                             : rangeFilter === "30d"
-                              ? "30 Hari Terakhir"
+                              ? "Last 30 days"
                               : rangeFilter === "this_month"
-                                ? "Bulan Ini"
-                                : "Semua Waktu"}
+                                ? "This month"
+                                : "All time"}
                         </span>
                         <ChevronDown className="h-4 w-4 text-slate-500" />
                       </button>
@@ -767,10 +766,10 @@ const AdminTransactionsPage: React.FC = () => {
                         <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white shadow-lg p-2 z-30">
                           {(
                             [
-                              { label: "7 Hari Terakhir", value: "7d" as const },
-                              { label: "30 Hari Terakhir", value: "30d" as const },
-                              { label: "Bulan Ini", value: "this_month" as const },
-                              { label: "Semua Waktu", value: "all" as const },
+                              { label: "Last 7 days", value: "7d" as const },
+                              { label: "Last 30 days", value: "30d" as const },
+                              { label: "This month", value: "this_month" as const },
+                              { label: "All time", value: "all" as const },
                             ] as const
                           ).map((opt) => (
                             <button

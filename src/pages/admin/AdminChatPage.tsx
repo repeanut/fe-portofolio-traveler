@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Send } from "lucide-react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
@@ -48,7 +48,7 @@ const dummyRecentMessages: MessagePreview[] = [
   {
     id: 4,
     name: "Revina Okta",
-    lastMessage: "kak tolong cek di menu landing page nya karena ada salah di penggunaan color pallete nya",
+    lastMessage: "Please check the landing page menu—there is an issue with the color palette usage.",
     avatarUrl:
       "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=200",
   },
@@ -58,25 +58,25 @@ const dummyThreadMessages: ChatThreadMessage[] = [
   {
     id: 1,
     role: "user",
-    content: "Halo kak, saya mau tanya tentang paket liburan di Bali.",
+    content: "Hi, I want to ask about the holiday packages in Bali.",
     timestamp: "10:21",
   },
   {
     id: 2,
     role: "admin",
-    content: "Halo, selamat siang! Untuk paket Bali yang mana ya kak?",
+    content: "Hi, good afternoon! Which Bali package are you referring to?",
     timestamp: "10:22",
   },
   {
     id: 3,
     role: "user",
-    content: "Yang 3 hari 2 malam kak, yang ada Ubud dan Nusa Penida.",
+    content: "The 3 days 2 nights package, the one that includes Ubud and Nusa Penida.",
     timestamp: "10:23",
   },
   {
     id: 4,
     role: "admin",
-    content: "Baik, saya kirim detail itinerary dan harganya di sini ya kak.",
+    content: "Sure, I’ll send the itinerary details and pricing here.",
     timestamp: "10:24",
   },
 ];
@@ -92,7 +92,7 @@ const initialMessagesByUser: MessagesByUserId = {
     {
       id: 2,
       role: "admin",
-      content: "Halo kak, boleh ceritain sedikit detailnya?",
+      content: "Hi, could you share a bit more detail?",
       timestamp: "09:51",
     },
   ],
@@ -109,13 +109,13 @@ const initialMessagesByUser: MessagesByUserId = {
     {
       id: 1,
       role: "user",
-      content: "kak tolong cek di menu landing page nya karena ada salah di penggunaan color pallete nya",
+      content: "Please check the landing page menu—there is an issue with the color palette usage.",
       timestamp: "08:30",
     },
     {
       id: 2,
       role: "admin",
-      content: "Baik kak, nanti saya cek ulang section landing page-nya ya.",
+      content: "Sure, I’ll review the landing page section again.",
       timestamp: "08:32",
     },
   ],
@@ -129,8 +129,23 @@ const AdminChatPage: React.FC = () => {
   );
   const [newMessage, setNewMessage] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    const apply = () => {
+      const nextMobile = mql.matches;
+      setIsMobile(nextMobile);
+      setMobileView(nextMobile ? "list" : "chat");
+    };
+
+    apply();
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
+  }, []);
 
   const activeUserData = dummyRecentMessages.find((u) => u.id === activeUser);
 
@@ -161,7 +176,7 @@ const AdminChatPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
       {/* Sidebar */}
       <AdminSidebar
         active={activeMenu}
@@ -193,7 +208,7 @@ const AdminChatPage: React.FC = () => {
       />
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
         {/* Header */}
         <AdminHeader title="Chat" />
 
@@ -214,7 +229,11 @@ const AdminChatPage: React.FC = () => {
         {/* Main chat card */}
         <div className="flex flex-1 min-h-0 gap-4">
           {/* Recent messages */}
-          <div className="flex w-72 flex-col rounded-3xl bg-white shadow-lg border border-slate-100 h-full">
+          <div
+            className={`flex flex-col rounded-3xl bg-white shadow-lg border border-slate-100 h-full min-w-0 ${
+              isMobile ? "w-full" : "w-72"
+            } ${isMobile && mobileView === "chat" ? "hidden" : "flex"}`}
+          >
             <div className="border-b border-slate-100 px-5 py-4 flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-800">
                 Recent Message
@@ -249,7 +268,10 @@ const AdminChatPage: React.FC = () => {
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => setActiveUser(item.id)}
+                    onClick={() => {
+                      setActiveUser(item.id);
+                      if (isMobile) setMobileView("chat");
+                    }}
                     className={`group flex w-full items-center px-4 py-2.5 text-left text-xs transition-colors ${
                       isActive
                         ? "bg-blue-500 text-white"
@@ -306,14 +328,29 @@ const AdminChatPage: React.FC = () => {
           </div>
 
           {/* Chat area */}
-          <div className="flex-1 rounded-3xl bg-white shadow-lg border border-slate-100 flex flex-col min-w-0 min-h-0">
+          <div
+            className={`flex-1 rounded-3xl bg-white shadow-lg border border-slate-100 flex flex-col min-w-0 min-h-0 ${
+              isMobile && mobileView === "list" ? "hidden" : "flex"
+            }`}
+          >
             {/* Chat header */}
-            <div className="border-b border-slate-100 px-6 py-4 text-sm font-semibold text-slate-800">
-              {activeUserData?.name ?? "Select a user"}
+            <div className="border-b border-slate-100 px-4 sm:px-6 py-4 text-sm font-semibold text-slate-800 flex items-center gap-3 min-w-0">
+              {isMobile ? (
+                <button
+                  type="button"
+                  onClick={() => setMobileView("list")}
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Back
+                </button>
+              ) : null}
+              <span className="min-w-0 flex-1 truncate">
+                {activeUserData?.name ?? "Select a user"}
+              </span>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 min-h-0 space-y-3 overflow-y-auto px-6 py-4 text-sm">
+            <div className="flex-1 min-h-0 space-y-3 overflow-y-auto px-4 sm:px-6 py-4 text-sm">
               {currentThread.map((msg) => (
                 <ChatMessage
                   key={msg.id}

@@ -111,7 +111,7 @@ const AdminAboutPage: React.FC = () => {
         name: "description",
         label: "Description",
         type: "textarea",
-        placeholder: "Masukkan deskripsi tentang kamu...",
+        placeholder: "Enter a description about you...",
       },
       {
         name: "experience",
@@ -123,8 +123,8 @@ const AdminAboutPage: React.FC = () => {
   );
 
   return (
-    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-28" rows={6} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-24" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
         <AdminSidebar
           active={activeMenu}
           landingActiveKey="about"
@@ -172,7 +172,7 @@ const AdminAboutPage: React.FC = () => {
           }}
         />
 
-        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
           <AdminHeader title="About Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -180,7 +180,7 @@ const AdminAboutPage: React.FC = () => {
               <AdminTableHeader
                 onAddClick={() => {
                   if (aboutData.length >= 1) {
-                    toast.warning("Batas maksimal", "Data About hanya boleh 1 item");
+                    toast.warning("Limit reached", "About can only have 1 item");
                     return;
                   }
                   setEditingId(null);
@@ -206,9 +206,9 @@ const AdminAboutPage: React.FC = () => {
                   if (typeof id === "number") {
                     try {
                       setAboutData((prev) => prev.filter((item) => item.id !== id));
-                      toast.success("Berhasil", "Data About berhasil dihapus");
+                      toast.success("Success", "About deleted successfully");
                     } catch {
-                      toast.error("Gagal", "Data About gagal dihapus");
+                      toast.error("Error", "Failed to delete About");
                     }
                   }
                 }}
@@ -220,7 +220,7 @@ const AdminAboutPage: React.FC = () => {
 
       <AdminModal
         isOpen={isModalOpen}
-        title={editingId ? "Edit About" : "Tambah About"}
+        title={editingId ? "Edit About" : "Add About"}
         fields={modalFields}
         initialData={
           editingId != null
@@ -263,11 +263,11 @@ const AdminAboutPage: React.FC = () => {
                     : item
                 )
               );
-              toast.success("Berhasil", "Data About berhasil diperbarui");
+              toast.success("Success", "About updated successfully");
             } else {
               setAboutData((prev) => {
                 if (prev.length >= 1) {
-                  toast.warning("Batas maksimal", "Data About hanya boleh 1 item");
+                  toast.warning("Limit reached", "About can only have 1 item");
                   return prev;
                 }
                 const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -281,13 +281,13 @@ const AdminAboutPage: React.FC = () => {
                   },
                 ];
               });
-              toast.success("Berhasil", "Data About berhasil ditambahkan");
+              toast.success("Success", "About added successfully");
             }
 
             setIsModalOpen(false);
             setEditingId(null);
           } catch {
-            toast.error("Gagal", "Perubahan data About gagal disimpan");
+            toast.error("Error", "Failed to save About changes");
           }
         }}
       />

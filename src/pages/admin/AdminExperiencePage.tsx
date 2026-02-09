@@ -33,8 +33,8 @@ const AdminExperiencePage: React.FC = () => {
       logoAlt: "Welocalize",
       title: "Ads Quality Rater",
       company: "Welocalize",
-      period: "Mar 2023 hingga Mei 2025",
-      duration: "2 thn 3 bln",
+      period: "Mar 2023 to May 2025",
+      duration: "2 yrs 3 mos",
     },
     {
       id: 2,
@@ -42,8 +42,8 @@ const AdminExperiencePage: React.FC = () => {
       logoAlt: "Gini Talent",
       title: "Search Quality Improvement Lead",
       company: "Gini Talent",
-      period: "Jun 2025 hingga Saat ini",
-      duration: "8 bln",
+      period: "Jun 2025 to Present",
+      duration: "8 mos",
     },
   ]);
 
@@ -81,36 +81,36 @@ const AdminExperiencePage: React.FC = () => {
         name: "title",
         label: "Position / Title",
         type: "text",
-        placeholder: "Misal: Ads Quality Rater",
+        placeholder: "e.g. Ads Quality Rater",
       },
       {
         name: "startDate",
-        label: "Tanggal mulai*",
+        label: "Start date*",
         type: "monthYear",
       },
       {
         name: "endDate",
-        label: "Tanggal berakhir*",
+        label: "End date*",
         type: "monthYear",
       },
       {
         name: "duration",
-        label: "Durasi",
+        label: "Duration",
         type: "text",
-        placeholder: "Misal: 2 thn 3 bln",
+        placeholder: "e.g. 2 yrs 3 mos",
       },
       {
         name: "company",
         label: "Company",
         type: "text",
-        placeholder: "Nama perusahaan",
+        placeholder: "Company name",
       },
     ],
     []
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
       <AdminSidebar
         active={activeMenu}
         landingActiveKey="experience"
@@ -158,7 +158,7 @@ const AdminExperiencePage: React.FC = () => {
         }}
       />
 
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
         <AdminHeader title="Experience Management" />
 
         <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -188,9 +188,9 @@ const AdminExperiencePage: React.FC = () => {
                 if (typeof id === "number") {
                   try {
                     setExperienceData((prev) => prev.filter((item) => item.id !== id));
-                    toast.success("Berhasil", "Experience berhasil dihapus");
+                    toast.success("Success", "Experience deleted successfully");
                   } catch {
-                    toast.error("Gagal", "Experience gagal dihapus");
+                    toast.error("Error", "Failed to delete experience");
                   }
                 }
               }}
@@ -201,7 +201,7 @@ const AdminExperiencePage: React.FC = () => {
 
       <AdminModal
         isOpen={isModalOpen}
-        title={editingId ? "Edit Experience" : "Tambah Experience"}
+        title={editingId ? "Edit Experience" : "Add Experience"}
         fields={modalFields}
         initialData={
           editingId != null
@@ -222,7 +222,7 @@ const AdminExperiencePage: React.FC = () => {
           const endDate = (data.endDate as string) || "";
           const period =
             startDate && endDate
-              ? `${startDate} hingga ${endDate}`
+              ? `${startDate} to ${endDate}`
               : startDate || endDate;
           const duration = (data.duration as string) || "";
           const company = (data.company as string) || "";
@@ -243,7 +243,7 @@ const AdminExperiencePage: React.FC = () => {
                     : item
                 )
               );
-              toast.success("Berhasil", "Experience berhasil diperbarui");
+              toast.success("Success", "Experience updated successfully");
             } else {
               setExperienceData((prev) => {
                 const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -260,13 +260,13 @@ const AdminExperiencePage: React.FC = () => {
                   },
                 ];
               });
-              toast.success("Berhasil", "Experience berhasil ditambahkan");
+              toast.success("Success", "Experience added successfully");
             }
 
             setIsModalOpen(false);
             setEditingId(null);
           } catch {
-            toast.error("Gagal", "Perubahan experience gagal disimpan");
+            toast.error("Error", "Failed to save experience changes");
           }
         }}
       />

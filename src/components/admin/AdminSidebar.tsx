@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -56,7 +56,21 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLandingOpen, setIsLandingOpen] = useState(active === "landing");
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    const apply = () => {
+      const nextMobile = mql.matches;
+      setIsMobile(nextMobile);
+      setMobileOpen(!nextMobile);
+    };
+    apply();
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
+  }, []);
 
   const handleLogout = () => {
     try {
@@ -76,16 +90,40 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   };
 
   return (
-    <aside
-      className={`relative h-screen bg-white border-r border-slate-100 flex flex-col py-6 transition-all duration-300 ease-in-out ${
-        isCollapsed ? "w-16" : "w-60"
-      }`}
-    >
+    <>
+      {isMobile && !mobileOpen ? (
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="fixed left-4 top-4 z-[1001] inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-lg"
+          aria-label="Open admin menu"
+        >
+          <span className="text-lg leading-none">≡</span>
+        </button>
+      ) : null}
+
+      {isMobile && mobileOpen ? (
+        <div
+          className="fixed inset-0 z-[1000] bg-slate-900/40"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      ) : null}
+
+      <aside
+        className={`bg-white border-r border-slate-100 flex flex-col py-6 transition-all duration-300 ease-in-out ${
+          isMobile
+            ? `fixed inset-y-0 left-0 z-[1001] w-72 transform ${
+                mobileOpen ? "translate-x-0" : "-translate-x-full"
+              }`
+            : `relative h-screen ${isCollapsed ? "w-16" : "w-60"}`
+        }`}
+      >
       {/* Toggle button */}
       <button
         type="button"
         onClick={() => setIsCollapsed((prev) => !prev)}
-        className="absolute -right-3 top-14 z-10 flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-md transition-colors border border-slate-200 bg-white"
+        className="absolute -right-3 top-14 z-10 hidden md:flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-md transition-colors border border-slate-200 bg-white"
       >
         <ChevronLeft
           className={`h-4 w-4 transform transition-transform duration-300 text-slate-600 ${
@@ -93,6 +131,17 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           }`}
         />
       </button>
+
+      {isMobile ? (
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm"
+          aria-label="Close admin menu"
+        >
+          <span className="text-lg leading-none">×</span>
+        </button>
+      ) : null}
 
       {/* Header Section */}
       <div className="px-3 flex justify-center text-center mx-auto">
@@ -289,6 +338,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
       </div>
     </aside>
+    </>
   );
 };
 

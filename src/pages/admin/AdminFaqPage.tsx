@@ -29,9 +29,9 @@ const AdminFaqPage: React.FC = () => {
   const [faqData, setFaqData] = useState<FaqItem[]>([
     {
       id: 1,
-      question: "Apa saja layanan copywriting yang ditawarkan?",
+      question: "What copywriting services do you offer?",
       answer:
-        "Saya menawarkan berbagai layanan copywriting termasuk video script, brand storytelling, email campaigns, content marketing, social media copy, product description, landing page copy, ads copy, dan SEO content.",
+        "I offer a variety of copywriting services including video scripts, brand storytelling, email campaigns, content marketing, social media copy, product descriptions, landing page copy, ad copy, and SEO content.",
     },
   ]);
 
@@ -50,13 +50,13 @@ const AdminFaqPage: React.FC = () => {
         name: "question",
         label: "Question",
         type: "text",
-        placeholder: "Tulis pertanyaan di sini...",
+        placeholder: "Write your question here...",
       },
       {
         name: "answer",
         label: "Answer",
         type: "textarea",
-        placeholder: "Tulis jawaban di sini...",
+        placeholder: "Write your answer here...",
       },
     ],
     []
@@ -64,7 +64,7 @@ const AdminFaqPage: React.FC = () => {
 
   return (
     <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-24" rows={6} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
         <AdminSidebar
           active={activeMenu}
           landingActiveKey="faq"
@@ -112,7 +112,7 @@ const AdminFaqPage: React.FC = () => {
           }}
         />
 
-        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
           <AdminHeader title="FAQ Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -120,7 +120,7 @@ const AdminFaqPage: React.FC = () => {
               <AdminTableHeader
                 onAddClick={() => {
                   if (faqData.length >= MAX_FAQ) {
-                    toast.warning("Batas maksimal", `FAQ maksimal ${MAX_FAQ} item`);
+                    toast.warning("Limit reached", `FAQ can have up to ${MAX_FAQ} items`);
                     return;
                   }
                   setEditingId(null);
@@ -146,9 +146,9 @@ const AdminFaqPage: React.FC = () => {
                   if (typeof id === "number") {
                     try {
                       setFaqData((prev) => prev.filter((item) => item.id !== id));
-                      toast.success("Berhasil", "FAQ berhasil dihapus");
+                      toast.success("Success", "FAQ deleted successfully");
                     } catch {
-                      toast.error("Gagal", "FAQ gagal dihapus");
+                      toast.error("Error", "Failed to delete FAQ");
                     }
                   }
                 }}
@@ -160,7 +160,7 @@ const AdminFaqPage: React.FC = () => {
 
       <AdminModal
         isOpen={isModalOpen}
-        title={editingId ? "Edit FAQ" : "Tambah FAQ"}
+        title={editingId ? "Edit FAQ" : "Add FAQ"}
         fields={modalFields}
         initialData={
           editingId != null
@@ -190,11 +190,11 @@ const AdminFaqPage: React.FC = () => {
                     : item
                 )
               );
-              toast.success("Berhasil", "FAQ berhasil diperbarui");
+              toast.success("Success", "FAQ updated successfully");
             } else {
               setFaqData((prev) => {
                 if (prev.length >= MAX_FAQ) {
-                  toast.warning("Batas maksimal", `FAQ maksimal ${MAX_FAQ} item`);
+                  toast.warning("Limit reached", `FAQ can have up to ${MAX_FAQ} items`);
                   return prev;
                 }
                 const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -207,13 +207,13 @@ const AdminFaqPage: React.FC = () => {
                   },
                 ];
               });
-              toast.success("Berhasil", "FAQ berhasil ditambahkan");
+              toast.success("Success", "FAQ added successfully");
             }
 
             setIsModalOpen(false);
             setEditingId(null);
           } catch {
-            toast.error("Gagal", "Perubahan FAQ gagal disimpan");
+            toast.error("Error", "Failed to save FAQ changes");
           }
         }}
       />

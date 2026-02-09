@@ -17,8 +17,8 @@ const experiences: Experience[] = [
         logoAlt: 'Welocalize',
         title: 'Ads Quality Rater',
         company: 'Welocalize',
-        period: 'Mar 2023 hingga Mei 2025',
-        duration: '2 thn 3 bln'
+        period: 'Mar 2023 to May 2025',
+        duration: '2 yrs 3 mos'
     },
     {
         id: 2,
@@ -26,8 +26,8 @@ const experiences: Experience[] = [
         logoAlt: 'Gini Talent',
         title: 'Search Quality Improvement Lead',
         company: 'Gini Talent',
-        period: 'Jun 2025 hingga Saat ini',
-        duration: '8 bln'
+        period: 'Jun 2025 to Present',
+        duration: '8 mos'
     },
     {
         id: 3,
@@ -35,8 +35,8 @@ const experiences: Experience[] = [
         logoAlt: 'Self Employed',
         title: 'Copywriter',
         company: 'Self Employed',
-        period: 'Jan 2020 hingga Saat ini',
-        duration: '6 thn 1 bln'
+        period: 'Jan 2020 to Present',
+        duration: '6 yrs 1 mo'
     }
 ]
 
