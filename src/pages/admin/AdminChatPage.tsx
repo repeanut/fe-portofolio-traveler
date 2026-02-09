@@ -533,7 +533,7 @@ const [isMobile, setIsMobile] = useState(false);
               </div>
             )}
             <div className="flex-1 overflow-y-auto py-1">
-{dummyRecentMessages
+                {dummyRecentMessages
                 .filter((item) => {
                   const query = searchQuery.trim().toLowerCase();
                   if (!query) return true;

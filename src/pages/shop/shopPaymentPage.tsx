@@ -8,8 +8,6 @@ import OrderDetails from '../../components/payments/OrderDetails';
 import MidtransPaymentOptions from '../../components/payments/MidtransPaymentOptions';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
-import paymentService from '../../services/payment.service';
-import type { PaymentRequest } from '../../services/payment.service';
 
 declare global {
     interface Window {
@@ -71,7 +69,7 @@ const ShopPaymentPage: React.FC = () => {
 
     const total = subtotal + serviceFee;
 
-    const handleMidtransSuccess = (response: unknown) => {
+    const handleMidtransSuccess = () => {
         navigate('/shop/payment/payment-success', {
             state: {
                 subtotal,
@@ -86,8 +84,8 @@ const ShopPaymentPage: React.FC = () => {
         });
     };
 
-    const handleMidtransError = (error: unknown) => {
-        console.error('Midtrans payment error:', error);
+    const handleMidtransError = () => {
+        console.error('Midtrans payment error');
         navigate('/shop/payment/payment-failed', {
             state: {
                 subtotal,
@@ -99,12 +97,12 @@ const ShopPaymentPage: React.FC = () => {
                 quantity,
                 paymentMethodLabel: 'Midtrans',
                 paymentStatus: 'failed',
-                error: (error as Error)?.message || 'Payment failed'
+                error: 'Payment failed'
             },
         });
     };
 
-    const handleMidtransPending = (response: unknown) => {
+    const handleMidtransPending = () => {
         navigate('/shop/payment/payment-pending', {
             state: {
                 subtotal,
@@ -115,9 +113,7 @@ const ShopPaymentPage: React.FC = () => {
                 deliveryLabel: orderPackage.deliveryLabel,
                 quantity,
                 paymentMethodLabel: 'Midtrans',
-                paymentStatus: 'pending',
-                transactionId: (response as any).transaction_id,
-                paymentId: (response as any).data?.transaction_id
+                paymentStatus: 'pending'
             },
         });
     };
