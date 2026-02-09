@@ -540,9 +540,8 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        ) : null}
-                    </div>
+                        </>
+                    ) : null}
                 </div>
             </div>
         </section>
