@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import NavbarShop from '../../components/ui/navbarShop';
 import FooterSection from '../../components/ui/footer';
 import type { ShopItem } from '../../components/ui/shopCards';
 import type { OrderPackage } from '../../components/order/sidebarOrder';
 import OrderDetails from '../../components/payments/OrderDetails';
+<<<<<<< Updated upstream
 import TotalPayment from '../../components/payments/TotalPayment';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
@@ -26,6 +27,10 @@ declare global {
         };
     }
 }
+import MidtransPaymentOptions from '../../components/payments/MidtransPaymentOptions';
+import InitialShimmer from '../../components/ui/InitialShimmer';
+import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
+import paymentService from '../../services/payment.service';
 
 interface PaymentLocationState {
     item?: ShopItem;
@@ -36,6 +41,27 @@ interface PaymentLocationState {
 const ShopPaymentPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+
+    // Load Midtrans Snap script
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+        script.setAttribute('data-client-key', import.meta.env.VITE_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-YOUR_CLIENT_KEY');
+        script.async = true;
+        script.onload = () => setIsScriptLoaded(true);
+        script.onerror = () => {
+            console.error('Failed to load Midtrans Snap script');
+        };
+        document.body.appendChild(script);
+
+        return () => {
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        };
+    }, []);
+
     const state = (location.state as PaymentLocationState | null) ?? null;
 
     const fallbackItem: ShopItem = {
@@ -139,6 +165,57 @@ const ShopPaymentPage: React.FC = () => {
         }
     };
 
+    const handleMidtransSuccess = (response: any) => {
+        navigate('/shop/payment/payment-success', {
+            state: {
+                subtotal,
+                serviceFee,
+                total,
+                itemTitle: item.title,
+                orderPackageTitle: orderPackage.title,
+                deliveryLabel: orderPackage.deliveryLabel,
+                quantity,
+                paymentMethodLabel: 'Midtrans',
+            },
+        });
+    };
+
+    const handleMidtransError = (error: any) => {
+        console.error('Midtrans payment error:', error);
+        navigate('/shop/payment/payment-failed', {
+            state: {
+                subtotal,
+                serviceFee,
+                total,
+                itemTitle: item.title,
+                orderPackageTitle: orderPackage.title,
+                deliveryLabel: orderPackage.deliveryLabel,
+                quantity,
+                paymentMethodLabel: 'Midtrans',
+                paymentStatus: 'failed',
+                error: error?.message || 'Payment failed'
+            },
+        });
+    };
+
+    const handleMidtransPending = (response: any) => {
+        navigate('/shop/payment/payment-pending', {
+            state: {
+                subtotal,
+                serviceFee,
+                total,
+                itemTitle: item.title,
+                orderPackageTitle: orderPackage.title,
+                deliveryLabel: orderPackage.deliveryLabel,
+                quantity,
+                paymentMethodLabel: 'Midtrans',
+                paymentStatus: 'pending',
+                transactionId: response.transaction_id,
+                paymentId: response.data?.transaction_id
+            },
+        });
+    };
+
     return (
         <InitialShimmer delayMs={850} skeleton={<ShopPaymentPageSkeleton />}>
             <div className="min-h-screen flex flex-col bg-white overflow-x-clip">
@@ -147,70 +224,41 @@ const ShopPaymentPage: React.FC = () => {
                 <main className="flex-1">
                     <section className="mx-auto w-full max-w-6xl px-4 md:px-0 py-8 md:py-10">
 
-                        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start max-w-full">
-                            <div className="space-y-6 min-w-0 w-full">
+<div className="flex flex-col lg:flex-row gap-5">
+                            {/* Left Column: Order Details */}
+                            <div className="w-full lg:w-1/2">
                                 <OrderDetails
                                     item={item}
                                     orderPackage={orderPackage}
                                     quantity={quantity}
                                     subtotal={subtotal}
                                 />
-
-                                <section className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5">
-                                    <h2 className="text-sm font-semibold text-gray-900">What happens next</h2>
-                                    <ol className="mt-3 space-y-2 text-xs text-gray-600">
-                                        <li className="flex gap-2">
-                                            <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">1</span>
-                                            <span>Click <span className="font-semibold text-gray-900">Confirm & Pay</span> to open the Midtrans popup.</span>
-                                        </li>
-                                        <li className="flex gap-2">
-                                            <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">2</span>
-                                            <span>Choose your payment method inside Midtrans and complete the payment.</span>
-                                        </li>
-                                        <li className="flex gap-2">
-                                            <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">3</span>
-                                            <span>After success, you'll see the payment success page and your order is confirmed.</span>
-                                        </li>
-                                    </ol>
-                                </section>
-
-                                <section className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5">
-                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                                        <div className="min-w-0">
-                                            <h2 className="text-sm font-semibold text-gray-900">Need help?</h2>
-                                            <p className="mt-1 text-xs text-gray-600">
-                                                If you have questions about your order or payment, chat with our admin.
-                                            </p>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => navigate('/ai-chatbot')}
-                                            className="w-full sm:w-auto shrink-0 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-                                        >
-                                            Chat admin
-                                        </button>
-                                    </div>
-                                    <div className="mt-3 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 text-[11px] text-gray-600">
-                                        Payment updates will also appear in your notifications.
-                                    </div>
-                                </section>
                             </div>
 
-                            <aside className="space-y-4 lg:sticky lg:top-24 min-w-0 w-full">
-                                <TotalPayment
-                                    subtotal={subtotal}
-                                    serviceFee={serviceFee}
-                                    total={total}
-                                    itemTitle={item.title}
-                                    orderPackageTitle={orderPackage.title}
-                                    deliveryLabel={orderPackage.deliveryLabel}
-                                    quantity={quantity}
-                                    paymentMethodLabel={'Midtrans'}
-                                    onPayment={handlePayment}
-                                    isProcessing={isProcessing}
-                                    canPay
+                            {/* Right Column: Midtrans Payment Options */}
+                            <div className="w-full lg:w-1/2">
+                                <MidtransPaymentOptions
+                                    amount={total}
+                                    customerDetails={{
+                                        firstName: 'User',
+                                        lastName: 'Name',
+                                        email: 'user@example.com',
+                                        phone: '+628123456789'
+                                    }}
+                                    itemDetails={[
+                                        {
+                                            id: String(item.id || 'item-1'),
+                                            price: unitPrice,
+                                            quantity: quantity,
+                                            name: `${item.title} - ${orderPackage.title}`,
+                                            category: 'travel-package'
+                                        }
+                                    ]}
+                                    onSuccess={handleMidtransSuccess}
+                                    onError={handleMidtransError}
+                                    onPending={handleMidtransPending}
                                 />
-                            </aside>
+                            </div>
                         </div>
                     </section>
                 </main>

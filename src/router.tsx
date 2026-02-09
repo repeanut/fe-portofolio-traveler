@@ -9,6 +9,9 @@ import ShopDetailPage from './pages/shop/shopDetailPage';
 import ShopPaymentPage from './pages/shop/shopPaymentPage';
 import PaymentPendingPage from './pages/shop/paymentPendingPage';
 import SuccessPayment from "./components/payments/SuccessPayment";
+import PaymentSuccessPage from './pages/payment/PaymentSuccessPage';
+import PaymentErrorPage from './pages/payment/PaymentErrorPage';
+import PaymentPendingPageNew from './pages/payment/PaymentPendingPage';
 import UserProfilePage from "./pages/users/UserProfilePage";
 import BlogPage from "./pages/blog/BlogPage";
 import BlogDetailPage from "./pages/blog/BlogDetailPage";
@@ -89,6 +92,11 @@ export const Router = () => {
                 <Route path="/shop/payment" element={<ShopPaymentPage />} />
                 <Route path="/shop/payment/pending" element={<PaymentPendingPage />} />
                 <Route path="/shop/payment/payment-success" element={<SuccessPayment />} />
+                
+                {/* New Payment Pages */}
+                <Route path="/payment/success" element={<PaymentSuccessPage />} />
+                <Route path="/payment/error" element={<PaymentErrorPage />} />
+                <Route path="/payment/pending" element={<PaymentPendingPageNew />} />
                 <Route path="/ai-chatbot" element={<AIChatbotPage />} />
                 <Route path="/users/AIchatbot" element={<AIChatbotPage />} />
                 <Route path="/ai-chatbot-demo" element={<AIChatbotDemo />} />

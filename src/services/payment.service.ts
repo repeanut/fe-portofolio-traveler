@@ -98,14 +98,36 @@ class PaymentService {
 
     async createMidtransPayment(paymentData: MidtransPaymentRequest): Promise<CreateMidtransPaymentResponse> {
         try {
+            console.log('Creating Midtrans payment with data:', paymentData);
+            console.log('API URL:', `${API_BASE_URL}/payments/create`);
+            
+            const headers = this.getAuthHeaders();
+            console.log('Request headers:', headers);
+            
             const response = await axios.post(
                 `${API_BASE_URL}/payments/create`,
                 paymentData,
-                { headers: this.getAuthHeaders() }
+                { headers }
             );
-            return response.data.data;
+            
+            console.log('Payment creation response:', response.data);
+            
+            // Handle different response formats
+            if (response.data.success && response.data.data) {
+                return response.data.data;
+            } else if (response.data.token) {
+                return response.data;
+            } else {
+                throw new Error('Invalid response format from payment API');
+            }
         } catch (error: unknown) {
             console.error('Create Midtrans payment error:', error);
+            
+            if ((error as any).response?.status === 401) {
+                throw new Error('Authentication required. Please login first.');
+            }
+            
+            console.error('Error response:', (error as any).response?.data);
             throw new Error((error as any).response?.data?.message || 'Failed to create Midtrans payment');
         }
     }

@@ -41,15 +41,43 @@ const experiences: Experience[] = [
 ]
 
 const ExperienceSection: React.FC = () => {
+    const [experiences, setExperiences] = useState<Experience[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [activeIndex, setActiveIndex] = useState(0)
     const [isAnimating, setIsAnimating] = useState(false)
 
+    const fetchExperiences = async () => {
+        try {
+            setLoading(true)
+            const response = await fetch('/api/experiences')
+            const result = await response.json()
+
+            if (result.success) {
+                setExperiences(result.data.experiences)
+                setError(null)
+            } else {
+                setError(result.message || 'Failed to fetch experiences')
+            }
+        } catch (err) {
+            setError('Error connecting to backend API')
+            console.error('Error fetching experiences:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchExperiences()
+    }, [])
+
     const getVisibleCards = useCallback(() => {
         const total = experiences.length
+        if (total === 0) return { prev: 0, active: 0, next: 0 }
         const prev = (activeIndex - 1 + total) % total
         const next = (activeIndex + 1) % total
         return { prev, active: activeIndex, next }
-    }, [activeIndex])
+    }, [activeIndex, experiences.length])
 
     const handleCardClick = (experienceId: number) => {
         const index = experiences.findIndex(exp => exp.id === experienceId)
@@ -62,7 +90,7 @@ const ExperienceSection: React.FC = () => {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            if (!isAnimating) {
+            if (!isAnimating && experiences.length > 0) {
                 setIsAnimating(true)
                 setActiveIndex((prev) => (prev + 1) % experiences.length)
                 setTimeout(() => setIsAnimating(false), 500)
@@ -70,7 +98,7 @@ const ExperienceSection: React.FC = () => {
         }, 8000)
 
         return () => clearInterval(interval)
-    }, [isAnimating])
+    }, [isAnimating, experiences.length])
 
     const handleDotClick = (index: number) => {
         if (!isAnimating && index !== activeIndex) {
@@ -177,58 +205,89 @@ const ExperienceSection: React.FC = () => {
 
                 {/* Mobile: Carousel card */}
                 <div className="md:hidden ">
-                    <div className="mx-auto max-w-sm rounded-2xl bg-white shadow-lg border border-gray-100 overflow-visible relative">
-                        <div className="absolute left-1/2 -translate-x-1/2 -top-10 w-20 h-20 rounded-full flex items-center justify-center shadow-md bg-white">
-                            <img
-                                src={experiences[activeIndex].logo}
-                                alt={experiences[activeIndex].logoAlt}
-                                className="w-20 h-20 rounded-full object-contain"
-                            />
+                    {loading ? (
+                        <div className="mx-auto max-w-sm rounded-2xl bg-white shadow-lg border border-gray-100 overflow-visible relative">
+                            <div className="flex justify-center items-center h-64">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
                         </div>
+                    ) : error ? (
+                        <div className="mx-auto max-w-sm rounded-2xl bg-red-50 border border-red-200 p-6">
+                            <p className="text-red-700 text-center">{error}</p>
+                        </div>
+                    ) : experiences.length === 0 ? (
+                        <div className="mx-auto max-w-sm rounded-2xl bg-gray-50 border border-gray-200 p-6">
+                            <p className="text-gray-500 text-center">No experiences available</p>
+                        </div>
+                    ) : (
+                        <div className="mx-auto max-w-sm rounded-2xl bg-white shadow-lg border border-gray-100 overflow-visible relative">
+                            <div className="absolute left-1/2 -translate-x-1/2 -top-10 w-20 h-20 rounded-full flex items-center justify-center shadow-md bg-white">
+                                <img
+                                    src={experiences[activeIndex].logo}
+                                    alt={experiences[activeIndex].logoAlt}
+                                    className="w-20 h-20 rounded-full object-contain"
+                                />
+                            </div>
 
-                        <div className="pt-16 pb-6 px-6">
-                            <h3 className="font-semibold text-slate-800 text-center mb-2 text-lg">
-                                {experiences[activeIndex].title}
-                            </h3>
-                            <p className="text-gray-400 text-center mb-6 text-sm">
-                                {experiences[activeIndex].period} · {experiences[activeIndex].duration}
-                            </p>
-                            <button className="w-full py-3 rounded-full text-white font-semibold bg-sky-500 hover:bg-sky-600 transition-colors text-sm">
-                                {experiences[activeIndex].company}
-                            </button>
+                            <div className="pt-16 pb-6 px-6">
+                                <h3 className="font-semibold text-slate-800 text-center mb-2 text-lg">
+                                    {experiences[activeIndex].title}
+                                </h3>
+                                <p className="text-gray-400 text-center mb-6 text-sm">
+                                    {experiences[activeIndex].period} · {experiences[activeIndex].duration}
+                                </p>
+                                <button className="w-full py-3 rounded-full text-white font-semibold bg-sky-500 hover:bg-sky-600 transition-colors text-sm">
+                                    {experiences[activeIndex].company}
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Desktop: Carousel Container */}
                 <div className="hidden md:flex relative h-80 md:h-96 items-center justify-center overflow-hidden">
-                    {/* Cards */}
-                    <div className="relative w-full h-full flex items-center justify-center">
-                        {renderCard(experiences[prev], 'left')}
-                        {renderCard(experiences[active], 'center')}
-                        {renderCard(experiences[next], 'right')}
-                    </div>
+                    {loading ? (
+                        <div className="flex justify-center items-center h-full">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                    ) : error ? (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                            <p className="text-red-700 text-center">{error}</p>
+                        </div>
+                    ) : experiences.length === 0 ? (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                            <p className="text-gray-500 text-center">No experiences available</p>
+                        </div>
+                    ) : (
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            {renderCard(experiences[prev], 'left')}
+                            {renderCard(experiences[active], 'center')}
+                            {renderCard(experiences[next], 'right')}
+                        </div>
+                    )}
                 </div>
 
                 {/* Pagination Dots */}
-                <div className="flex justify-center items-center gap-1.5 mt-8">
-                    {experiences.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => handleDotClick(index)}
-                            className="rounded-full transition-all duration-300 focus:outline-none p-0 border-none"
-                            style={{
-                                width: index === activeIndex ? '12px' : '10px',
-                                height: index === activeIndex ? '12px' : '10px',
-                                padding: 0,
-                                border: 'none',
-                                backgroundColor: index === activeIndex ? '#22252aff' : '#d4d4d8',
-                                opacity: index === activeIndex ? 0.9 : 0.7,
-                            }}
-                            aria-label={`Go to slide ${index + 1}`}
-                        />
-                    ))}
-                </div>
+                {!loading && !error && experiences.length > 0 && (
+                    <div className="flex justify-center items-center gap-1.5 mt-8">
+                        {experiences.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => handleDotClick(index)}
+                                className="rounded-full transition-all duration-300 focus:outline-none p-0 border-none"
+                                style={{
+                                    width: index === activeIndex ? '12px' : '10px',
+                                    height: index === activeIndex ? '12px' : '10px',
+                                    padding: 0,
+                                    border: 'none',
+                                    backgroundColor: index === activeIndex ? '#22252aff' : '#d4d4d8',
+                                    opacity: index === activeIndex ? 0.9 : 0.7,
+                                }}
+                                aria-label={`Go to slide ${index + 1}`}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* CSS for smooth animations */}

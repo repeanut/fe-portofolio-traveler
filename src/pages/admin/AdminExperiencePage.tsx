@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
@@ -26,29 +26,36 @@ const AdminExperiencePage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useAdminToast();
 
-  const [experienceData, setExperienceData] = useState<ExperienceItem[]>([
-    {
-      id: 1,
-      logo: "/welocalize_logo.jpeg",
-      logoAlt: "Welocalize",
-      title: "Ads Quality Rater",
-      company: "Welocalize",
-      period: "Mar 2023 to May 2025",
-      duration: "2 yrs 3 mos",
-    },
-    {
-      id: 2,
-      logo: "/ginitalent.jpeg",
-      logoAlt: "Gini Talent",
-      title: "Search Quality Improvement Lead",
-      company: "Gini Talent",
-      period: "Jun 2025 to Present",
-      duration: "8 mos",
-    },
-  ]);
+  const [experienceData, setExperienceData] = useState<ExperienceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  const fetchExperiences = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/experiences");
+      const result = await response.json();
+
+      if (result.success) {
+        setExperienceData(result.data.experiences);
+        setError(null);
+      } else {
+        setError(result.message || "Failed to fetch experiences");
+      }
+    } catch (err) {
+      setError("Error connecting to backend API");
+      console.error("Error fetching experiences:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExperiences();
+  }, []);
 
   const columns: Column[] = [
     { header: "Logo", accessor: "logo", type: "image" },
@@ -170,31 +177,53 @@ const AdminExperiencePage: React.FC = () => {
               }}
             />
 
-            <AdminTable
-              columns={columns}
-              data={experienceData}
-              currentPage={1}
-              itemsPerPage={5}
-              totalPages={1}
-              onPageChange={() => {}}
-              onItemsPerPageChange={() => {}}
-              onEdit={(id) => {
-                if (typeof id === "number") {
-                  setEditingId(id);
-                  setIsModalOpen(true);
-                }
-              }}
-              onDelete={(id) => {
-                if (typeof id === "number") {
-                  try {
-                    setExperienceData((prev) => prev.filter((item) => item.id !== id));
-                    toast.success("Success", "Experience deleted successfully");
-                  } catch {
-                    toast.error("Error", "Failed to delete experience");
+{error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                {error}
+              </div>
+            )}
+            
+            {loading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <AdminTable
+                columns={columns}
+                data={experienceData}
+                currentPage={1}
+                itemsPerPage={5}
+                totalPages={1}
+                onPageChange={() => {}}
+                onItemsPerPageChange={() => {}}
+                onEdit={(id) => {
+                  if (typeof id === "number") {
+                    setEditingId(id);
+                    setIsModalOpen(true);
                   }
-                }
-              }}
-            />
+                }}
+                onDelete={async (id) => {
+                  if (typeof id === "number") {
+                    try {
+                      const response = await fetch(`/api/experiences/${id}`, {
+                        method: 'DELETE'
+                      });
+                      
+                      const result = await response.json();
+                      
+                      if (result.success) {
+                        await fetchExperiences();
+                        toast.success("Berhasil", "Experience berhasil dihapus");
+                      } else {
+                        toast.error("Gagal", result.message || "Experience gagal dihapus");
+                      }
+                    } catch {
+                      toast.error("Gagal", "Experience gagal dihapus");
+                    }
+                  }
+                }}
+              />
+            )}
           </section>
         </div>
       </div>
@@ -214,7 +243,7 @@ const AdminExperiencePage: React.FC = () => {
           setIsModalOpen(false);
           setEditingId(null);
         }}
-        onSubmit={(data) => {
+        onSubmit={async (data) => {
           const logoList = (data.logo as string[] | undefined) ?? [];
           const logo = logoList[0] || "";
           const title = (data.title as string) || "";
@@ -228,43 +257,50 @@ const AdminExperiencePage: React.FC = () => {
           const company = (data.company as string) || "";
 
           try {
+            let response;
+            
             if (editingId != null) {
-              setExperienceData((prev) =>
-                prev.map((item) =>
-                  item.id === editingId
-                    ? {
-                        ...item,
-                        logo: logo || item.logo,
-                        title: title || item.title,
-                        period: period || item.period,
-                        duration: duration || item.duration,
-                        company: company || item.company,
-                      }
-                    : item
-                )
-              );
-              toast.success("Success", "Experience updated successfully");
-            } else {
-              setExperienceData((prev) => {
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    logo,
-                    logoAlt: "",
-                    title,
-                    company,
-                    period,
-                    duration,
-                  },
-                ];
+              response = await fetch(`/api/experiences/${editingId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  logo,
+                  logoAlt: "",
+                  title,
+                  company,
+                  period,
+                  duration
+                })
               });
-              toast.success("Success", "Experience added successfully");
+            } else {
+              response = await fetch('/api/experiences', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  logo,
+                  logoAlt: "",
+                  title,
+                  company,
+                  period,
+                  duration
+                })
+              });
             }
-
-            setIsModalOpen(false);
-            setEditingId(null);
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              await fetchExperiences();
+              toast.success("Berhasil", editingId ? "Experience berhasil diperbarui" : "Experience berhasil ditambahkan");
+              setIsModalOpen(false);
+              setEditingId(null);
+            } else {
+              toast.error("Gagal", result.message || "Perubahan experience gagal disimpan");
+            }
           } catch {
             toast.error("Error", "Failed to save experience changes");
           }
