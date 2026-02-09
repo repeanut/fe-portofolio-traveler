@@ -1,11 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import NavbarShop from '../../components/ui/navbarShop';
 import FooterSection from '../../components/ui/footer';
 import type { ShopItem } from '../../components/ui/shopCards';
 import type { OrderPackage } from '../../components/order/sidebarOrder';
 import OrderDetails from '../../components/payments/OrderDetails';
-import TotalPayment from '../../components/payments/TotalPayment';
+import MidtransPaymentOptions from '../../components/payments/MidtransPaymentOptions';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
 import paymentService from '../../services/payment.service';
@@ -26,10 +26,6 @@ declare global {
         };
     }
 }
-import MidtransPaymentOptions from '../../components/payments/MidtransPaymentOptions';
-import InitialShimmer from '../../components/ui/InitialShimmer';
-import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
-import paymentService from '../../services/payment.service';
 
 interface PaymentLocationState {
     item?: ShopItem;
@@ -40,32 +36,11 @@ interface PaymentLocationState {
 const ShopPaymentPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-
-    // Load Midtrans Snap script
-    useEffect(() => {
-        const script = document.createElement('script');
-        script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
-        script.setAttribute('data-client-key', import.meta.env.VITE_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-YOUR_CLIENT_KEY');
-        script.async = true;
-        script.onload = () => setIsScriptLoaded(true);
-        script.onerror = () => {
-            console.error('Failed to load Midtrans Snap script');
-        };
-        document.body.appendChild(script);
-
-        return () => {
-            if (document.body.contains(script)) {
-                document.body.removeChild(script);
-            }
-        };
-    }, []);
-
     const state = (location.state as PaymentLocationState | null) ?? null;
 
     const fallbackItem: ShopItem = {
         id: state?.item?.id ?? 0,
-        title:
+        title: state?.item?.title ?? 'I will be SEO content writer for article writing or blog writing',
             state?.item?.title ?? 'I will be SEO content writer for article writing or blog writing',
         imageSrc: state?.item?.imageSrc ?? '/bg-shopCards.jpg',
         price: state?.item?.price ?? '$20',
@@ -86,7 +61,6 @@ const ShopPaymentPage: React.FC = () => {
     const item = state?.item ?? fallbackItem;
     const orderPackage = state?.orderPackage ?? fallbackPackage;
     const [quantity] = useState<number>(state?.quantity && state.quantity > 0 ? state.quantity : 1);
-    const [isProcessing, setIsProcessing] = useState(false);
 
     const unitPrice = orderPackage.price;
     const subtotal = useMemo(() => unitPrice * quantity, [unitPrice, quantity]);
@@ -98,73 +72,7 @@ const ShopPaymentPage: React.FC = () => {
 
     const total = subtotal + serviceFee;
 
-    const handlePayment = async () => {
-        setIsProcessing(true);
-        try {
-            const paymentRequest: PaymentRequest = {
-                method: 'midtrans',
-                amount: total,
-                currency: 'USD',
-                description: `${item.title} - ${orderPackage.title}`,
-                customerInfo: {
-                    email: 'user@example.com',
-                },
-            };
-
-            const response = await paymentService.processPayment(paymentRequest);
-
-            if (!response.success) {
-                alert('Payment failed: ' + response.message);
-                return;
-            }
-
-            const maybeGateway = response.data?.gatewayResponse as
-                | { token?: unknown; snapToken?: unknown }
-                | undefined;
-
-            const snapTokenRaw = maybeGateway?.snapToken ?? maybeGateway?.token;
-            const snapToken = typeof snapTokenRaw === 'string' ? snapTokenRaw : null;
-
-            if (!snapToken || typeof window === 'undefined' || !window.snap?.pay) {
-                alert('Midtrans is not ready yet. Please try again later.');
-                return;
-            }
-
-            window.snap.pay(snapToken, {
-                onSuccess: () => {
-                    navigate('/shop/payment/payment-success', {
-                        state: {
-                            subtotal,
-                            serviceFee,
-                            total,
-                            itemTitle: item.title,
-                            orderPackageTitle: orderPackage.title,
-                            deliveryLabel: orderPackage.deliveryLabel,
-                            quantity,
-                            paymentMethodLabel: 'Midtrans',
-                        },
-                    });
-                },
-                onPending: () => {
-                    // Pending state handled by Midtrans UI.
-                },
-                onError: () => {
-                    alert('Payment failed. Please try again.');
-                },
-                onClose: () => {
-                    // User closed the popup.
-                },
-            });
-        } catch (error: unknown) {
-            console.error('Payment error:', error);
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            alert('An error occurred while processing the payment: ' + message);
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleMidtransSuccess = (response: any) => {
+    const handleMidtransSuccess = (response: unknown) => {
         navigate('/shop/payment/payment-success', {
             state: {
                 subtotal,
@@ -179,7 +87,7 @@ const ShopPaymentPage: React.FC = () => {
         });
     };
 
-    const handleMidtransError = (error: any) => {
+    const handleMidtransError = (error: unknown) => {
         console.error('Midtrans payment error:', error);
         navigate('/shop/payment/payment-failed', {
             state: {
@@ -192,12 +100,12 @@ const ShopPaymentPage: React.FC = () => {
                 quantity,
                 paymentMethodLabel: 'Midtrans',
                 paymentStatus: 'failed',
-                error: error?.message || 'Payment failed'
+                error: (error as Error)?.message || 'Payment failed'
             },
         });
     };
 
-    const handleMidtransPending = (response: any) => {
+    const handleMidtransPending = (response: unknown) => {
         navigate('/shop/payment/payment-pending', {
             state: {
                 subtotal,
@@ -209,8 +117,8 @@ const ShopPaymentPage: React.FC = () => {
                 quantity,
                 paymentMethodLabel: 'Midtrans',
                 paymentStatus: 'pending',
-                transactionId: response.transaction_id,
-                paymentId: response.data?.transaction_id
+                transactionId: (response as any).transaction_id,
+                paymentId: (response as any).data?.transaction_id
             },
         });
     };

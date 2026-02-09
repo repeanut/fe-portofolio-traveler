@@ -213,7 +213,8 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({
                                     </div>
                                 </div>
                             </div>
-                        ) : activeMethod === 'card' ? (
+                        </>
+                    ) : activeMethod === 'card' ? (
                         <>
                             <div className="space-y-6">
                                 <div>

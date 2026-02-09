@@ -522,7 +522,6 @@ const AdminTravelJournalPage: React.FC = () => {
               />
             </section>
           </div>
-          </div>
         </div>
       </div>
 
