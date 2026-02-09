@@ -542,20 +542,6 @@ const AIChatbotPage: React.FC = () => {
                                 }}
                             />
                         </div>
-
-                                const title = makeChatTitle(msgs);
-                                if (!title) return;
-                                setHistoryItems((prev) => {
-                                    const current = prev.find((x) => x.id === activeHistoryId);
-                                    if (!current) return prev;
-                                    if (current.title && current.title !== 'New chat') return prev;
-                                    return prev.map((x) => (x.id === activeHistoryId ? { ...x, title } : x));
-                                });
-                            }}
-                            onChatModeChange={(m) => {
-                                if (m === 'ai' || m === 'cs') setChatMode(m);
-                            }}
-                        />
                     </div>
 
                     {chatMode === 'ai' && historyOpen ? (

@@ -206,9 +206,12 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span className="text-xs font-semibold text-gray-900">{card.label}</span>
                                                         {card.logo && <img src={card.logo} alt={card.label} className="h-5" />}
-                                    onError={handlePayPalError}
-                                    onCancel={handlePayPalCancel}
-                                />
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ) : activeMethod === 'card' ? (
                         <>

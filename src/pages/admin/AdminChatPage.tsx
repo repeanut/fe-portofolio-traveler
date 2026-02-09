@@ -586,9 +586,7 @@ const [isMobile, setIsMobile] = useState(false);
                           <div className="h-full w-full bg-slate-200" />
                         )}
                       </div>
-                    </button>
-                  ))}
-                      </div>
+                    </div>
                     </button>
                   ))}
                 </div>

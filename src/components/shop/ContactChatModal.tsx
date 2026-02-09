@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import UserChat from '../AIchatbot/UserChat';
 
 export type ContactChatModalProps = {
     open: boolean;

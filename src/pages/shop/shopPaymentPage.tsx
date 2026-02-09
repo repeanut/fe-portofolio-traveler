@@ -5,7 +5,6 @@ import FooterSection from '../../components/ui/footer';
 import type { ShopItem } from '../../components/ui/shopCards';
 import type { OrderPackage } from '../../components/order/sidebarOrder';
 import OrderDetails from '../../components/payments/OrderDetails';
-<<<<<<< Updated upstream
 import TotalPayment from '../../components/payments/TotalPayment';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';

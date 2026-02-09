@@ -488,22 +488,40 @@ const AdminTravelJournalPage: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
             <section>
+              <AdminTableHeader
+                onAddClick={() => {
+                  setEditingId(null);
                   setIsModalOpen(true);
-                }
-              }}
-              onDelete={async (id) => {
-                if (typeof id === "number") {
-                  try {
+                }}
+              />
+
+              <AdminTable
+                columns={columns}
+                data={travelData}
+                isLoading={loading}
+                currentPage={1}
+                itemsPerPage={5}
+                totalPages={1}
+                onPageChange={() => {}}
+                onItemsPerPageChange={() => {}}
+                onEdit={(id) => {
+                  if (typeof id === "number") {
+                    setEditingId(id);
+                    setIsModalOpen(true);
+                  }
+                }}
+                onDelete={async (id) => {
+                  if (typeof id === "number") {
+                    try {
                     await deleteTravelJournal(id);
                     toast.success("Berhasil", "Travel highlight berhasil dihapus");
                   } catch (error: any) {
                     toast.error("Gagal", error?.message || "Travel highlight gagal dihapus");
                   }
-                }
-              }}
-            />
-              )}
+                }}
+              />
             </section>
+          </div>
           </div>
         </div>
       </div>
