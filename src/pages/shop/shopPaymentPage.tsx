@@ -5,10 +5,27 @@ import FooterSection from '../../components/ui/footer';
 import type { ShopItem } from '../../components/ui/shopCards';
 import type { OrderPackage } from '../../components/order/sidebarOrder';
 import OrderDetails from '../../components/payments/OrderDetails';
-import MidtransPayment from '../../components/payments/MidtransPayment';
 import TotalPayment from '../../components/payments/TotalPayment';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
+import paymentService from '../../services/payment.service';
+import type { PaymentRequest } from '../../services/payment.service';
+
+declare global {
+    interface Window {
+        snap?: {
+            pay: (
+                token: string,
+                options?: {
+                    onSuccess?: (result: unknown) => void;
+                    onPending?: (result: unknown) => void;
+                    onError?: (result: unknown) => void;
+                    onClose?: () => void;
+                },
+            ) => void;
+        };
+    }
+}
 
 interface PaymentLocationState {
     item?: ShopItem;
@@ -44,6 +61,7 @@ const ShopPaymentPage: React.FC = () => {
     const item = state?.item ?? fallbackItem;
     const orderPackage = state?.orderPackage ?? fallbackPackage;
     const [quantity] = useState<number>(state?.quantity && state.quantity > 0 ? state.quantity : 1);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const unitPrice = orderPackage.price;
     const subtotal = useMemo(() => unitPrice * quantity, [unitPrice, quantity]);
@@ -55,83 +73,130 @@ const ShopPaymentPage: React.FC = () => {
 
     const total = subtotal + serviceFee;
 
-    const handleMidtransSuccess = (response: any) => {
-        navigate('/shop/payment/payment-success', {
-            state: {
-                subtotal,
-                serviceFee,
-                total,
-                itemTitle: item.title,
-                orderPackageTitle: orderPackage.title,
-                deliveryLabel: orderPackage.deliveryLabel,
-                quantity,
-                paymentMethodLabel: 'Midtrans',
-                paymentId: response.data?.transaction_id
-            },
-        });
-    };
+    const handlePayment = async () => {
+        setIsProcessing(true);
+        try {
+            const paymentRequest: PaymentRequest = {
+                method: 'midtrans',
+                amount: total,
+                currency: 'USD',
+                description: `${item.title} - ${orderPackage.title}`,
+                customerInfo: {
+                    email: 'user@example.com',
+                },
+            };
 
-    const handleMidtransError = (error: Error) => {
-        console.error('Midtrans payment error:', error);
-        alert('Pembayaran gagal: ' + error.message);
-    };
+            const response = await paymentService.processPayment(paymentRequest);
 
-    const handleMidtransPending = (response: any) => {
-        navigate('/shop/payment/pending', {
-            state: {
-                subtotal,
-                serviceFee,
-                total,
-                itemTitle: item.title,
-                orderPackageTitle: orderPackage.title,
-                deliveryLabel: orderPackage.deliveryLabel,
-                quantity,
-                paymentMethodLabel: 'Midtrans',
-                paymentId: response.data?.transaction_id
-            },
-        });
+            if (!response.success) {
+                alert('Payment failed: ' + response.message);
+                return;
+            }
+
+            const maybeGateway = response.data?.gatewayResponse as
+                | { token?: unknown; snapToken?: unknown }
+                | undefined;
+
+            const snapTokenRaw = maybeGateway?.snapToken ?? maybeGateway?.token;
+            const snapToken = typeof snapTokenRaw === 'string' ? snapTokenRaw : null;
+
+            if (!snapToken || typeof window === 'undefined' || !window.snap?.pay) {
+                alert('Midtrans is not ready yet. Please try again later.');
+                return;
+            }
+
+            window.snap.pay(snapToken, {
+                onSuccess: () => {
+                    navigate('/shop/payment/payment-success', {
+                        state: {
+                            subtotal,
+                            serviceFee,
+                            total,
+                            itemTitle: item.title,
+                            orderPackageTitle: orderPackage.title,
+                            deliveryLabel: orderPackage.deliveryLabel,
+                            quantity,
+                            paymentMethodLabel: 'Midtrans',
+                        },
+                    });
+                },
+                onPending: () => {
+                    // Pending state handled by Midtrans UI.
+                },
+                onError: () => {
+                    alert('Payment failed. Please try again.');
+                },
+                onClose: () => {
+                    // User closed the popup.
+                },
+            });
+        } catch (error: unknown) {
+            console.error('Payment error:', error);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            alert('An error occurred while processing the payment: ' + message);
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
         <InitialShimmer delayMs={850} skeleton={<ShopPaymentPageSkeleton />}>
-            <div className="min-h-screen flex flex-col bg-white">
+            <div className="min-h-screen flex flex-col bg-white overflow-x-clip">
                 <NavbarShop />
 
                 <main className="flex-1">
-                    <section className="mx-auto max-w-6xl px-4 md:px-0 py-8 md:py-10">
+                    <section className="mx-auto w-full max-w-6xl px-4 md:px-0 py-8 md:py-10">
 
-                        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
-                            <div className="space-y-6">
+                        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start max-w-full">
+                            <div className="space-y-6 min-w-0 w-full">
                                 <OrderDetails
                                     item={item}
                                     orderPackage={orderPackage}
                                     quantity={quantity}
                                     subtotal={subtotal}
                                 />
-                                <MidtransPayment
-                                    amount={total}
-                                    customerDetails={{
-                                        firstName: 'User',
-                                        lastName: 'Name',
-                                        email: 'user@example.com',
-                                        phone: '+628123456789'
-                                    }}
-                                    itemDetails={[
-                                        {
-                                            id: String(item.id || 'item-1'),
-                                            price: unitPrice,
-                                            quantity: quantity,
-                                            name: `${item.title} - ${orderPackage.title}`,
-                                            category: 'travel-package'
-                                        }
-                                    ]}
-                                    onSuccess={handleMidtransSuccess}
-                                    onError={handleMidtransError}
-                                    onPending={handleMidtransPending}
-                                />
+
+                                <section className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5">
+                                    <h2 className="text-sm font-semibold text-gray-900">What happens next</h2>
+                                    <ol className="mt-3 space-y-2 text-xs text-gray-600">
+                                        <li className="flex gap-2">
+                                            <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">1</span>
+                                            <span>Click <span className="font-semibold text-gray-900">Confirm & Pay</span> to open the Midtrans popup.</span>
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">2</span>
+                                            <span>Choose your payment method inside Midtrans and complete the payment.</span>
+                                        </li>
+                                        <li className="flex gap-2">
+                                            <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">3</span>
+                                            <span>After success, you'll see the payment success page and your order is confirmed.</span>
+                                        </li>
+                                    </ol>
+                                </section>
+
+                                <section className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5">
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                        <div className="min-w-0">
+                                            <h2 className="text-sm font-semibold text-gray-900">Need help?</h2>
+                                            <p className="mt-1 text-xs text-gray-600">
+                                                If you have questions about your order or payment, chat with our admin.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate('/ai-chatbot')}
+                                            className="w-full sm:w-auto shrink-0 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                                        >
+                                            Chat admin
+                                        </button>
+                                    </div>
+                                    <div className="mt-3 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 text-[11px] text-gray-600">
+                                        Payment updates will also appear in your notifications.
+                                    </div>
+                                </section>
                             </div>
 
-                            <aside className="space-y-4 lg:sticky lg:top-24">
+                            <aside className="space-y-4 lg:sticky lg:top-24 min-w-0 w-full">
                                 <TotalPayment
                                     subtotal={subtotal}
                                     serviceFee={serviceFee}
@@ -140,7 +205,10 @@ const ShopPaymentPage: React.FC = () => {
                                     orderPackageTitle={orderPackage.title}
                                     deliveryLabel={orderPackage.deliveryLabel}
                                     quantity={quantity}
-                                    paymentMethodLabel="Midtrans"
+                                    paymentMethodLabel={'Midtrans'}
+                                    onPayment={handlePayment}
+                                    isProcessing={isProcessing}
+                                    canPay
                                 />
                             </aside>
                         </div>

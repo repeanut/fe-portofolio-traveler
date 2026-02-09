@@ -58,7 +58,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ historyItems, onSelectHistory
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
                             <MessageSquare className={`w-6 h-6 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
                         </div>
-                        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Belum ada riwayat chat</p>
+                        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>No chat history yet</p>
                     </div>
                 ) : (
                     <div className="py-2">

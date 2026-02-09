@@ -221,7 +221,7 @@ const UserProfilePage: React.FC = () => {
                                     className="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors inline-flex items-center gap-2 lg:w-10 lg:px-0 lg:justify-center"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
-                                    <span className="lg:hidden">Kembali</span>
+                                    <span className="lg:hidden">Back</span>
                                 </button>
                             </div>
 

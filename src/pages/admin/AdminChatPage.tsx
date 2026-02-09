@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Send, MessageCircle, Users, MessageSquare, Check, CheckCheck } from "lucide-react";
 import { io, Socket } from "socket.io-client";
@@ -33,6 +33,113 @@ interface User {
   unreadCount?: number;
 }
 
+interface ChatThreadMessage {
+  id: number;
+  role: "user" | "admin";
+  content: string;
+  timestamp?: string;
+}
+
+type MessagesByUserId = Record<number, ChatThreadMessage[]>;
+
+const dummyRecentMessages: MessagePreview[] = [
+  {
+    id: 1,
+    name: "Faris Meika Adz-daky",
+    lastMessage: "cur iki yopo cur",
+    avatarUrl:
+      "https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=200",
+  },
+  {
+    id: 2,
+    name: "M Rasya Zildan",
+    lastMessage: "wuhuhuhu",
+    avatarUrl:
+      "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200",
+  },
+  {
+    id: 3,
+    name: "Fawwaz",
+    lastMessage: "😂😂😂😂😂😂",
+    avatarUrl:
+      "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=200",
+  },
+  {
+    id: 4,
+    name: "Revina Okta",
+    lastMessage: "Please check the landing page menu—there is an issue with the color palette usage.",
+    avatarUrl:
+      "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=200",
+  },
+];
+
+const dummyThreadMessages: ChatThreadMessage[] = [
+  {
+    id: 1,
+    role: "user",
+    content: "Hi, I want to ask about the holiday packages in Bali.",
+    timestamp: "10:21",
+  },
+  {
+    id: 2,
+    role: "admin",
+    content: "Hi, good afternoon! Which Bali package are you referring to?",
+    timestamp: "10:22",
+  },
+  {
+    id: 3,
+    role: "user",
+    content: "The 3 days 2 nights package, the one that includes Ubud and Nusa Penida.",
+    timestamp: "10:23",
+  },
+  {
+    id: 4,
+    role: "admin",
+    content: "Sure, I’ll send the itinerary details and pricing here.",
+    timestamp: "10:24",
+  },
+];
+
+const initialMessagesByUser: MessagesByUserId = {
+  1: [
+    {
+      id: 1,
+      role: "user",
+      content: "cur iki yopo cur",
+      timestamp: "09:50",
+    },
+    {
+      id: 2,
+      role: "admin",
+      content: "Hi, could you share a bit more detail?",
+      timestamp: "09:51",
+    },
+  ],
+  2: dummyThreadMessages,
+  3: [
+    {
+      id: 1,
+      role: "user",
+      content: "😂😂😂😂😂😂",
+      timestamp: "11:05",
+    },
+  ],
+  4: [
+    {
+      id: 1,
+      role: "user",
+      content: "Please check the landing page menu—there is an issue with the color palette usage.",
+      timestamp: "08:30",
+    },
+    {
+      id: 2,
+      role: "admin",
+      content: "Sure, I’ll review the landing page section again.",
+      timestamp: "08:32",
+    },
+  ],
+};
+
 const AdminChatPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("chat");
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -46,12 +153,25 @@ const AdminChatPage: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const [isMobile, setIsMobile] = useState(false);
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+
   const navigate = useNavigate();
 
-  // Error boundary fallback
-  const [hasError, setHasError] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    const apply = () => {
+      const nextMobile = mql.matches;
+      setIsMobile(nextMobile);
+      setMobileView(nextMobile ? "list" : "chat");
+    };
+
+    apply();
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
+  }, []);
+
+  const activeUserData = dummyRecentMessages.find((u) => u.id === activeUser);
 
   useEffect(() => {
     // Get current user from localStorage
@@ -337,23 +457,7 @@ const AdminChatPage: React.FC = () => {
   });
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
-      {/* Error boundary fallback */}
-      {hasError && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-red-600 mb-2">Connection Error</h3>
-            <p className="text-gray-600 mb-4">Failed to connect to chat server. Please refresh the page.</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Refresh Page
-            </button>
-          </div>
-        </div>
-      )}
-      
+    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
       {/* Sidebar */}
       <AdminSidebar
         active={activeMenu}
@@ -385,7 +489,7 @@ const AdminChatPage: React.FC = () => {
       />
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
         {/* Header */}
         <AdminHeader title="Chat" />
 
@@ -406,7 +510,11 @@ const AdminChatPage: React.FC = () => {
         {/* Main chat card */}
         <div className="flex flex-1 min-h-0 gap-4">
           {/* Recent messages */}
-          <div className="flex w-72 flex-col rounded-3xl bg-white shadow-lg border border-slate-100 h-full">
+          <div
+            className={`flex flex-col rounded-3xl bg-white shadow-lg border border-slate-100 h-full min-w-0 ${
+              isMobile ? "w-full" : "w-72"
+            } ${isMobile && mobileView === "chat" ? "hidden" : "flex"}`}
+          >
             <div className="border-b border-slate-100 px-5 py-4 flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" />
@@ -425,63 +533,74 @@ const AdminChatPage: React.FC = () => {
               </div>
             )}
             <div className="flex-1 overflow-y-auto py-1">
-              {filteredUsers.length === 0 ? (
-                <div className="px-5 text-center py-8">
-                  <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 text-sm">No users found</p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {filteredUsers.map(user => (
-                    <button
-                      key={user.id}
-                      onClick={() => setSelectedUser(user)}
-                      className={`w-full text-left transition-colors ${
-                        selectedUser?.id === user.id 
-                          ? 'bg-blue-50 border border-blue-200' 
-                          : 'hover:bg-slate-50 border border-transparent'
-                      }`}
-                    >
-                      <div className="p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="relative">
-                              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                {user.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                                user.status === 'online' ? 'bg-green-500' : 'bg-slate-400'
-                              }`} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-slate-800 text-sm truncate">{user.name}</p>
-                              <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                              {user.lastMessage && (
-                                <p className="text-xs text-slate-600 truncate mt-1">{user.lastMessage}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {user.unreadCount && user.unreadCount > 0 && (
-                              <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                {user.unreadCount}
-                              </div>
-                            )}
-                            {isTyping[user.id] && (
-                              <span className="text-xs text-slate-500 italic">typing...</span>
-                            )}
-                          </div>
-                        </div>
+{dummyRecentMessages
+                .filter((item) => {
+                  const query = searchQuery.trim().toLowerCase();
+                  if (!query) return true;
+
+                  const nameMatch = item.name.toLowerCase().includes(query);
+                  const thread = messagesByUser[item.id] ?? [];
+                  const textMatch = thread.some((msg) =>
+                    msg.content.toLowerCase().includes(query)
+                  );
+
+                  return nameMatch || textMatch;
+                })
+                .map((item) => {
+                const isActive = item.id === activeUser;
+                const thread = messagesByUser[item.id] ?? [];
+                const last = thread[thread.length - 1];
+
+                const lastText = last?.content ?? item.lastMessage;
+                const lastTime = last?.timestamp ?? "";
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveUser(item.id);
+                      if (isMobile) setMobileView("chat");
+                    }}
+                    className={`group flex w-full items-center px-4 py-2.5 text-left text-xs transition-colors ${
+                      isActive
+                        ? "bg-blue-500 text-white"
+                        : "hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div className="relative mr-3 h-9 w-9 flex-shrink-0">
+                      <div
+                        className={`h-9 w-9 rounded-full border shadow-sm overflow-hidden ${
+                          isActive
+                            ? "border-blue-200 bg-blue-50"
+                            : "border-slate-100 bg-slate-200"
+                        }`}
+                      >
+                        {item.avatarUrl ? (
+                          <img
+                            src={item.avatarUrl}
+                            alt={item.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-slate-200" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
                       </div>
                     </button>
                   ))}
                 </div>
-              )}
             </div>
           </div>
 
           {/* Chat area */}
-          <div className="flex-1 rounded-3xl bg-white shadow-lg border border-slate-100 flex flex-col min-w-0 min-h-0">
+          <div
+            className={`flex-1 rounded-3xl bg-white shadow-lg border border-slate-100 flex flex-col min-w-0 min-h-0 ${
+              isMobile && mobileView === "list" ? "hidden" : "flex"
+            }`}
+          >
             {selectedUser ? (
               <>
                 {/* Chat header */}

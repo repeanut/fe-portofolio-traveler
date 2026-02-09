@@ -178,20 +178,34 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({
                     
                     {/* Payment Content */}
                     <div className="flex-1 p-6">
-
-                        {activeMethod === 'paypal' ? (
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                    <Shield className="h-6 w-6 text-blue-600" />
+                        <div className="space-y-4">
+                            {activeMethod === 'card' ? (
+                                <>
                                     <div>
-                                        <h3 className="font-semibold text-blue-900">PayPal Protection</h3>
-                                        <p className="text-sm text-blue-700">Buy with confidence - PayPal protects your purchase</p>
-                                    </div>
-                                </div>
-                                <PayPalPayment
-                                    amount={amount}
-                                    description={description}
-                                    onSuccess={handlePayPalSuccess}
+                                        <p className="mb-2 text-xs font-medium text-gray-700">Select a card method</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                                            {[{ id: 'paypal', label: 'PayPal', helper: 'Credit / Debit Card', logo: '/icon-paypal.png' },
+                                            { id: 'bri', label: 'Bank BRI', helper: 'Credit / debit card' },
+                                            { id: 'bca', label: 'Bank BCA', helper: 'Credit / debit card' },
+                                            ].map((card) => (
+                                                <button
+                                                    key={card.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedCard(card.id as 'paypal' | 'bri' | 'bca');
+                                                        setSelectedWallet(null);
+                                                        onPaymentMethodChange?.(card.label);
+                                                        handleCardDetailChange('cardNumber', cardDetails.cardNumber);
+                                                    }}
+                                                    className={`h-16 rounded-xl border px-3 py-2 text-left shadow-sm transition-colors flex flex-col justify-center gap-1 ${
+                                                        selectedCard === card.id
+                                                            ? 'border-sky-500 bg-white'
+                                                            : 'border-gray-200 bg-gray-50 hover:border-sky-400 hover:bg-white'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-xs font-semibold text-gray-900">{card.label}</span>
+                                                        {card.logo && <img src={card.logo} alt={card.label} className="h-5" />}
                                     onError={handlePayPalError}
                                     onCancel={handlePayPalCancel}
                                 />
@@ -225,11 +239,126 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({
                                                         <div className="font-semibold text-sm text-gray-900">{card.label}</div>
                                                         <div className="text-xs text-gray-500">{card.helper}</div>
                                                     </div>
-                                                    {card.logo && <img src={card.logo} alt={card.label} className="h-6" />}
                                                 </div>
                                             </button>
                                         ))}
                                     </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="mb-2 mt-4 block text-xs font-medium text-gray-700">Expiration date</label>
+                                            <input
+                                                type="text"
+                                                placeholder="MM/YY"
+                                                value={cardDetails.expiryDate}
+                                                onChange={(e) => {
+                                                    let value = e.target.value.replace(/\D/g, '');
+                                                    if (value.length >= 2) {
+                                                        value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                                                    }
+                                                    handleCardDetailChange('expiryDate', value);
+                                                }}
+                                                className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                                                    cardDetails.expiryDate && !cardDetails.expiryDate.match(/^(0[1-9]|1[0-2])\/\d{2}$/) ? 'border-red-500' : 'border-gray-200'
+                                                }`}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-2 mt-4 block text-xs font-medium text-gray-700">Security code</label>
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                placeholder="123"
+                                                value={cardDetails.securityCode}
+                                                onChange={(e) => {
+                                                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                                    handleCardDetailChange('securityCode', value);
+                                                }}
+                                                className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                                                    cardDetails.securityCode && !cardDetails.securityCode.match(/^\d{3,4}$/) ? 'border-red-500' : 'border-gray-200'
+                                                }`}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 mt-4 block text-xs font-medium text-gray-700">Cardholder's name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Your full name"
+                                            value={cardDetails.cardholderName}
+                                            onChange={(e) => handleCardDetailChange('cardholderName', e.target.value)}
+                                            className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                                                cardDetails.cardholderName && !cardDetails.cardholderName.trim() ? 'border-red-500' : 'border-gray-200'
+                                            }`}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 mt-4 block text-xs font-medium text-gray-700">As written on card</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Exact name on card"
+                                            value={cardDetails.nameOnCard}
+                                            onChange={(e) => handleCardDetailChange('nameOnCard', e.target.value)}
+                                            className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                                                cardDetails.nameOnCard && !cardDetails.nameOnCard.trim() ? 'border-red-500' : 'border-gray-200'
+                                            }`}
+                                        />
+                                    </div>
+
+                                    <label className="mt-4 inline-flex items-center gap-2 text-xs text-gray-600">
+                                        <input
+                                            type="checkbox"
+                                            checked={cardDetails.saveCard}
+                                            onChange={(e) => handleCardDetailChange('saveCard', e.target.checked)}
+                                            className="h-4 w-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500"
+                                        />
+                                        <span>Save this card for future payments</span>
+                                    </label>
+                                </div>
+                            ) : (
+                                <p className="text-[11px] text-gray-500">
+                                    Please select a card first to continue with payment.
+                                </p>
+                            )}
+                        </> 
+                    ) : (
+                        <>
+                            <div>
+                                <p className="mb-2 text-xs font-medium text-gray-700">Select an e-wallet or QR code</p>
+                                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                                    {[{ id: 'gopay', label: 'GoPay' },
+                                    { id: 'qris', label: 'QRIS' },
+                                    ].map((wallet) => (
+                                        <button
+                                            key={wallet.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedWallet(wallet.id as 'gopay' | 'qris');
+                                                setSelectedCard(null);
+                                                onPaymentMethodChange?.(wallet.label);
+                                                if (onPaymentDataChange) {
+                                                    onPaymentDataChange({
+                                                        method: wallet.id,
+                                                        isValid: true
+                                                    });
+                                                }
+                                            }}
+                                            className={`h-14 rounded-xl border px-3 py-2 text-left shadow-sm transition-colors flex items-center justify-between gap-2 ${
+                                                selectedWallet === wallet.id
+                                                    ? 'border-sky-500 bg-white'
+                                                    : 'border-gray-200 bg-gray-50 hover:border-sky-400 hover:bg-white'
+                                            }`}
+                                        >
+                                            <span className="text-xs font-semibold text-gray-900">{wallet.label}</span>
+                                            <span
+                                                className={`h-2 w-2 rounded-full ${
+                                                    selectedWallet === wallet.id ? 'bg-emerald-500' : 'bg-gray-300'
+                                                }`}
+                                            />
+                                        </button>
+                                    ))}
                                 </div>
 
                                 {selectedCard ? (

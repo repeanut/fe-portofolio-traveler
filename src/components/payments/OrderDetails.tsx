@@ -15,8 +15,8 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ item, orderPackage, quantit
     return (
         <section>
             <h2 className="mb-3 text-sm font-semibold text-gray-900">Order details</h2>
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex gap-4 items-center">
-                <div className="h-20 w-32 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 flex flex-col sm:flex-row gap-4 sm:items-center max-w-full overflow-hidden">
+                <div className="h-20 w-full sm:w-32 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
                     <img src={item.imageSrc} alt={item.title} className="h-full w-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -40,9 +40,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ item, orderPackage, quantit
                         {orderPackage.shortDescription}
                     </p>
                 </div>
-                <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
-                    {formatCurrency(subtotal)}
-                </p>
+                <div className="flex min-w-0 items-center justify-between sm:block">
+                    <p className="text-[11px] text-gray-500 sm:hidden">Subtotal</p>
+                    <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                        {formatCurrency(subtotal)}
+                    </p>
+                </div>
             </div>
         </section>
     );

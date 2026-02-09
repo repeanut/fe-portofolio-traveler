@@ -392,16 +392,16 @@ const AdminShopPage: React.FC = () => {
       setEditingId(null);
 
       toast.success(
-        "Berhasil",
-        editingItem ? "Produk berhasil diperbarui" : "Produk berhasil ditambahkan"
+        "Success",
+        editingItem ? "Product updated successfully" : "Product added successfully"
       );
     } catch {
-      toast.error("Gagal", "Perubahan produk gagal disimpan");
+      toast.error("Error", "Failed to save product changes");
     }
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
       <AdminSidebar
         active={activeMenu}
         onNavigate={(key) => {
@@ -424,7 +424,7 @@ const AdminShopPage: React.FC = () => {
         }}
       />
 
-      <div className="flex flex-1 flex-col px-6 py-6 md:px-8 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
         <AdminHeader title="Shop Management" />
 
         <div className="flex-1 overflow-y-auto pr-1">
@@ -433,7 +433,7 @@ const AdminShopPage: React.FC = () => {
               <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">Products</p>
-                  <p className="mt-1 text-xs text-slate-500">Pilih produk lalu lanjutkan CRUD per langkah.</p>
+                  <p className="mt-1 text-xs text-slate-500">Select a product, then manage it step by step.</p>
                 </div>
               </div>
               <AdminTableHeader
@@ -467,21 +467,21 @@ const AdminShopPage: React.FC = () => {
                   try {
                     setItems((prev) => prev.filter((x) => x.id !== id));
                     setSelectedId((prev) => (prev === id ? null : prev));
-                    toast.success("Berhasil", "Produk berhasil dihapus");
+                    toast.success("Success", "Product deleted successfully");
                   } catch {
-                    toast.error("Gagal", "Produk gagal dihapus");
+                    toast.error("Error", "Failed to delete product");
                   }
                 }}
               />
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-12 items-stretch">
-              <div className="lg:col-span-4">
-                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs">
+            <section className="grid gap-6 lg:grid-cols-12 items-stretch max-w-full">
+              <div className="lg:col-span-4 min-w-0">
+                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs min-w-0 max-w-full overflow-hidden">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Selected Product</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Meta produk di-edit melalui table produk (atas).
+                      Product metadata is edited via the product table (above).
                     </p>
                   </div>
 
@@ -507,29 +507,29 @@ const AdminShopPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="p-4">
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        <div className="p-4 min-w-0">
+                          <div className="grid grid-cols-2 gap-3 min-w-0">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
                               <p className="text-[11px] text-slate-500">Category</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900">
+                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
                                 {selectedItem.serviceCategory ?? "-"}
                               </p>
                             </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
                               <p className="text-[11px] text-slate-500">Status</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900">
+                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
                                 {selectedItem.status === "active" ? "Active" : "Inactive"}
                               </p>
                             </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
                               <p className="text-[11px] text-slate-500">Price</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900">
+                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
                                 {selectedItem.price ?? "-"}
                               </p>
                             </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
                               <p className="text-[11px] text-slate-500">Delivery</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900">
+                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
                                 {selectedItem.deliveryTime ?? "-"}
                               </p>
                             </div>
@@ -538,22 +538,22 @@ const AdminShopPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="bg-slate-50 px-4 py-10 text-center">
-                        <p className="text-sm text-slate-600">Pilih produk dari table di atas.</p>
+                        <p className="text-sm text-slate-600">Select a product from the table above.</p>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="lg:col-span-8">
-                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs">
+              <div className="lg:col-span-8 min-w-0">
+                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs min-w-0 max-w-full overflow-hidden">
                   {!selectedProductId ? (
                     <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                      <p className="text-sm font-semibold text-slate-900">Belum ada produk dipilih</p>
-                      <p className="mt-2 text-sm text-slate-600">Pilih produk dari tabel, lalu mulai isi data step-by-step.</p>
+                      <p className="text-sm font-semibold text-slate-900">No product selected</p>
+                      <p className="mt-2 text-sm text-slate-600">Select a product from the table, then start filling in the data step by step.</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-4 min-w-0 max-w-full">
                       <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                         <div className="relative">
                           <div className="absolute left-0 right-0 top-[18px] h-0.5 bg-slate-200" />
@@ -562,7 +562,7 @@ const AdminShopPage: React.FC = () => {
                             style={{ width: `${((activeStep - 1) / 2) * 100}%` }}
                           />
 
-                          <div className="relative grid gap-3 md:grid-cols-3">
+                          <div className="relative grid gap-3 md:grid-cols-3 min-w-0">
                             <button
                               type="button"
                               onClick={() => setActiveStep(1)}
@@ -583,8 +583,8 @@ const AdminShopPage: React.FC = () => {
                                   1
                                 </div>
                               </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900">Product Details</p>
-                              <p className="mt-1 text-xs text-slate-500">Kelola deskripsi lengkap produk.</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Product Details</p>
+                              <p className="mt-1 text-xs text-slate-500">Manage the full product description.</p>
                             </button>
 
                             <button
@@ -623,8 +623,8 @@ const AdminShopPage: React.FC = () => {
                                   )}
                                 </div>
                               </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900">Advantages</p>
-                              <p className="mt-1 text-xs text-slate-500">Kelola keunggulan produk.</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Advantages</p>
+                              <p className="mt-1 text-xs text-slate-500">Manage product advantages.</p>
                             </button>
 
                             <button
@@ -648,8 +648,8 @@ const AdminShopPage: React.FC = () => {
                                   3
                                 </div>
                               </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900">Packages</p>
-                              <p className="mt-1 text-xs text-slate-500">Kelola paket dan harga.</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Packages</p>
+                              <p className="mt-1 text-xs text-slate-500">Manage packages and pricing.</p>
                             </button>
                           </div>
                         </div>
@@ -660,7 +660,7 @@ const AdminShopPage: React.FC = () => {
                           <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
                             <div>
                               <p className="text-sm font-semibold text-slate-900">Product Details</p>
-                              <p className="mt-1 text-xs text-slate-500">Kelola konten deskripsi produk.</p>
+                              <p className="mt-1 text-xs text-slate-500">Manage product description content.</p>
                             </div>
                             <button
                               type="button"
@@ -700,9 +700,9 @@ const AdminShopPage: React.FC = () => {
                                       [selectedProductId]: existing.filter((x) => x.id !== id),
                                     };
                                   });
-                                  toast.success("Berhasil", "Detail produk berhasil dihapus");
+                                  toast.success("Success", "Product detail deleted successfully");
                                 } catch {
-                                  toast.error("Gagal", "Detail produk gagal dihapus");
+                                  toast.error("Error", "Failed to delete product detail");
                                 }
                               }}
                             />
@@ -715,7 +715,7 @@ const AdminShopPage: React.FC = () => {
                           <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
                             <div>
                               <p className="text-sm font-semibold text-slate-900">Advantages</p>
-                              <p className="mt-1 text-xs text-slate-500">Kelola keunggulan produk.</p>
+                              <p className="mt-1 text-xs text-slate-500">Manage product advantages.</p>
                             </div>
                             <button
                               type="button"
@@ -755,9 +755,9 @@ const AdminShopPage: React.FC = () => {
                                       [selectedProductId]: existing.filter((x) => x.id !== id),
                                     };
                                   });
-                                  toast.success("Berhasil", "Keunggulan berhasil dihapus");
+                                  toast.success("Success", "Advantage deleted successfully");
                                 } catch {
-                                  toast.error("Gagal", "Keunggulan gagal dihapus");
+                                  toast.error("Error", "Failed to delete advantage");
                                 }
                               }}
                             />
@@ -770,7 +770,7 @@ const AdminShopPage: React.FC = () => {
                           <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
                             <div>
                               <p className="text-sm font-semibold text-slate-900">Packages</p>
-                              <p className="mt-1 text-xs text-slate-500">Kelola paket dan harga.</p>
+                              <p className="mt-1 text-xs text-slate-500">Manage packages and pricing.</p>
                             </div>
                             <button
                               type="button"
@@ -810,9 +810,9 @@ const AdminShopPage: React.FC = () => {
                                       [selectedProductId]: existing.filter((x) => x.id !== id),
                                     };
                                   });
-                                  toast.success("Berhasil", "Paket berhasil dihapus");
+                                  toast.success("Success", "Package deleted successfully");
                                 } catch {
-                                  toast.error("Gagal", "Paket gagal dihapus");
+                                  toast.error("Error", "Failed to delete package");
                                 }
                               }}
                             />
@@ -883,11 +883,11 @@ const AdminShopPage: React.FC = () => {
             setDetailsModalOpen(false);
             setEditingDetailId(null);
             toast.success(
-              "Berhasil",
-              editingDetailId ? "Detail produk berhasil diperbarui" : "Detail produk berhasil ditambahkan"
+              "Success",
+              editingDetailId ? "Product detail updated successfully" : "Product detail added successfully"
             );
           } catch {
-            toast.error("Gagal", "Perubahan detail produk gagal disimpan");
+            toast.error("Error", "Failed to save product detail changes");
           }
         }}
       />
@@ -929,11 +929,11 @@ const AdminShopPage: React.FC = () => {
             setAdvModalOpen(false);
             setEditingAdvId(null);
             toast.success(
-              "Berhasil",
-              editingAdvId ? "Keunggulan berhasil diperbarui" : "Keunggulan berhasil ditambahkan"
+              "Success",
+              editingAdvId ? "Advantage updated successfully" : "Advantage added successfully"
             );
           } catch {
-            toast.error("Gagal", "Perubahan keunggulan gagal disimpan");
+            toast.error("Error", "Failed to save advantage changes");
           }
         }}
       />
@@ -982,11 +982,11 @@ const AdminShopPage: React.FC = () => {
             setPkgModalOpen(false);
             setEditingPkgId(null);
             toast.success(
-              "Berhasil",
-              editingPkgId ? "Paket berhasil diperbarui" : "Paket berhasil ditambahkan"
+              "Success",
+              editingPkgId ? "Package updated successfully" : "Package added successfully"
             );
           } catch {
-            toast.error("Gagal", "Perubahan paket gagal disimpan");
+            toast.error("Error", "Failed to save package changes");
           }
         }}
       />

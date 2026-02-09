@@ -59,7 +59,7 @@ const AdminToastProvider: React.FC<AdminToastProviderProps> = ({ children }) => 
   return (
     <AdminToastContext.Provider value={api}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-[1200] flex w-full max-w-md flex-col gap-2">
+      <div className="pointer-events-none fixed left-4 right-4 top-4 z-[1200] flex max-w-md flex-col gap-2 sm:left-auto sm:right-4">
         {toasts.map((t) => (
           <div key={t.id} className="pointer-events-auto">
             <AdminAlert

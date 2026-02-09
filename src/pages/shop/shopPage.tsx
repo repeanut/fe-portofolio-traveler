@@ -187,9 +187,9 @@ const ShopPage: React.FC = () => {
                 />
 
                 <main className="flex-1">
-                    <section className="mx-auto max-w-7xl py-10">
+                    <section className="mx-auto max-w-7xl py-10 px-4 md:px-0">
                         {/* Breadcrumb */}
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                             <Link to="/" className="hover:text-slate-800 transition-colors">
                                 <Home className="w-4 h-4" />
                             </Link>
@@ -199,7 +199,7 @@ const ShopPage: React.FC = () => {
 
                         {/* Filter bar */}
                         <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <p className="text-xl md:text-2xl font-semibold text-slate-900">
+                            <p className="text-xl md:text-2xl font-semibold text-slate-900 text-center md:text-left">
                                 All product for you!
                             </p>
 
@@ -221,9 +221,11 @@ const ShopPage: React.FC = () => {
                         </div>
 
                         {/* Grid products */}
-                        <div className="mt-8 grid gap-6 md:grid-cols-4">
+                        <div className="mt-8 grid gap-6 items-stretch grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
                             {paginatedItems.map((item) => (
-                                <ShopCard key={item.id} item={item} />
+                                <div key={item.id} className="h-full">
+                                    <ShopCard item={item} />
+                                </div>
                             ))}
                         </div>
 

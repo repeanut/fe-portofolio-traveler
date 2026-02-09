@@ -242,6 +242,10 @@ const AIChatbotPage: React.FC = () => {
         if (!initialChatId) return {};
         return { [initialChatId]: initialChatMessages };
     });
+    const [adminMessages, setAdminMessages] = useState<Message[] | null>(null);
+    const [chatMode, setChatMode] = useState<'ai' | 'cs'>('ai');
+    const [isMobile, setIsMobile] = useState(false);
+    const [historyOpen, setHistoryOpen] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>(() => {
         const saved = typeof window !== 'undefined' ? window.localStorage.getItem('theme') : null;
         return saved === 'dark' ? 'dark' : 'light';
@@ -273,6 +277,18 @@ const AIChatbotPage: React.FC = () => {
     }, [theme]);
 
     const isDark = theme === 'dark';
+
+    useEffect(() => {
+        const mql = window.matchMedia('(max-width: 767px)');
+        const apply = () => {
+            const nextMobile = mql.matches;
+            setIsMobile(nextMobile);
+            if (!nextMobile) setHistoryOpen(false);
+        };
+        apply();
+        mql.addEventListener('change', apply);
+        return () => mql.removeEventListener('change', apply);
+    }, []);
 
     const pageClasses = useMemo(() => {
         return isDark ? 'bg-slate-950 text-slate-100' : 'bg-white text-gray-900';
@@ -409,101 +425,49 @@ const AIChatbotPage: React.FC = () => {
    
     return (
         <div className={`fixed inset-0 overflow-hidden ${pageClasses}`}>
-            <div
-                className={
-                    `h-full grid overflow-hidden ` +
-                    (chatMode === 'ai' ? 'grid-cols-[72px_320px_1fr]' : 'grid-cols-[72px_1fr]') +
-                    (!isAuthenticated ? ' pointer-events-none select-none blur-[1px]' : '')
-                }
-                aria-hidden={!isAuthenticated}
-            >
-                {/* Left icon sidebar */}
-                <aside className={`h-full border-r flex flex-col items-center py-5 overflow-hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-gray-100 bg-white'}`}>
-                    <button
-                        type="button"
-                        onClick={handleBack}
-                        className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
-                        aria-label="Back"
-                    >
-                        <ArrowLeft className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
-                    </button>
-
-                    <div className="flex-1 w-full flex flex-col items-center justify-center gap-4">
-                        <button
-                            type="button"
-                            className={`w-11 h-11 p-0 rounded-full flex items-center justify-center transition-colors ${isDark ? 'bg-slate-900 hover:bg-slate-800/70' : 'bg-gray-50 hover:bg-gray-100'}`}
-                            aria-label="Home"
-                        >
-                            <Home className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`} />
-                        </button>
-
-                        {chatMode === 'ai' && (
+            {isMobile ? (
+                <div
+                    className={
+                        `h-full flex flex-col overflow-hidden ` +
+                        (!isAuthenticated ? ' pointer-events-none select-none blur-[1px]' : '')
+                    }
+                    aria-hidden={!isAuthenticated}
+                >
+                    <header className={`h-16 border-b flex items-center justify-between px-4 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
+                        <div className="flex items-center gap-2 min-w-0">
                             <button
                                 type="button"
-                                className="w-8 h-8 p-0 rounded-full bg-black text-white hover:bg-gray-900 flex items-center justify-center transition-colors"
-                                aria-label="New chat"
-                                onClick={handleNewChat}
+                                onClick={handleBack}
+                                className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
+                                aria-label="Back"
                             >
-                                <Plus className="w-4 h-4" />
+                                <ArrowLeft className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
                             </button>
-                        )}
-                    </div>
 
-                    <div className="w-full flex flex-col items-center gap-4">
-                        <button
-                            type="button"
-                            onClick={() => navigate('/profile')}
-                            className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
-                            aria-label="Settings"
-                        >
-                            <Settings className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
-                        </button>
+                            {chatMode === 'ai' ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setHistoryOpen(true)}
+                                    className={`h-10 rounded-xl border px-3 text-xs font-semibold transition-colors ${isDark ? 'border-slate-800 bg-slate-900 text-slate-100 hover:bg-slate-800/70' : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50'}`}
+                                >
+                                    Chats
+                                </button>
+                            ) : null}
 
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
-                            aria-label="Log out"
-                        >
-                            <LogOut className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
-                        </button>
-
-                        <div className={`w-10 h-10 rounded-full overflow-hidden border mb-1 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
-                            <img
-                                src={userAvatarUrl || DEFAULT_AVATAR_URL}
-                                alt="User"
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    e.currentTarget.src = DEFAULT_AVATAR_URL;
-                                }}
-                            />
+                            {chatMode === 'ai' ? (
+                                <button
+                                    type="button"
+                                    onClick={handleNewChat}
+                                    className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'bg-slate-900 hover:bg-slate-800/70' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                    aria-label="New chat"
+                                >
+                                    <Plus className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`} />
+                                </button>
+                            ) : null}
                         </div>
-                    </div>
-                </aside>
 
-                {chatMode === 'ai' && (
-                    <aside className={`h-full border-r overflow-hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-gray-100 bg-white'}`}>
-                        <ChatHistory
-                            historyItems={historyItems}
-                            onSelectHistory={handleSelectHistory}
-                            onDeleteHistory={handleDeleteHistory}
-                            activeId={activeHistoryId}
-                            theme={theme}
-                        />
-                    </aside>
-                )}
-
-                {/* Main chat area */}
-                <section className={`h-full flex flex-col overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-white'}`}>
-                    <header className={`h-16 border-b flex items-center justify-between px-6 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
-                        <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-900' : 'bg-sky-50'}`}>
-                                <MessageSquareText className="w-5 h-5 text-sky-600" />
-                            </div>
-                            <h2 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>AI Chatbot</h2>
-                        </div>
                         <div className="flex items-center gap-2">
-                            <div className={`flex items-center rounded-full p-1 mr-2 ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
+                            <div className={`flex items-center rounded-full p-1 ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
                                 <button
                                     type="button"
                                     onClick={() => handleSwitchMode('ai')}
@@ -514,7 +478,7 @@ const AIChatbotPage: React.FC = () => {
                                             : (isDark ? 'text-slate-300 hover:text-slate-100' : 'text-gray-600 hover:text-gray-900'))
                                     }
                                 >
-                                    Chat AI
+                                    AI
                                 </button>
                                 <button
                                     type="button"
@@ -526,9 +490,10 @@ const AIChatbotPage: React.FC = () => {
                                             : (isDark ? 'text-slate-300 hover:text-slate-100' : 'text-gray-600 hover:text-gray-900'))
                                     }
                                 >
-                                    Chat Admin
+                                    CS
                                 </button>
                             </div>
+
                             <button
                                 type="button"
                                 className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'bg-sky-50 hover:bg-sky-100'}`}
@@ -561,6 +526,10 @@ const AIChatbotPage: React.FC = () => {
                                 onMessagesChange={(msgs) => {
                                     if (chatMode === 'cs') {
                                         setAdminMessages(msgs);
+                                    } else {
+                                        if (msgs.length === 0) return;
+                                        if (!activeHistoryId) return;
+                                        setMessagesByChatId((prev) => ({ ...prev, [activeHistoryId]: msgs }));
                                     }
                                 }}
                                 onChatModeChange={(m) => {
@@ -573,9 +542,233 @@ const AIChatbotPage: React.FC = () => {
                                 }}
                             />
                         </div>
+
+                                const title = makeChatTitle(msgs);
+                                if (!title) return;
+                                setHistoryItems((prev) => {
+                                    const current = prev.find((x) => x.id === activeHistoryId);
+                                    if (!current) return prev;
+                                    if (current.title && current.title !== 'New chat') return prev;
+                                    return prev.map((x) => (x.id === activeHistoryId ? { ...x, title } : x));
+                                });
+                            }}
+                            onChatModeChange={(m) => {
+                                if (m === 'ai' || m === 'cs') setChatMode(m);
+                            }}
+                        />
                     </div>
-                </section>
-            </div>
+
+                    {chatMode === 'ai' && historyOpen ? (
+                        <>
+                            <div
+                                className="fixed inset-0 z-[120] bg-black/50"
+                                onClick={() => setHistoryOpen(false)}
+                                aria-hidden="true"
+                            />
+                            <div
+                                className={`fixed inset-y-0 left-0 z-[121] w-[88vw] max-w-[360px] border-r shadow-2xl ${isDark ? 'border-slate-800 bg-slate-950' : 'border-gray-100 bg-white'}`}
+                            >
+                                <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                                    <div className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>Chats</div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHistoryOpen(false)}
+                                        className={`h-9 w-9 rounded-xl border flex items-center justify-center ${isDark ? 'border-slate-800 hover:bg-slate-900' : 'border-gray-200 hover:bg-gray-50'}`}
+                                        aria-label="Close"
+                                    >
+                                        <span className="text-lg leading-none">×</span>
+                                    </button>
+                                </div>
+                                <ChatHistory
+                                    historyItems={historyItems}
+                                    onSelectHistory={(id) => {
+                                        handleSelectHistory(id);
+                                        setHistoryOpen(false);
+                                    }}
+                                    onDeleteHistory={handleDeleteHistory}
+                                    activeId={activeHistoryId}
+                                    theme={theme}
+                                />
+                            </div>
+                        </>
+                    ) : null}
+                </div>
+            ) : (
+                <div
+                    className={
+                        `h-full grid overflow-hidden ` +
+                        (chatMode === 'ai' ? 'grid-cols-[72px_320px_1fr]' : 'grid-cols-[72px_1fr]') +
+                        (!isAuthenticated ? ' pointer-events-none select-none blur-[1px]' : '')
+                    }
+                    aria-hidden={!isAuthenticated}
+                >
+                    {/* Left icon sidebar */}
+                    <aside className={`h-full border-r flex flex-col items-center py-5 overflow-hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-gray-100 bg-white'}`}>
+                        <button
+                            type="button"
+                            onClick={handleBack}
+                            className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
+                            aria-label="Back"
+                        >
+                            <ArrowLeft className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
+                        </button>
+
+                        <div className="flex-1 w-full flex flex-col items-center justify-center gap-4">
+                            <button
+                                type="button"
+                                className={`w-11 h-11 p-0 rounded-full flex items-center justify-center transition-colors ${isDark ? 'bg-slate-900 hover:bg-slate-800/70' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                aria-label="Home"
+                            >
+                                <Home className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-700'}`} />
+                            </button>
+
+                            {chatMode === 'ai' && (
+                                <button
+                                    type="button"
+                                    className="w-8 h-8 p-0 rounded-full bg-black text-white hover:bg-gray-900 flex items-center justify-center transition-colors"
+                                    aria-label="New chat"
+                                    onClick={handleNewChat}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="w-full flex flex-col items-center gap-4">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/profile')}
+                                className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
+                                aria-label="Settings"
+                            >
+                                <Settings className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
+                                aria-label="Log out"
+                            >
+                                <LogOut className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-gray-600'}`} />
+                            </button>
+
+                            <div className={`w-10 h-10 rounded-full overflow-hidden border mb-1 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
+                                <img
+                                    src={userAvatarUrl || DEFAULT_AVATAR_URL}
+                                    alt="User"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.src = DEFAULT_AVATAR_URL;
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </aside>
+
+                    {chatMode === 'ai' && (
+                        <aside className={`h-full border-r overflow-hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-gray-100 bg-white'}`}>
+                            <ChatHistory
+                                historyItems={historyItems}
+                                onSelectHistory={handleSelectHistory}
+                                onDeleteHistory={handleDeleteHistory}
+                                activeId={activeHistoryId}
+                                theme={theme}
+                            />
+                        </aside>
+                    )}
+
+                    {/* Main chat area */}
+                    <section className={`h-full flex flex-col overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-white'}`}>
+                        <header className={`h-16 border-b flex items-center justify-between px-6 ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-900' : 'bg-sky-50'}`}>
+                                    <MessageSquareText className="w-5 h-5 text-sky-600" />
+                                </div>
+                                <h2 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>AI Chatbot</h2>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className={`flex items-center rounded-full p-1 mr-2 ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSwitchMode('ai')}
+                                        className={
+                                            `px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ` +
+                                            (chatMode === 'ai'
+                                                ? (isDark ? 'bg-slate-800 text-slate-100 shadow-sm' : 'bg-white text-gray-900 shadow-sm')
+                                                : (isDark ? 'text-slate-300 hover:text-slate-100' : 'text-gray-600 hover:text-gray-900'))
+                                        }
+                                    >
+                                        Chat AI
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSwitchMode('cs')}
+                                        className={
+                                            `px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ` +
+                                            (chatMode === 'cs'
+                                                ? (isDark ? 'bg-slate-800 text-slate-100 shadow-sm' : 'bg-white text-gray-900 shadow-sm')
+                                                : (isDark ? 'text-slate-300 hover:text-slate-100' : 'text-gray-600 hover:text-gray-900'))
+                                        }
+                                    >
+                                        Chat Admin
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'bg-sky-50 hover:bg-sky-100'}`}
+                                    aria-label="Light"
+                                    onClick={() => setTheme('light')}
+                                >
+                                    <Sun className={`w-5 h-5 ${isDark ? 'text-slate-200' : 'text-sky-600'}`} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`w-10 h-10 p-0 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'bg-slate-900 hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
+                                    aria-label="Dark"
+                                    onClick={() => setTheme('dark')}
+                                >
+                                    <Moon className={`w-5 h-5 ${isDark ? 'text-sky-400' : 'text-gray-600'}`} />
+                                </button>
+                            </div>
+                        </header>
+
+                        <div className="flex-1 overflow-hidden">
+                            <div className="h-full">
+                                <ChatContainer
+                                    ref={chatRef}
+                                    showActions={false}
+                                    showHeader={false}
+                                    senderRole="user"
+                                    theme={theme}
+                                    chatMode={chatMode}
+                                    onMessagesChange={(msgs) => {
+                                        if (chatMode === 'cs') {
+                                            setAdminMessages(msgs);
+                                            return;
+                                        }
+
+                                        if (!activeHistoryId) return;
+                                        setMessagesByChatId((prev) => ({ ...prev, [activeHistoryId]: msgs }));
+
+                                        const title = makeChatTitle(msgs);
+                                        if (!title) return;
+                                        setHistoryItems((prev) => {
+                                            const current = prev.find((x) => x.id === activeHistoryId);
+                                            if (!current) return prev;
+                                            if (current.title && current.title !== 'New chat') return prev;
+                                            return prev.map((x) => (x.id === activeHistoryId ? { ...x, title } : x));
+                                        });
+                                    }}
+                                    onChatModeChange={(m) => {
+                                        if (m === 'ai' || m === 'cs') setChatMode(m);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            )}
 
             {!isAuthenticated && (
                 <>

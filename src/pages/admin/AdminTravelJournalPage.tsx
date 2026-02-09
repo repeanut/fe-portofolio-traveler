@@ -90,7 +90,7 @@ const TravelContentModal: React.FC<{
                 <input
                   type="text"
                   className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Misal: Bali, Tokyo, Alps"
+                  placeholder="e.g. Bali, Tokyo, Alps"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -126,7 +126,7 @@ const TravelContentModal: React.FC<{
                       onClick={() => setCover("")}
                       className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
                     >
-                      Hapus Cover
+                      Remove cover
                     </button>
                   </div>
                 ) : null}
@@ -184,7 +184,7 @@ const TravelContentModal: React.FC<{
               <div className="space-y-3">
                 {images.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-[11px] text-slate-500">
-                    Belum ada travel images.
+                    No travel images yet.
                   </div>
                 ) : (
                   images.map((src, idx) => (
@@ -236,14 +236,14 @@ const TravelContentModal: React.FC<{
               onClick={onClose}
               className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
             >
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
               className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSaving ? "Menyimpan..." : "Simpan"}
+              {isSaving ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
@@ -434,8 +434,8 @@ const AdminTravelJournalPage: React.FC = () => {
   ];
 
   return (
-    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-40" rows={6} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-48" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
         <AdminSidebar
           active={activeMenu}
           landingActiveKey="travel"
@@ -483,72 +483,25 @@ const AdminTravelJournalPage: React.FC = () => {
           }}
         />
 
-        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
           <AdminHeader title="Travel Journal Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
             <section>
-              <AdminTableHeader
-                onAddClick={() => {
-                  setEditingId(null);
                   setIsModalOpen(true);
-                }}
-              />
-
-              {error && (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    {error}
-                  </div>
-                </div>
-              )}
-
-              {loading && (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-2 text-gray-600">Loading travel journals...</span>
-                </div>
-              )}
-
-              {!loading && travelData.length === 0 && !error && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No travel journals found</h3>
-                  <p className="text-gray-600">Start by adding your first travel journal.</p>
-                </div>
-              )}
-
-              {!loading && travelData.length > 0 && (
-                <AdminTable
-                  columns={columns}
-                  data={travelData}
-                  currentPage={1}
-                  itemsPerPage={5}
-                  totalPages={1}
-                  onPageChange={() => {}}
-                  onItemsPerPageChange={() => {}}
-                  onEdit={(id) => {
-                    if (typeof id === "number") {
-                      setEditingId(id);
-                      setIsModalOpen(true);
-                    }
-                  }}
-                  onDelete={async (id) => {
-                    if (typeof id === "number") {
-                      try {
-                        await deleteTravelJournal(id);
-                        toast.success("Berhasil", "Travel highlight berhasil dihapus");
-                      } catch (error: any) {
-                        toast.error("Gagal", error?.message || "Travel highlight gagal dihapus");
-                      }
-                    }
-                  }}
-                />
+                }
+              }}
+              onDelete={async (id) => {
+                if (typeof id === "number") {
+                  try {
+                    await deleteTravelJournal(id);
+                    toast.success("Berhasil", "Travel highlight berhasil dihapus");
+                  } catch (error: any) {
+                    toast.error("Gagal", error?.message || "Travel highlight gagal dihapus");
+                  }
+                }
+              }}
+            />
               )}
             </section>
           </div>
@@ -569,32 +522,40 @@ const AdminTravelJournalPage: React.FC = () => {
           const images = payload.images ?? [];
 
           try {
-            if (!name) {
-              toast.error("Gagal", "Name highlight is required");
-              return;
-            }
-
-            if (!cover) {
-              toast.error("Gagal", "Cover image is required");
-              return;
-            }
-
-            saveTravelJournal({ name, cover, images }, editingId || undefined)
-              .then(() => {
-                if (editingId != null) {
-                  toast.success("Berhasil", "Travel highlight berhasil diperbarui");
-                } else {
-                  toast.success("Berhasil", "Travel highlight berhasil ditambahkan");
-                }
-
-                setIsModalOpen(false);
-                setEditingId(null);
-              })
-              .catch((error: any) => {
-                toast.error("Gagal", error?.message || "Perubahan travel highlight gagal disimpan");
+            if (editingId != null) {
+              setTravelData((prev) =>
+                prev.map((item) =>
+                  item.id === editingId
+                    ? {
+                        ...item,
+                        name: name || item.name,
+                        cover: cover || item.cover,
+                        images: images.length ? images : item.images,
+                      }
+                    : item
+                )
+              );
+              toast.success("Success", "Travel highlight updated successfully");
+            } else {
+              setTravelData((prev) => {
+                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+                return [
+                  ...prev,
+                  {
+                    id: nextId,
+                    name,
+                    cover,
+                    images,
+                  },
+                ];
               });
-          } catch (error: any) {
-            toast.error("Gagal", error?.message || "Perubahan travel highlight gagal disimpan");
+              toast.success("Success", "Travel highlight added successfully");
+            }
+
+            setIsModalOpen(false);
+            setEditingId(null);
+          } catch {
+            toast.error("Error", "Failed to save travel highlight changes");
           }
         }}
       />

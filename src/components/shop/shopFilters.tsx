@@ -109,7 +109,7 @@ const ShopFilters: React.FC<ShopFiltersProps> = ({
                     <ChevronDown className="h-4 w-4 text-slate-500" />
                 </button>
                 {serviceOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white shadow-lg p-2 z-30">
+                    <div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white shadow-lg p-2 z-30">
                         {serviceOptions.map((opt) => (
                             <button
                                 key={opt}
@@ -143,7 +143,7 @@ const ShopFilters: React.FC<ShopFiltersProps> = ({
                 </button>
 
                 {budgetOpen && (
-                    <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-200 bg-white shadow-lg z-30 overflow-hidden">
+                    <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white shadow-lg z-30 overflow-hidden">
                         <div className="p-4">
                             <p className="text-sm font-semibold text-slate-900">Budget</p>
 

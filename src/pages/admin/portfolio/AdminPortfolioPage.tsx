@@ -115,8 +115,8 @@ const AdminPortfolioPage: React.FC = () => {
   };
 
   return (
-    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-28" rows={6} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-32" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
         <AdminSidebar
           active={activeMenu}
           landingActiveKey="portfolio"
@@ -158,7 +158,7 @@ const AdminPortfolioPage: React.FC = () => {
           }}
         />
 
-        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
           <AdminHeader title="Portfolio Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">

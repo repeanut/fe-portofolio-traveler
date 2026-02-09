@@ -38,21 +38,21 @@ interface ChatContainerProps {
 }
 
 const faqOptions = [
-    { id: '1', question: 'Apa saja layanan yang tersedia?' },
-    { id: '2', question: 'Bagaimana cara memesan jasa?' },
-    { id: '3', question: 'Berapa biaya jasanya?' },
-    { id: '4', question: 'Berapa lama proses pengerjaannya?' },
+    { id: '1', question: 'What services are available?' },
+    { id: '2', question: 'How do I place an order?' },
+    { id: '3', question: 'How much does it cost?' },
+    { id: '4', question: 'How long does the process take?' },
 ];
 
 const aiResponses: Record<string, string> = {
-    'Apa saja layanan yang tersedia?':
-        'Saya menyediakan layanan Copywriting, Content Strategy, Brand Messaging, Social Media Content, dan Travel Writing. Setiap layanan disesuaikan dengan kebutuhan Anda.',
-    'Bagaimana cara memesan jasa?':
-        'Caranya mudah! Anda bisa menghubungi saya melalui form kontak di website atau langsung chat di sini. Kita akan diskusi kebutuhan project Anda, lalu saya akan memberikan proposal.',
-    'Berapa biaya jasanya?':
-        'Biaya bervariasi tergantung kompleksitas project. Konsultasi awal GRATIS! Hubungi saya untuk mendapatkan penawaran yang sesuai kebutuhan Anda.',
-    'Berapa lama proses pengerjaannya?':
-        'Durasi tergantung jenis dan kompleksitas project. Copywriting sederhana 2-3 hari, sedangkan project besar bisa 1-2 minggu. Kita akan diskusikan timeline bersama.',
+    'What services are available?':
+        'I offer Copywriting, Content Strategy, Brand Messaging, Social Media Content, and Travel Writing. Each service is tailored to your needs.',
+    'How do I place an order?':
+        'It’s easy! You can contact me through the website contact form or chat here directly. We’ll discuss your project needs, then I’ll send you a proposal.',
+    'How much does it cost?':
+        'Pricing varies depending on the project complexity. The initial consultation is FREE! Contact me to get an offer that fits your needs.',
+    'How long does the process take?':
+        'The timeline depends on the type and complexity of the project. Simple copywriting takes 2–3 days, while larger projects can take 1–2 weeks. We’ll confirm the timeline together.',
 };
 
 const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
@@ -70,7 +70,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
     const isDark = theme === 'dark';
     const onMessagesChangeRef = useRef<ChatContainerProps['onMessagesChange']>(onMessagesChange);
     const getCurrentTime = useCallback(() => {
-        return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }, []);
 
     const getUserName = useCallback(() => {
@@ -85,7 +85,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
         if (chatModeProp === 'cs') {
             return [{
                 id: 'greeting-admin',
-                content: 'Halo, Admin di sini. Ada yang bisa saya bantu?',
+                content: 'Hi, Admin is here. How can I help you?',
                 role: 'admin',
                 name: 'Rizwords',
                 timestamp: getCurrentTime(),
@@ -93,7 +93,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
         }
         return [{
             id: 'greeting',
-            content: 'Halo! Selamat datang. Ada yang bisa saya bantu?',
+            content: 'Hi! Welcome. How can I help you?',
             role: 'ai',
             name: 'AI Chatbot',
             timestamp: getCurrentTime(),
@@ -125,7 +125,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
     const addAIResponse = (userQuestion: string, customResponse?: string) => {
         setTimeout(() => {
             const response = customResponse || aiResponses[userQuestion] ||
-                'Terima kasih atas pertanyaan Anda! Saya akan dengan senang hati membantu. Untuk informasi lebih detail, silakan hubungi kami langsung melalui form kontak atau pilih opsi "Chat dengan Customer Service".';
+                'Thanks for your question! I’m happy to help. For more detailed information, please contact us via the contact form or choose the "Chat with Customer Service" option.';
 
             const aiMessage: Message = {
                 id: `ai-${Date.now()}`,
@@ -161,7 +161,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
 
         const systemMessage: Message = {
             id: `system-${Date.now()}`,
-            content: 'Anda telah terhubung dengan Customer Service. Silakan tunggu Admin untuk merespons pesan Anda. Anda juga bisa langsung menghubungi kami melalui WhatsApp di tombol yang tersedia di halaman Contact.',
+            content: 'You are now connected to Customer Service. Please wait for an Admin to respond to your message. You can also contact us directly via WhatsApp using the button on the Contact page.',
             role: 'ai',
             name: 'AI Chatbot',
             timestamp: getCurrentTime(),
@@ -204,7 +204,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
         setTimeout(() => {
             const adminMessage: Message = {
                 id: `admin-${Date.now()}`,
-                content: `Halo ${getUserName()}, admin di sini. Ada yang bisa saya bantu?`,
+                content: `Hi ${getUserName()}, admin is here. How can I help you?`,
                 role: 'admin',
                 name: 'Rizwords',
                 timestamp: getCurrentTime(),
@@ -237,7 +237,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
     }), [handleClearChat, handleResetToGreeting, handleSetMessages, messages]);
 
     return (
-        <div className={`h-full flex flex-col md:flex-row overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-white'}`}>
+        <div className={`h-full min-w-0 max-w-full flex flex-col md:flex-row overflow-hidden overflow-x-hidden ${isDark ? 'bg-slate-950' : 'bg-white'}`}>
             {/* Left Side - Floating Action Buttons */}
             {showActions && (
             <div className="hidden md:flex md:flex-col items-start gap-3 md:pr-4 md:pt-16 md:pb-0">
@@ -267,7 +267,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
             )}
 
             {/* Main Chat Container */}
-            <div className={`flex-1 flex flex-col overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-white'}`}>
+            <div className={`flex-1 min-w-0 flex flex-col overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-white'}`}>
                 {/* Header */}
                 {showHeader && (
                     <div className="flex items-center justify-between mb-4">
@@ -286,7 +286,7 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({
                 )}
 
                 {/* Messages Area */}
-                <div className={`flex-1 overflow-y-auto px-6 py-5 ${isDark ? 'bg-slate-950 chat-scroll-dark' : 'bg-white chat-scroll-light'}`}>
+                <div className={`flex-1 overflow-y-auto px-4 sm:px-6 py-5 ${isDark ? 'bg-slate-950 chat-scroll-dark' : 'bg-white chat-scroll-light'}`}>
                     {messages.map((msg) => (
                         <ChatMessage
                             key={msg.id}

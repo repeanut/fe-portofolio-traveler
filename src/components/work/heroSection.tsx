@@ -105,7 +105,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ shouldAnimateCounts = true, o
 
             <div
                 ref={heroBgRef}
-                className="relative w-full overflow-hidden flex-1"
+                className="relative w-full overflow-x-hidden flex-1"
                 style={{
                     backgroundImage: "url('/bg-work.png')",
                     backgroundSize: 'cover',
@@ -129,20 +129,20 @@ const HeroSection: React.FC<HeroSectionProps> = ({ shouldAnimateCounts = true, o
 
                 <div
                     ref={heroRef}
-                    className={`relative mx-auto py-16 md:py-20 fade-up ${heroInView ? 'in-view' : ''}`}
+                    className={`relative mx-auto h-full fade-up ${heroInView ? 'in-view' : ''}`}
                 >
-                    <div className="grid items-center gap-10 md:grid-cols-[1.5fr_1.4fr] pl-28">
-                        <div className="text-white">
+                    <div className="grid h-full items-center gap-6 lg:gap-10 md:grid-cols-[1.5fr_1.4fr] pt-8 pb-20 md:pb-24">
+                        <div className="text-white px-6 md:px-0 lg:pl-28 lg:pr-8">
                             <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] text-white/80">
-                                We just raised $20M in Series B. Learn more
+                                Premium SEO content and copywriting—delivered fast
                             </div>
 
-                            <h1 className="mt-6 text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                                Modern analytics for the modern world
+                            <h1 className="mt-5 text-3xl font-semibold leading-[1.05] tracking-tight md:text-6xl bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                                SEO content that ranks and converts
                             </h1>
 
-                            <p className="mt-4 max-w-xl text-sm leading-6 text-white/55">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.
+                            <p className="mt-3 max-w-xl text-sm leading-6 text-white/55">
+                                From blog posts and product descriptions to landing pages and ad copy—choose a package, place your order, and get polished writing that fits your brand voice.
                             </p>
 
                             <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -161,24 +161,24 @@ const HeroSection: React.FC<HeroSectionProps> = ({ shouldAnimateCounts = true, o
                                 </Button>
                             </div>
 
-                            <div className="mt-12 grid max-w-xl grid-cols-3 gap-10">
+                            <div className="mt-8 grid max-w-xl grid-cols-3 gap-6 md:gap-10">
                                 <div>
-                                    <div className="text-3xl font-semibold">{brandsCount.toLocaleString()}+</div>
+                                    <div className="text-2xl md:text-3xl font-semibold">{brandsCount.toLocaleString()}+</div>
                                     <div className="mt-1 text-xs text-white/55">International Brands</div>
                                 </div>
                                 <div>
-                                    <div className="text-3xl font-semibold">{productsCount.toLocaleString()}+</div>
+                                    <div className="text-2xl md:text-3xl font-semibold">{productsCount.toLocaleString()}+</div>
                                     <div className="mt-1 text-xs text-white/55">High-Quality Products</div>
                                 </div>
                                 <div>
-                                    <div className="text-3xl font-semibold">{customersCount.toLocaleString()}+</div>
+                                    <div className="text-2xl md:text-3xl font-semibold">{customersCount.toLocaleString()}+</div>
                                     <div className="mt-1 text-xs text-white/55">Happy Customers</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="relative flex justify-center md:justify-end">
-                            <div className="h-[400px] w-full rounded-2xl bg-[#0b1224]/80 border border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.5)] overflow-hidden">
+                        <div className="relative hidden md:flex justify-end">
+                            <div className="w-full max-h-[48vh] h-[220px] sm:h-[280px] md:h-[320px] lg:h-[380px] rounded-2xl bg-[#0b1224]/80 border border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.5)] overflow-hidden md:rounded-r-none">
                                 <img
                                     src="/image-work.png"
                                     alt="image-work"
@@ -187,11 +187,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ shouldAnimateCounts = true, o
                             </div>
                         </div>
                     </div>
-                    <div className="relative mt-18">
-                        <div className="bg-[#E7F1FD] py-4 md:py-6 shadow-xl overflow-hidden">
-                            <div className="overflow-hidden whitespace-nowrap">
+
+                    <div className="absolute inset-x-0 bottom-0">
+                        <div className="bg-[#E7F1FD] h-16 md:h-20 shadow-xl overflow-hidden">
+                            <div className="h-full overflow-hidden whitespace-nowrap flex items-center">
                                 <div
-                                    className="inline-flex items-center gap-10 animate-marquee"
+                                    className="inline-flex min-w-max items-center gap-10 animate-marquee"
                                     style={{ animation: 'marquee 30s linear infinite' }}
                                 >
                                     {marqueeBrands.map((src, idx) => (
@@ -199,7 +200,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ shouldAnimateCounts = true, o
                                             key={`${src}-${idx}`}
                                             src={src}
                                             alt="Featured brand logo"
-                                            className="h-10 w-auto object-contain flex-shrink-0"
+                                            className="h-8 md:h-10 w-auto object-contain flex-shrink-0"
                                         />
                                     ))}
                                 </div>

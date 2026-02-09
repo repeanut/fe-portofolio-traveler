@@ -59,7 +59,7 @@ const BlogEditorModal: React.FC<EditorModalProps> = ({
       <div className="flex h-[80vh] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl border border-slate-200">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Tulis Artikel</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Write Article</h2>
             {initialTitle && (
               <p className="mt-0.5 text-xs text-slate-500">{initialTitle}</p>
             )}
@@ -69,7 +69,7 @@ const BlogEditorModal: React.FC<EditorModalProps> = ({
             onClick={onClose}
             className="rounded-md px-3 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
           >
-            Tutup
+            Close
           </button>
         </div>
 
@@ -87,14 +87,14 @@ const BlogEditorModal: React.FC<EditorModalProps> = ({
             onClick={onClose}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
           >
-            Batal
+            Cancel
           </button>
           <button
             type="button"
             onClick={() => onSubmit(content)}
             className="rounded-lg bg-blue-500 px-4 py-2 text-xs font-medium text-white shadow-xs hover:bg-blue-600"
           >
-            Simpan Artikel
+            Save Article
           </button>
         </div>
       </div>
@@ -154,7 +154,7 @@ const BlogPreviewModal: React.FC<PreviewModalProps> = ({ isOpen, article, onClos
             onClick={onClose}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
           >
-            Tutup
+            Close
           </button>
         </div>
 
@@ -225,10 +225,10 @@ const AdminBlogArticlesPage: React.FC = () => {
       {
         id: 1,
         cover: "/placeholder-image.png",
-        title: "Tips Menyiapkan Liburan ke Bali",
+        title: "Tips for Preparing a Trip to Bali",
         category: "Travel Tips",
         status: "publish",
-        content: "Konten artikel contoh tentang liburan ke Bali.",
+        content: "Sample article content about traveling to Bali.",
       },
     ];
   });
@@ -317,9 +317,9 @@ const AdminBlogArticlesPage: React.FC = () => {
                 if (typeof id !== "number") return;
                 try {
                   setArticles((prev) => prev.filter((a) => a.id !== id));
-                  toast.success("Berhasil", "Artikel berhasil dihapus");
+                  toast.success("Success", "Article deleted successfully");
                 } catch {
-                  toast.error("Gagal", "Artikel gagal dihapus");
+                  toast.error("Error", "Failed to delete article");
                 }
               }}
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-red-700"
@@ -348,13 +348,13 @@ const AdminBlogArticlesPage: React.FC = () => {
         name: "title",
         label: "Title",
         type: "text",
-        placeholder: "Judul artikel",
+        placeholder: "Article title",
       },
       {
         name: "category",
         label: "Category",
         type: "text",
-        placeholder: "Misal: Travel, Tips, Story",
+        placeholder: "e.g. Travel, Tips, Story",
       },
       {
         name: "status",
@@ -371,7 +371,7 @@ const AdminBlogArticlesPage: React.FC = () => {
 
   return (
     <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-36" rows={6} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
         <AdminSidebar
           active={activeMenu}
           onNavigate={(key) => {
@@ -394,7 +394,7 @@ const AdminBlogArticlesPage: React.FC = () => {
           }}
         />
 
-        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
           <AdminHeader title="Blog Articles" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -432,10 +432,10 @@ const AdminBlogArticlesPage: React.FC = () => {
           }}
         />
 
-        {/* Modal 1: metadata artikel */}
+        {/* Modal 1: article metadata */}
         <AdminModal
           isOpen={isMetaModalOpen}
-          title={editingId ? "Edit Artikel" : "Tambah Artikel"}
+          title={editingId ? "Edit Article" : "Add Article"}
           fields={metaFields}
           submitLabel="Continue"
           initialData={
@@ -467,14 +467,14 @@ const AdminBlogArticlesPage: React.FC = () => {
               setEditorTitle(title);
               setIsMetaModalOpen(false);
               setIsEditorOpen(true);
-              toast.success("Berhasil", "Metadata artikel tersimpan. Lanjut tulis konten.");
+              toast.success("Success", "Article metadata saved. Continue writing the content.");
             } catch {
-              toast.error("Gagal", "Metadata artikel gagal disimpan");
+              toast.error("Error", "Failed to save article metadata");
             }
           }}
         />
 
-        {/* Modal 2: editor konten artikel */}
+        {/* Modal 2: article content editor */}
         <BlogEditorModal
           isOpen={isEditorOpen}
           initialTitle={editorTitle}
@@ -508,7 +508,7 @@ const AdminBlogArticlesPage: React.FC = () => {
                       : item
                   )
                 );
-                toast.success("Berhasil", "Artikel berhasil diperbarui");
+                toast.success("Success", "Article updated successfully");
               } else {
                 setArticles((prev) => {
                   const nextId = prev.length ? prev[prev.length - 1].id + 1 : 1;
@@ -524,7 +524,7 @@ const AdminBlogArticlesPage: React.FC = () => {
                     },
                   ];
                 });
-                toast.success("Berhasil", "Artikel berhasil ditambahkan");
+                toast.success("Success", "Article added successfully");
               }
 
               setIsEditorOpen(false);
@@ -535,15 +535,15 @@ const AdminBlogArticlesPage: React.FC = () => {
 
               // Show success message
               if (pendingMeta.status === "publish") {
-                toast.success("Berhasil", "Artikel berhasil dipublikasikan");
+                toast.success("Success", "Article published successfully");
                 setTimeout(() => {
                   navigate("/blog");
                 }, 1500);
               } else {
-                toast.success("Berhasil", "Artikel berhasil disimpan sebagai draft");
+                toast.success("Success", "Article saved as a draft");
               }
             } catch {
-              toast.error("Gagal", "Perubahan artikel gagal disimpan");
+              toast.error("Error", "Failed to save article changes");
             }
           }}
         />

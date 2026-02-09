@@ -48,7 +48,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 />
             </div>
 
-            <div className={`min-w-0 ${isRightAligned ? 'flex flex-col items-end' : 'flex flex-col items-start'} max-w-[78%]`}>
+            <div className={`min-w-0 ${isRightAligned ? 'flex flex-col items-end' : 'flex flex-col items-start'} max-w-[82%] sm:max-w-[78%]`}>
                 <div className={`flex items-center gap-2 mb-1 ${isRightAligned ? 'justify-end' : 'justify-start'}`}>
                     <span className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>{name}</span>
                     {isAdmin && (
@@ -82,7 +82,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                             <img
                                 src={imageUrl}
                                 alt={message}
-                                className="w-full max-w-[360px] rounded-2xl object-cover"
+                                className="w-full max-w-full sm:max-w-[360px] rounded-2xl object-cover"
                             />
                         </div>
                     ) : (
