@@ -27,15 +27,15 @@ const DashboardGrowthCard: React.FC<DashboardGrowthCardProps> = ({
   formatRupiah,
 }) => {
   return (
-    <div className="flex h-full flex-col">
-      <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm h-full">
-        <div className="flex items-start justify-between gap-4">
+    <div className="flex h-full min-w-0 flex-col">
+      <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm h-full min-w-0 max-w-full overflow-hidden">
+        <div className="flex min-w-0 items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-slate-900 truncate">Profile Growth</h3>
             <p className="mt-0.5 text-[11px] text-slate-500">Overall information</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="inline-flex items-center rounded-full bg-slate-100 p-1">
               <button
                 type="button"
@@ -59,19 +59,21 @@ const DashboardGrowthCard: React.FC<DashboardGrowthCardProps> = ({
           </div>
         </div>
 
-        <div className="relative mt-4 overflow-hidden rounded-2xl bg-indigo-50/60 px-3 py-3">
-          <ReactApexChart type="line" height={192} options={chartOptions} series={chartSeries} />
+        <div className="relative mt-4 w-full max-w-full overflow-x-auto overflow-y-hidden rounded-2xl bg-indigo-50/60 px-3 py-3">
+          <div className="min-w-[520px] md:min-w-0">
+            <ReactApexChart type="line" height={192} options={chartOptions} series={chartSeries} />
+          </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 text-[11px]">
-          <div className="rounded-xl border border-slate-100 bg-white p-3">
+        <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] min-w-0">
+          <div className="rounded-xl border border-slate-100 bg-white p-3 min-w-0">
             <div className="text-slate-500">Best income</div>
-            <div className="mt-1 font-semibold text-slate-900">{formatRupiah(monthlyIncome.bestAmount)}</div>
+            <div className="mt-1 font-semibold text-slate-900 truncate">{formatRupiah(monthlyIncome.bestAmount)}</div>
             <div className="mt-0.5 text-[10px] text-slate-500">{monthlyIncome.bestLabel}</div>
           </div>
-          <div className="rounded-xl border border-slate-100 bg-white p-3">
+          <div className="rounded-xl border border-slate-100 bg-white p-3 min-w-0">
             <div className="text-slate-500">Avg/day</div>
-            <div className="mt-1 font-semibold text-slate-900">{formatRupiah(avgIncome)}</div>
+            <div className="mt-1 font-semibold text-slate-900 truncate">{formatRupiah(avgIncome)}</div>
           </div>
         </div>
       </div>

@@ -6,8 +6,8 @@ export interface AdminModalField {
   type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select" | "radio";
   options?: Array<{ label: string; value: string }>;
   placeholder?: string;
-  // Untuk field image: atur apakah boleh memilih banyak file atau hanya satu.
-  // Default: true (boleh multiple) supaya tidak mengubah perilaku lama.
+  // For image fields: whether multiple files can be selected or only one.
+  // Default: true (multiple allowed) to preserve existing behavior.
   multiple?: boolean;
 }
 
@@ -30,7 +30,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
   onClose,
   onSubmit,
   isSaving = false,
-  submitLabel = "Simpan",
+  submitLabel = "Save",
 }) => {
   const [imagePreviews, setImagePreviews] = useState<Record<string, string[]>>({});
   const [tagValues, setTagValues] = useState<Record<string, string[]>>({});
@@ -69,7 +69,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
     const data: Record<string, unknown> = {};
     fields.forEach((field) => {
       if (field.type === "image") {
-        // Gunakan preview yang sudah tersimpan sebagai sumber kebenaran
+        // Use the stored previews as the source of truth
         data[field.name] = imagePreviews[field.name] ?? [];
       } else if (field.type === "tags") {
         data[field.name] = tagValues[field.name] ?? [];
@@ -119,23 +119,23 @@ const AdminModal: React.FC<AdminModalProps> = ({
           {fields.map((field) => {
             if (field.type === "monthYear") {
               const months = [
-                "Bulan",
+                "Month",
                 "Jan",
                 "Feb",
                 "Mar",
                 "Apr",
-                "Mei",
+                "May",
                 "Jun",
                 "Jul",
-                "Agu",
+                "Aug",
                 "Sep",
-                "Okt",
+                "Oct",
                 "Nov",
-                "Des",
+                "Dec",
               ];
 
               const currentYear = new Date().getFullYear();
-              const years: string[] = ["Tahun"];
+              const years: string[] = ["Year"];
               for (let y = currentYear; y >= currentYear - 30; y -= 1) {
                 years.push(String(y));
               }
@@ -393,14 +393,14 @@ const AdminModal: React.FC<AdminModalProps> = ({
               onClick={onClose}
               className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
             >
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
               className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSaving ? "Menyimpan..." : submitLabel}
+              {isSaving ? "Saving..." : submitLabel}
             </button>
           </div>
         </form>

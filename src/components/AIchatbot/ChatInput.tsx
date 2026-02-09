@@ -46,8 +46,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="px-6 pb-5">
-            <div className={`flex items-center gap-3 rounded-full border shadow-sm px-3 py-2 ${isDark ? 'bg-slate-900/60 border-slate-800 shadow-black/20' : 'bg-white border-gray-200'}`}>
+        <form onSubmit={handleSubmit} className="px-4 sm:px-6 pb-4 sm:pb-5">
+            <div className={`flex min-w-0 items-center gap-2 sm:gap-3 rounded-full border shadow-sm px-3 py-2 ${isDark ? 'bg-slate-900/60 border-slate-800 shadow-black/20' : 'bg-white border-gray-200'}`}>
                 <input
                     ref={attachmentInputRef}
                     type="file"
@@ -58,7 +58,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 <button
                     type="button"
                     onClick={handleAttachmentClick}
-                    className={`w-10 h-10 p-0 rounded-full flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
+                    className={`w-9 h-9 sm:w-10 sm:h-10 p-0 rounded-full flex items-center justify-center transition-colors ${isDark ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}
                     aria-label="Attach"
                 >
                     <Paperclip className={`w-5 h-5 ${isDark ? 'text-slate-300' : 'text-gray-500'}`} />
@@ -75,7 +75,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 <button
                     type="submit"
                     disabled={!inputValue.trim() || disabled}
-                    className={`w-11 h-11 p-0 flex items-center justify-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'bg-sky-500 hover:bg-sky-400 text-white' : 'bg-sky-500 hover:bg-sky-600 text-white'}`}
+                    className={`w-10 h-10 sm:w-11 sm:h-11 p-0 flex items-center justify-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'bg-sky-500 hover:bg-sky-400 text-white' : 'bg-sky-500 hover:bg-sky-600 text-white'}`}
                 >
                     <Send className="w-5 h-5" />
                 </button>

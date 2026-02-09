@@ -59,7 +59,7 @@ const DashboardCalendarCard: React.FC<DashboardCalendarCardProps> = ({ recentOrd
   const selectedDateObj = useMemo(() => new Date(`${selectedDateKey}T00:00:00`), [selectedDateKey]);
   const selectedDateLabel = useMemo(
     () =>
-      new Intl.DateTimeFormat("id-ID", {
+      new Intl.DateTimeFormat("en-US", {
         weekday: "short",
         day: "2-digit",
         month: "short",
@@ -196,7 +196,7 @@ const DashboardCalendarCard: React.FC<DashboardCalendarCardProps> = ({ recentOrd
                   <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[304px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
                     <div className="mb-3 flex items-start justify-between gap-3 px-1">
                       <div className="min-w-0">
-                        <div className="text-[12px] font-semibold text-slate-900">Pilih tanggal</div>
+                        <div className="text-[12px] font-semibold text-slate-900">Select date</div>
                         <div className="mt-0.5 text-[10px] font-medium text-slate-500 truncate">{selectedDateLabel}</div>
                       </div>
 
@@ -321,12 +321,12 @@ const DashboardCalendarCard: React.FC<DashboardCalendarCardProps> = ({ recentOrd
             <div className="flex h-full items-center justify-center rounded-2xl bg-slate-50 p-4 text-center">
               <div>
                 <div className="text-sm font-semibold text-slate-900">
-                  {selectedDateKey === todayKey ? "hari ini kamu bisa beristirahat" : "Tidak ada orderan"}
+                  {selectedDateKey === todayKey ? "You can take a break today" : "No orders"}
                 </div>
                 <div className="mt-1 text-[11px] text-slate-500">
                   {selectedDateKey === todayKey
-                    ? "Tidak ada orderan untuk hari ini."
-                    : `Tidak ada orderan untuk tanggal ${selectedDateKey}.`}
+                    ? "There are no orders for today."
+                    : `There are no orders for ${selectedDateKey}.`}
                 </div>
               </div>
             </div>

@@ -185,10 +185,10 @@ const AdminTable: React.FC<AdminTableProps> = ({
   };
 
   return (
-    <div className="overflow-visible rounded-2xl border border-slate-100 bg-white shadow-xs">
-      <div className="min-w-full inline-block align-middle">
-        <div className="relative overflow-x-auto overflow-y-visible">
-          <table className="w-full table-fixed divide-y divide-slate-100">
+    <div className="rounded-2xl border border-slate-100 bg-white shadow-xs max-w-full overflow-hidden">
+      <div className="w-full max-w-full align-middle">
+        <div className="relative w-full max-w-full overflow-x-auto overflow-y-visible">
+          <table className="w-full min-w-[820px] md:min-w-0 table-fixed divide-y divide-slate-100">
             <thead className="bg-slate-50 sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 w-12">

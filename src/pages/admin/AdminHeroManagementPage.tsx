@@ -66,7 +66,7 @@ const HeroContentModal: React.FC<HeroContentModalProps> = ({
       <div className="w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h2 className="text-sm font-semibold text-slate-900">
-            {mode === "edit" ? "Edit Hero Content" : "Tambah Hero Content"}
+            {mode === "edit" ? "Edit Hero Content" : "Add Hero Content"}
           </h2>
           <button
             type="button"
@@ -161,7 +161,7 @@ const HeroContentModal: React.FC<HeroContentModalProps> = ({
             <div className="space-y-3">
               {brands.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-[11px] text-slate-500">
-                  Belum ada logo brand.
+                  No brand logos yet.
                 </div>
               ) : (
                 brands.map((src, idx) => (
@@ -327,7 +327,7 @@ const AdminHeroManagementPage: React.FC = () => {
 
   return (
     <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-44" rows={6} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
         {/* Sidebar */}
         <AdminSidebar
           active={activeMenu}
@@ -377,7 +377,7 @@ const AdminHeroManagementPage: React.FC = () => {
         />
 
         {/* Main content */}
-        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
           <AdminHeader title="Hero Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -386,7 +386,7 @@ const AdminHeroManagementPage: React.FC = () => {
               <AdminTableHeader
                 onAddClick={() => {
                   if (heroBrandsData.length >= 1) {
-                    toast.warning("Batas maksimal", "Hero text hanya boleh 1 item");
+                    toast.warning("Limit reached", "Hero text can only have 1 item");
                     return;
                   }
                   setEditingHeroId(null);
@@ -413,9 +413,9 @@ const AdminHeroManagementPage: React.FC = () => {
                   if (typeof id === "number") {
                     try {
                       setHeroBrandsData((prev) => prev.filter((item) => item.id !== id));
-                      toast.success("Berhasil", "Hero text berhasil dihapus");
+                      toast.success("Success", "Hero text deleted successfully");
                     } catch {
-                      toast.error("Gagal", "Hero text gagal dihapus");
+                      toast.error("Error", "Failed to delete hero text");
                     }
                   }
                 }}
@@ -431,7 +431,7 @@ const AdminHeroManagementPage: React.FC = () => {
               <AdminTableHeader
                 onAddClick={() => {
                   if (heroImageData.length >= 7) {
-                    toast.warning("Batas maksimal", "Hero image maksimal 7 item");
+                    toast.warning("Limit reached", "Hero images can have up to 7 items");
                     return;
                   }
                   setEditingImageId(null);
@@ -458,9 +458,9 @@ const AdminHeroManagementPage: React.FC = () => {
                   if (typeof id === "number") {
                     try {
                       setHeroImageData((prev) => prev.filter((item) => item.id !== id));
-                      toast.success("Berhasil", "Hero image berhasil dihapus");
+                      toast.success("Success", "Hero image deleted successfully");
                     } catch {
-                      toast.error("Gagal", "Hero image gagal dihapus");
+                      toast.error("Error", "Failed to delete hero image");
                     }
                   }
                 }}
@@ -507,11 +507,11 @@ const AdminHeroManagementPage: React.FC = () => {
                       : item
                   )
                 );
-                toast.success("Berhasil", "Hero text berhasil diperbarui");
+                toast.success("Success", "Hero text updated successfully");
               } else {
                 setHeroBrandsData((prev) => {
                   if (prev.length >= 1) {
-                    toast.warning("Batas maksimal", "Hero text hanya boleh 1 item");
+                    toast.warning("Limit reached", "Hero text can only have 1 item");
                     return prev;
                   }
                   const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -525,13 +525,13 @@ const AdminHeroManagementPage: React.FC = () => {
                     },
                   ];
                 });
-                toast.success("Berhasil", "Hero text berhasil ditambahkan");
+                toast.success("Success", "Hero text added successfully");
               }
 
               setIsHeroModalOpen(false);
               setEditingHeroId(null);
             } catch {
-              toast.error("Gagal", "Perubahan hero text gagal disimpan");
+              toast.error("Error", "Failed to save hero text changes");
             }
           }}
         />
@@ -539,7 +539,7 @@ const AdminHeroManagementPage: React.FC = () => {
         {/* Hero image modal */}
         <AdminModal
           isOpen={isImageModalOpen}
-          title={editingImageId ? "Edit Hero Image" : "Tambah Hero Image"}
+          title={editingImageId ? "Edit Hero Image" : "Add Hero Image"}
           fields={heroImageFields}
           initialData={
             editingImageId != null
@@ -567,11 +567,11 @@ const AdminHeroManagementPage: React.FC = () => {
                       : item
                   )
                 );
-                toast.success("Berhasil", "Hero image berhasil diperbarui");
+                toast.success("Success", "Hero image updated successfully");
               } else {
                 setHeroImageData((prev) => {
                   if (prev.length >= 7) {
-                    toast.warning("Batas maksimal", "Hero image maksimal 7 item");
+                    toast.warning("Limit reached", "Hero images can have up to 7 items");
                     return prev;
                   }
                   const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -583,13 +583,13 @@ const AdminHeroManagementPage: React.FC = () => {
                     },
                   ];
                 });
-                toast.success("Berhasil", "Hero image berhasil ditambahkan");
+                toast.success("Success", "Hero image added successfully");
               }
 
               setIsImageModalOpen(false);
               setEditingImageId(null);
             } catch {
-              toast.error("Gagal", "Perubahan hero image gagal disimpan");
+              toast.error("Error", "Failed to save hero image changes");
             }
           }}
         />

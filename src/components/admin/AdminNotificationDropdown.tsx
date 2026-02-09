@@ -12,7 +12,7 @@ type Notification = {
   read: boolean;
 };
 
-const mockNotifications: Notification[] = [
+const mockAdminNotifications: Notification[] = [
   {
     id: "1",
     type: "order",
@@ -55,6 +55,33 @@ const mockNotifications: Notification[] = [
   },
 ];
 
+const mockUserNotifications: Notification[] = [
+  {
+    id: "u1",
+    type: "chat",
+    title: "New message from admin",
+    description: "You have a new message about your order details.",
+    time: "Just now",
+    read: false,
+  },
+  {
+    id: "u2",
+    type: "order",
+    title: "Order in progress",
+    description: "Your order is being processed.",
+    time: "10 min ago",
+    read: false,
+  },
+  {
+    id: "u3",
+    type: "order",
+    title: "Order completed",
+    description: "Your draft is ready. Please review the delivery.",
+    time: "2 hours ago",
+    read: true,
+  },
+];
+
 const typeIcons: Record<NotificationType, React.ComponentType<{ className?: string }>> = {
   order: Package,
   chat: MessageSquare,
@@ -67,9 +94,21 @@ const typeColors: Record<NotificationType, string> = {
   deadline: "text-amber-600 bg-amber-50",
 };
 
-const AdminNotificationDropdown: React.FC = () => {
+type AdminNotificationDropdownProps = {
+  variant?: "admin" | "user";
+  initialNotifications?: Notification[];
+  buttonClassName?: string;
+};
+
+const AdminNotificationDropdown: React.FC<AdminNotificationDropdownProps> = ({
+  variant = "admin",
+  initialNotifications,
+  buttonClassName,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>(
+    initialNotifications ?? (variant === "user" ? mockUserNotifications : mockAdminNotifications)
+  );
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -105,7 +144,10 @@ const AdminNotificationDropdown: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-700"
+        className={
+          buttonClassName ??
+          "relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-700"
+        }
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
@@ -126,13 +168,15 @@ const AdminNotificationDropdown: React.FC = () => {
             aria-hidden="true"
           />
           {/* Dropdown */}
-          <div className="absolute right-0 top-full z-20 mt-2 w-[420px] origin-top-right rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
+          <div className="absolute right-0 top-full z-20 mt-2 w-[320px] sm:w-[420px] max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
             {/* Header */}
             <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-slate-100">
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="text-[11px] text-slate-500">Keep track of orders & messages</span>
+                  <span className="text-[11px] text-slate-500">
+                    {variant === "user" ? "Updates for orders & messages" : "Keep track of orders & messages"}
+                  </span>
                   {unreadCount > 0 && (
                     <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-100">
                       {unreadCount} unread

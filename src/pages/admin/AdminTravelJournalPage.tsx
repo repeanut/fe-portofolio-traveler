@@ -90,7 +90,7 @@ const TravelContentModal: React.FC<{
                 <input
                   type="text"
                   className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Misal: Bali, Tokyo, Alps"
+                  placeholder="e.g. Bali, Tokyo, Alps"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -126,7 +126,7 @@ const TravelContentModal: React.FC<{
                       onClick={() => setCover("")}
                       className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
                     >
-                      Hapus Cover
+                      Remove cover
                     </button>
                   </div>
                 ) : null}
@@ -184,7 +184,7 @@ const TravelContentModal: React.FC<{
               <div className="space-y-3">
                 {images.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-[11px] text-slate-500">
-                    Belum ada travel images.
+                    No travel images yet.
                   </div>
                 ) : (
                   images.map((src, idx) => (
@@ -236,14 +236,14 @@ const TravelContentModal: React.FC<{
               onClick={onClose}
               className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
             >
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
               className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSaving ? "Menyimpan..." : "Simpan"}
+              {isSaving ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
@@ -309,8 +309,8 @@ const AdminTravelJournalPage: React.FC = () => {
   ];
 
   return (
-    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-40" rows={6} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-48" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
         <AdminSidebar
           active={activeMenu}
           landingActiveKey="travel"
@@ -358,7 +358,7 @@ const AdminTravelJournalPage: React.FC = () => {
           }}
         />
 
-        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
           <AdminHeader title="Travel Journal Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -388,9 +388,9 @@ const AdminTravelJournalPage: React.FC = () => {
                   if (typeof id === "number") {
                     try {
                       setTravelData((prev) => prev.filter((item) => item.id !== id));
-                      toast.success("Berhasil", "Travel highlight berhasil dihapus");
+                      toast.success("Success", "Travel highlight deleted successfully");
                     } catch {
-                      toast.error("Gagal", "Travel highlight gagal dihapus");
+                      toast.error("Error", "Failed to delete travel highlight");
                     }
                   }
                 }}
@@ -427,7 +427,7 @@ const AdminTravelJournalPage: React.FC = () => {
                     : item
                 )
               );
-              toast.success("Berhasil", "Travel highlight berhasil diperbarui");
+              toast.success("Success", "Travel highlight updated successfully");
             } else {
               setTravelData((prev) => {
                 const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
@@ -441,13 +441,13 @@ const AdminTravelJournalPage: React.FC = () => {
                   },
                 ];
               });
-              toast.success("Berhasil", "Travel highlight berhasil ditambahkan");
+              toast.success("Success", "Travel highlight added successfully");
             }
 
             setIsModalOpen(false);
             setEditingId(null);
           } catch {
-            toast.error("Gagal", "Perubahan travel highlight gagal disimpan");
+            toast.error("Error", "Failed to save travel highlight changes");
           }
         }}
       />

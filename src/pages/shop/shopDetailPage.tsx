@@ -75,12 +75,12 @@ const ShopDetailPage: React.FC = () => {
                             {/* Left column: seller + details */}
                             <div>
                                 {/* Title */}
-                                <p className="mt-4 text-3xl md:text-4xl font-semibold text-slate-900 max-w-3xl mb-12">
+                                <p className="mt-4 text-2xl sm:text-3xl md:text-4xl font-semibold text-slate-900 max-w-3xl mb-8 md:mb-12">
                                     {item.title}
                                 </p>
 
                                 {/* Seller card */}
-                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 rounded-3xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 rounded-3xl border border-slate-200 bg-white px-4 sm:px-6 py-5 shadow-sm">
                                     <div className="flex items-center gap-4">
                                         <div className="h-16 w-16 rounded-full overflow-hidden bg-slate-200">
                                             <img
@@ -112,14 +112,14 @@ const ShopDetailPage: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setIsContactOpen(true)}
-                                        className="inline-flex items-center justify-center rounded-full border border-sky-500 px-5 py-2 text-xs font-medium text-sky-500 hover:bg-sky-500 hover:text-white transition-colors"
+                                        className="inline-flex w-full md:w-auto items-center justify-center rounded-full border border-sky-500 px-5 py-2 text-xs font-medium text-sky-500 hover:bg-sky-500 hover:text-white transition-colors"
                                     >
                                         Contact Me
                                     </button>
                                 </div>
 
                                 {/* Tabs */}
-                                <div className="mt-12 border-b border-slate-200 flex gap-0 text-lg md:text-base">
+                                <div className="mt-10 md:mt-12 border-b border-slate-200 flex gap-0 text-sm sm:text-base md:text-base">
                                     <button
                                         type="button"
                                         onClick={() => setActiveTab('details')}

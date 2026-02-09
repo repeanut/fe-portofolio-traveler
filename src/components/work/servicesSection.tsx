@@ -47,20 +47,20 @@ const ServicesSection: React.FC = () => {
 
     return (
         <section ref={sectionRef} className="w-full py-12 md:py-16">
-            <div className={`mx-auto max-w-6xl fade-up ${inView ? 'in-view' : ''}`}>
+            <div className={`mx-auto max-w-6xl px-6 md:px-8 fade-up ${inView ? 'in-view' : ''}`}>
                 {/* <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">
                     Popular Services
                 </h2> */}
 
-                <div className="mt-14 -mx-4 md:mx-0">
+                <div className="mt-10 md:mt-14 -mx-4 sm:-mx-6 lg:-mx-8">
                     <div
-                        className="services-scroll flex gap-4 md:gap-6 overflow-x-auto pb-2 px-4 md:px-0"
+                        className="services-scroll flex gap-4 md:gap-6 overflow-x-auto pb-2 px-4 sm:px-6 lg:px-8"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         {services.map((service) => (
                             <article
                                 key={service.title}
-                                className="min-w-[260px] md:min-w-[280px] flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white px-6 py-6 md:py-8 shadow-sm/5 hover:shadow-md transition-shadow duration-150 cursor-pointer"
+                                className="min-w-[240px] sm:min-w-[260px] md:min-w-[280px] flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white px-6 py-6 md:py-8 shadow-sm/5 hover:shadow-md transition-shadow duration-150 cursor-pointer"
                                 onClick={() => handleServiceClick(service.title)}
                             >
                                 <div className="flex h-20 w-full items-center justify-center mb-4">

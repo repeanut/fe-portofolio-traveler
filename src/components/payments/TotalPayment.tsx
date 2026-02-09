@@ -52,10 +52,10 @@ const TotalPayment: React.FC<TotalPaymentProps> = ({
         }
     };
     return (
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-5 space-y-4 max-w-full overflow-hidden">
+            <div className="flex min-w-0 items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-900">Total</h2>
-                <p className="text-sm font-semibold text-gray-900">{formatCurrency(total)}</p>
+                <p className="text-sm font-semibold text-gray-900 shrink-0">{formatCurrency(total)}</p>
             </div>
 
             <button
@@ -71,7 +71,7 @@ const TotalPayment: React.FC<TotalPaymentProps> = ({
                 {isProcessing ? 'Processing...' : 'Confirm & Pay'}
             </button>
 
-            <p className="text-[11px] text-gray-500 leading-relaxed">
+            <p className="text-[11px] text-gray-500 leading-relaxed break-words">
                 By clicking the button, you agree to our
                 <span className="text-sky-500"> Terms of Service</span> and
                 <span className="text-sky-500"> Payment Terms</span>.
@@ -84,17 +84,17 @@ const TotalPayment: React.FC<TotalPaymentProps> = ({
 
             <div className="mt-3 border-t border-gray-200 pt-3 space-y-2 text-xs text-gray-600">
                 <p className="font-semibold text-gray-900">Price summary</p>
-                <div className="flex items-center justify-between">
-                    <span>Selected package</span>
-                    <span>{formatCurrency(subtotal)}</span>
+                <div className="flex min-w-0 items-center justify-between">
+                    <span className="min-w-0">Selected package</span>
+                    <span className="shrink-0">{formatCurrency(subtotal)}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                    <span>Service fee</span>
-                    <span>{formatCurrency(serviceFee)}</span>
+                <div className="flex min-w-0 items-center justify-between">
+                    <span className="min-w-0">Service fee</span>
+                    <span className="shrink-0">{formatCurrency(serviceFee)}</span>
                 </div>
-                <div className="mt-2 border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold text-gray-900">
-                    <span>Total</span>
-                    <span>{formatCurrency(total)}</span>
+                <div className="mt-2 border-t border-gray-200 pt-2 flex min-w-0 items-center justify-between text-sm font-semibold text-gray-900">
+                    <span className="min-w-0">Total</span>
+                    <span className="shrink-0">{formatCurrency(total)}</span>
                 </div>
             </div>
         </div>

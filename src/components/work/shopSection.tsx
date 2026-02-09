@@ -76,10 +76,12 @@ const ShopSection: React.FC = () => {
     }, []);
     return (
         <section ref={sectionRef} className="w-full py-16 md:py-20">
-            <div className={`mx-auto max-w-6xl fade-up ${inView ? 'in-view' : ''}`}>
-                <div className="grid gap-12 md:grid-cols-3">
-                    {shopItems.map((item) => (
-                        <ShopCard key={item.id} item={item} />
+            <div className={`mx-auto max-w-6xl px-6 lg:px-8 fade-up ${inView ? 'in-view' : ''}`}>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {shopItems.map((item, idx) => (
+                        <div key={item.id} className={idx >= 3 ? 'hidden sm:block' : undefined}>
+                            <ShopCard item={item} />
+                        </div>
                     ))}
                 </div>
 

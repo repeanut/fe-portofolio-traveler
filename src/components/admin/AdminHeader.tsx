@@ -73,9 +73,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   return (
-    <header className="mb-6 flex items-center justify-between">
-      <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
-      <div className="flex items-center gap-3 text-sm">
+    <header className="mb-6 mt-12 md:mt-0 flex w-full min-w-0 items-center justify-between gap-3">
+      <h2 className="min-w-0 flex-1 text-xl sm:text-2xl font-semibold text-slate-900 truncate">{title}</h2>
+      <div className="flex shrink-0 items-center gap-3 text-sm">
         <AdminNotificationDropdown />
         <div className="relative">
           <button
@@ -92,7 +92,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                 />
               ) : null}
             </div>
-            <span className="text-slate-700 font-medium">{profileName}</span>
+            <span className="hidden sm:inline text-slate-700 font-medium truncate max-w-[180px]">{profileName}</span>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-slate-400">
               <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
             </svg>

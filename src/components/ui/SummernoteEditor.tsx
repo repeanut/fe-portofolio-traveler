@@ -123,7 +123,11 @@ const SummernoteEditor: React.FC<SummernoteEditorProps> = ({
     }
   }, [value]);
 
-  return <div ref={hostRef} />;
+  return (
+    <div className="w-full max-w-full overflow-x-auto">
+      <div ref={hostRef} className="w-full" />
+    </div>
+  );
 };
 
 export default SummernoteEditor;
