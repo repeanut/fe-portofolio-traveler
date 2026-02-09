@@ -41,7 +41,6 @@ const ShopPaymentPage: React.FC = () => {
     const fallbackItem: ShopItem = {
         id: state?.item?.id ?? 0,
         title: state?.item?.title ?? 'I will be SEO content writer for article writing or blog writing',
-            state?.item?.title ?? 'I will be SEO content writer for article writing or blog writing',
         imageSrc: state?.item?.imageSrc ?? '/bg-shopCards.jpg',
         price: state?.item?.price ?? '$20',
         deliveryTime: state?.item?.deliveryTime ?? '1-day delivery',

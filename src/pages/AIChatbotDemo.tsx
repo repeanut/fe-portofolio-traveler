@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AIChatbotProvider, AIChatbotButton, useAIChatbotControls } from '../components/AIchatbot';
 import { Bot, MessageCircle, Sparkles, Info, TestTube } from 'lucide-react';
 
