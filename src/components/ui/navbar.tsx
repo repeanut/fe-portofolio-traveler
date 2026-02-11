@@ -48,9 +48,6 @@ const Navbar: React.FC = () => {
             >
               Blog
             </Link>
-            <a href="#contact" className="hover:text-gray-900">
-              Contact
-            </a>
           </div>
 
           <Button
@@ -103,9 +100,6 @@ const Navbar: React.FC = () => {
             >
               Blog
             </Link>
-            <a href="#contact" className="rounded-lg px-3 py-2 hover:bg-gray-50 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
-              Contact
-            </a>
           </div>
         </div>
       </div>

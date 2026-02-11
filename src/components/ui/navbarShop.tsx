@@ -87,7 +87,6 @@ const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
                     >
                         Blog
                     </Link>
-                    <a href="#" className="hover:text-gray-900 transition-colors">Contact</a>
                     {!isAuthenticated ? (
                         <Button
                             variant="link"
@@ -179,13 +178,6 @@ const NavbarShop: React.FC<NavbarShopProps> = ({ onSignUpClick }) => {
                         >
                             Blog
                         </Link>
-                        <a
-                            href="#"
-                            className="rounded-lg px-3 py-2 hover:bg-gray-50 hover:text-gray-900"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                            Contact
-                        </a>
 
                         {!isAuthenticated ? (
                             <button
