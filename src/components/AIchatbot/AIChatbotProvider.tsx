@@ -40,7 +40,6 @@ export const AIChatbotProvider: React.FC<AIChatbotProviderProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
 
   const sendMessage = (message: string) => {
-    // This will be handled by the AIAutoChatbot component
     console.log('Sending message:', message);
   };
 
@@ -96,7 +95,6 @@ export const useAIChatbot = () => {
   return context;
 };
 
-// Hook for easy access to chatbot controls
 export const useAIChatbotControls = () => {
   const { isOpen, setIsOpen, unreadCount } = useAIChatbot();
   

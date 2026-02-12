@@ -7,7 +7,6 @@ const DemoContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -35,9 +34,7 @@ const DemoContent: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="flex justify-center mb-4">
             <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-4 rounded-full shadow-lg">
@@ -52,7 +49,6 @@ const DemoContent: React.FC = () => {
             Click the chat button to start interacting with our AI assistant.
           </p>
           
-          {/* Quick Actions */}
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             <AIChatbotButton 
               label="Start Chat" 
@@ -68,9 +64,7 @@ const DemoContent: React.FC = () => {
           </div>
         </div>
 
-        {/* Features Grid */}
         <div className="grid md:grid-cols-2 gap-8 mb-12">
-          {/* Copywriter Services */}
           <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100">
             <div className="flex items-center space-x-3 mb-4">
               <div className="bg-purple-100 p-3 rounded-lg">
@@ -103,7 +97,6 @@ const DemoContent: React.FC = () => {
             </div>
           </div>
 
-          {/* Travel Services */}
           <div className="bg-white rounded-xl shadow-lg p-6 border border-blue-100">
             <div className="flex items-center space-x-3 mb-4">
               <div className="bg-blue-100 p-3 rounded-lg">
@@ -137,7 +130,6 @@ const DemoContent: React.FC = () => {
           </div>
         </div>
 
-        {/* Sample Questions */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
             <TestTube className="w-5 h-5 text-gray-600" />
@@ -165,7 +157,6 @@ const DemoContent: React.FC = () => {
           </div>
         </div>
 
-        {/* Integration Info */}
         <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-6 border border-purple-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center space-x-2">
             <Info className="w-5 h-5 text-purple-600" />
@@ -192,7 +183,6 @@ const DemoContent: React.FC = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center text-sm text-gray-500">
