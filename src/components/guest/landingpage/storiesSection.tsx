@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ChevronLeft, ChevronRight, X, Heart, Send, MoreHorizontal } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, MoreHorizontal } from 'lucide-react'
 
 interface StoryItem {
     id: number
@@ -244,22 +244,6 @@ const StoryViewer: React.FC<{
                     <div className="absolute inset-y-0 left-0 w-1/4 z-10" onClick={handlePrevStory} />
                     <div className="absolute inset-y-0 right-0 w-1/4 z-10" onClick={handleNextStory} />
 
-                    {/* Footer Interactive Area */}
-                    <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-6 bg-gradient-to-t from-black/80 to-transparent flex items-center gap-3">
-                        <div className="flex-1 relative">
-                            <input
-                                type="text"
-                                placeholder={`Reply to Rizqi...`}
-                                className="w-full bg-transparent border border-white/40 rounded-full py-2.5 px-4 text-white text-sm placeholder:text-white/70 focus:outline-none focus:border-white"
-                            />
-                        </div>
-                        <button className="p-2 text-white hover:scale-110 transition-transform">
-                            <Heart size={28} />
-                        </button>
-                        <button className="p-2 text-white hover:scale-110 transition-transform">
-                            <Send size={26} className="-rotate-12 translate-y-[-2px]" />
-                        </button>
-                    </div>
                 </div>
 
                 {/* Next Highlight Preview / Button */}
