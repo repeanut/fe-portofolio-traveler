@@ -23,6 +23,7 @@ import AdminUserListPage from "./pages/admin/userlist/AdminUserListPage";
 import AdminBlogArticlesPage from "./pages/admin/blog-article/AdminBlogArticlesPage";
 import AdminShopPage from "./pages/admin/shop/AdminShopPage";
 import AdminTransactionsPage from "./pages/admin/transactions/AdminTransactionsPage";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AiMotionLoadingPage from "./components/ui/AiMotionLoadingPage";
 import AdminToastProvider from "./components/admin/AdminToastProvider";
 import GoogleOAuthCallback from "./components/auth/GoogleOAuthCallback";
@@ -92,6 +93,7 @@ export const Router = () => {
                 <Route path="/blog/:id" element={<BlogDetailPage />} />
 
                 {/* Admin Route */}
+                <Route path="/admin/login" element={<AdminLoginPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/chat" element={<AdminChatPage />} />
                 <Route path="/admin/blog" element={<AdminBlogArticlesPage />} />
