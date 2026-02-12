@@ -42,24 +42,24 @@ const portfolioData: Category[] = [
         id: 'ads-copy',
         name: 'ADS COPY',
         items: [
-            { id: 7, image: '/foto 7.jpg', title: 'High-Converting Ad Campaign' },
-            { id: 8, image: '/foto 1.jpg', title: 'Retargeting Campaign Copy' }
+            { id: 7, image: '/image-ads-copy.jpg', title: 'High-Converting Ad Campaign' },
+            { id: 8, image: '/image-ads-copy2.jpg', title: 'Retargeting Campaign Copy' }
         ]
     },
     {
         id: 'articles',
         name: 'ARTICLES',
         items: [
-            { id: 9, image: '/foto 2.jpg', title: 'Hidden Gems of Southeast Asia' },
-            { id: 10, image: '/foto 3.jpg', title: 'The Art of Slow Travel' }
+            { id: 9, image: '/image-article.jpg', title: 'Hidden Gems of Southeast Asia' },
+            { id: 10, image: '/image-article2.jpg', title: 'The Art of Slow Travel' }
         ]
     },
     {
         id: 'email',
         name: 'EMAIL',
         items: [
-            { id: 11, image: '/foto 4.jpg', title: 'Weekly Travel Digest' },
-            { id: 12, image: '/foto 5.jpg', title: 'Flash Sale Campaign' }
+            { id: 11, image: '/image-email.jpeg', title: 'Weekly Travel Digest' },
+            { id: 12, image: '/image-email2.jpeg', title: 'Flash Sale Campaign' }
         ]
     }
 ]

@@ -536,9 +536,6 @@ const AdminBlogArticlesPage: React.FC = () => {
               // Show success message
               if (pendingMeta.status === "publish") {
                 toast.success("Success", "Article published successfully");
-                setTimeout(() => {
-                  navigate("/blog");
-                }, 1500);
               } else {
                 toast.success("Success", "Article saved as a draft");
               }

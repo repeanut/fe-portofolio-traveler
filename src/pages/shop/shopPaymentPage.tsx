@@ -8,8 +8,7 @@ import OrderDetails from '../../components/payments/OrderDetails';
 import TotalPayment from '../../components/payments/TotalPayment';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
-import paymentService from '../../services/payment.service';
-import type { PaymentRequest } from '../../services/payment.service';
+ 
 
 declare global {
     interface Window {
@@ -76,58 +75,16 @@ const ShopPaymentPage: React.FC = () => {
     const handlePayment = async () => {
         setIsProcessing(true);
         try {
-            const paymentRequest: PaymentRequest = {
-                method: 'midtrans',
-                amount: total,
-                currency: 'USD',
-                description: `${item.title} - ${orderPackage.title}`,
-                customerInfo: {
-                    email: 'user@example.com',
-                },
-            };
-
-            const response = await paymentService.processPayment(paymentRequest);
-
-            if (!response.success) {
-                alert('Payment failed: ' + response.message);
-                return;
-            }
-
-            const maybeGateway = response.data?.gatewayResponse as
-                | { token?: unknown; snapToken?: unknown }
-                | undefined;
-
-            const snapTokenRaw = maybeGateway?.snapToken ?? maybeGateway?.token;
-            const snapToken = typeof snapTokenRaw === 'string' ? snapTokenRaw : null;
-
-            if (!snapToken || typeof window === 'undefined' || !window.snap?.pay) {
-                alert('Midtrans is not ready yet. Please try again later.');
-                return;
-            }
-
-            window.snap.pay(snapToken, {
-                onSuccess: () => {
-                    navigate('/shop/payment/payment-success', {
-                        state: {
-                            subtotal,
-                            serviceFee,
-                            total,
-                            itemTitle: item.title,
-                            orderPackageTitle: orderPackage.title,
-                            deliveryLabel: orderPackage.deliveryLabel,
-                            quantity,
-                            paymentMethodLabel: 'Midtrans',
-                        },
-                    });
-                },
-                onPending: () => {
-                    // Pending state handled by Midtrans UI.
-                },
-                onError: () => {
-                    alert('Payment failed. Please try again.');
-                },
-                onClose: () => {
-                    // User closed the popup.
+            navigate('/shop/payment/payment-success', {
+                state: {
+                    subtotal,
+                    serviceFee,
+                    total,
+                    itemTitle: item.title,
+                    orderPackageTitle: orderPackage.title,
+                    deliveryLabel: orderPackage.deliveryLabel,
+                    quantity,
+                    paymentMethodLabel: 'Demo Payment',
                 },
             });
         } catch (error: unknown) {
