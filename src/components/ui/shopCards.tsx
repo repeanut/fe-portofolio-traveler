@@ -33,7 +33,7 @@ export const ShopCard: React.FC<ShopCardProps> = ({ item }) => {
     return (
         <article
             onClick={handleClick}
-            className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer overflow-hidden p-4"
+            className="flex flex-col rounded-3xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer overflow-hidden p-4"
         >
             <div className="relative w-full aspect-[3/2]">
                 <img
@@ -44,7 +44,7 @@ export const ShopCard: React.FC<ShopCardProps> = ({ item }) => {
             </div>
 
             <div className="flex-1 px-5 pt-4 pb-4 flex flex-col justify-between">
-                <p className="text-sm text-slate-900 leading-snug min-h-[2.5rem] max-h-[2.5rem] overflow-hidden">
+                <p className="text-sm text-slate-900 leading-relaxed">
                     {item.title}
                 </p>
 

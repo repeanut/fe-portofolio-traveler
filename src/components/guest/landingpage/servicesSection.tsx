@@ -19,10 +19,10 @@ const ServicesSection: React.FC = () => {
     const duplicatedServices = [...services, ...services, ...services]
 
     return (
-        <section className="relative py-12 md:py-14 overflow-hidden bg-white" id="services">
+        <section className="relative py-12 overflow-hidden bg-white" id="services">
             {/* Blue Rectangle Background */}
             <div className="relative mx-auto w-full">
-                <div className="relative h-24 sm:h-28 md:h-32 bg-sky-500 rounded-none md:rounded-4xl overflow-hidden">
+                <div className="relative h-28 md:h-32 bg-sky-500 rounded-4xl overflow-hidden">
                 </div>
             </div>
 

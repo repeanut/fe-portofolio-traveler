@@ -98,7 +98,7 @@ const WorkPage: React.FC = () => {
         <InitialShimmer delayMs={850} skeleton={<WorkPageSkeleton />}>
             <div
                 ref={pageRef}
-                className="min-h-screen bg-white relative overflow-x-hidden"
+                className="min-h-screen bg-white relative overflow-hidden"
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
             >

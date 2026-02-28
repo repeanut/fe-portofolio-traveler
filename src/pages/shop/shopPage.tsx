@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import NavbarShop from '../../components/ui/navbarShop';
@@ -11,76 +11,43 @@ import ShopFilters, { type BudgetState } from '../../components/shop/shopFilters
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPageSkeleton } from '../../components/ui/skeletons';
 
-const shopItems: ShopItem[] = [
-    {
-        id: 1,
-        title: 'I will be SEO content writer for article writing or blog writing',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$20',
-        deliveryTime: '2 Days Delivery',
-        serviceCategory: 'SEO Content',
-    },
-    {
-        id: 2,
-        title: 'I will write human SEO blogs and articles',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '3 Days Delivery',
-        serviceCategory: 'Blog Writing',
-    },
-    {
-        id: 3,
-        title: 'I will write SEO blog posts and articles as your content writer',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '4 Days Delivery',
-        serviceCategory: 'Product Description',
-    },
-    {
-        id: 4,
-        title: 'I will be SEO content writer for article writing or blog writing',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$20',
-        deliveryTime: '2 Days Delivery',
-        serviceCategory: 'SEO Content',
-    },
-    {
-        id: 5,
-        title: 'I will write human SEO blogs and articles',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '5 Days Delivery',
-        serviceCategory: 'Blog Writing',
-    },
-    {
-        id: 6,
-        title: 'I will write SEO blog posts and articles as your content writer',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '7 Days Delivery',
-        serviceCategory: 'Product Description',
-    },
-    {
-        id: 7,
-        title: 'I will be SEO content writer for article writing or blog writing',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$20',
-        deliveryTime: '1 Day Delivery',
-        serviceCategory: 'SEO Content',
-    },
-    {
-        id: 8,
-        title: 'I will write human SEO blogs and articles',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '3 Days Delivery',
-        serviceCategory: 'Blog Writing',
-    },
-];
-
 const ShopPage: React.FC = () => {
     const location = useLocation();
     const initialServiceFromState = (location.state as { initialService?: string } | null)?.initialService;
+
+    const [shopItems, setShopItems] = useState<ShopItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Load products from API
+    useEffect(() => {
+        loadProducts();
+    }, []);
+
+    const loadProducts = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch('http://localhost:5000/api/shop-products');
+            const result = await response.json();
+            
+            if (result.success) {
+                const products = result.data.products.map((product: any) => ({
+                    id: product.id,
+                    title: product.title,
+                    imageSrc: product.imageSrc,
+                    price: typeof product.price === 'number' ? `$${product.price}` : product.price,
+                    deliveryTime: product.deliveryTime,
+                    serviceCategory: product.serviceCategory,
+                }));
+                setShopItems(products);
+            } else {
+                console.error('Failed to load products:', result.message);
+            }
+        } catch (error) {
+            console.error('Error loading products:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const [currentPage, setCurrentPage] = useState(1);
     const [serviceFilter, setServiceFilter] = useState<string | null>(
@@ -187,9 +154,9 @@ const ShopPage: React.FC = () => {
                 />
 
                 <main className="flex-1">
-                    <section className="mx-auto max-w-7xl py-10 px-4 md:px-0">
+                    <section className="mx-auto max-w-7xl py-10">
                         {/* Breadcrumb */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
                             <Link to="/" className="hover:text-slate-800 transition-colors">
                                 <Home className="w-4 h-4" />
                             </Link>
@@ -199,7 +166,7 @@ const ShopPage: React.FC = () => {
 
                         {/* Filter bar */}
                         <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <p className="text-xl md:text-2xl font-semibold text-slate-900 text-center md:text-left">
+                            <p className="text-xl md:text-2xl font-semibold text-slate-900">
                                 All product for you!
                             </p>
 
@@ -221,11 +188,9 @@ const ShopPage: React.FC = () => {
                         </div>
 
                         {/* Grid products */}
-                        <div className="mt-8 grid gap-6 items-stretch grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+                        <div className="mt-8 grid gap-6 md:grid-cols-4">
                             {paginatedItems.map((item) => (
-                                <div key={item.id} className="h-full">
-                                    <ShopCard item={item} />
-                                </div>
+                                <ShopCard key={item.id} item={item} />
                             ))}
                         </div>
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../../components/admin/AdminSidebar";
@@ -8,7 +8,6 @@ import AdminTable from "../../../components/admin/AdminTable";
 import type { Column } from "../../../components/admin/AdminTable";
 import AdminModal, { type AdminModalField } from "../../../components/admin/AdminModal";
 import type { ShopItem } from "../../../components/ui/shopCards";
-import { useAdminToast } from "../../../hooks/useAdminToast";
 
 type AdminShopItem = ShopItem & {
   status: "active" | "inactive";
@@ -38,37 +37,41 @@ type ProductPackage = {
 const AdminShopPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("shop");
   const navigate = useNavigate();
-  const toast = useAdminToast();
 
-  const [items, setItems] = useState<AdminShopItem[]>([
-    {
-      id: 1,
-      title: "I will be SEO content writer for article writing or blog writing",
-      imageSrc: "/bg-shopCards.jpg",
-      price: "$20",
-      deliveryTime: "2 Days Delivery",
-      serviceCategory: "SEO Content",
-      status: "active",
-    },
-    {
-      id: 2,
-      title: "I will write human SEO blogs and articles",
-      imageSrc: "/bg-shopCards.jpg",
-      price: "$100",
-      deliveryTime: "3 Days Delivery",
-      serviceCategory: "Blog Writing",
-      status: "active",
-    },
-    {
-      id: 3,
-      title: "I will write SEO blog posts and articles as your content writer",
-      imageSrc: "/bg-shopCards.jpg",
-      price: "$100",
-      deliveryTime: "7 Days Delivery",
-      serviceCategory: "Product Description",
-      status: "inactive",
-    },
-  ]);
+  const [items, setItems] = useState<AdminShopItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load products from API
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/shop-products');
+      const result = await response.json();
+      
+      if (result.success) {
+        const products = result.data.products.map((product: any) => ({
+          id: product.id,
+          title: product.title,
+          imageSrc: product.imageSrc,
+          price: typeof product.price === 'number' ? `$${product.price}` : product.price,
+          deliveryTime: product.deliveryTime,
+          serviceCategory: product.serviceCategory,
+          status: product.status,
+        }));
+        setItems(products);
+      } else {
+        console.error('Failed to load products:', result.message);
+      }
+    } catch (error) {
+      console.error('Error loading products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [search, setSearch] = useState("");
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
@@ -230,7 +233,7 @@ const AdminShopPage: React.FC = () => {
       {
         name: "status",
         label: "Status (active / inactive)",
-        type: "radio",
+        type: "select",
         options: [
           { label: "Active", value: "active" },
           { label: "Inactive", value: "inactive" },
@@ -367,48 +370,56 @@ const AdminShopPage: React.FC = () => {
     return "/placeholder-image.png";
   };
 
-  const handleSubmit = (data: Record<string, unknown>) => {
-    const next: AdminShopItem = {
-      id: editingItem?.id ?? Date.now(),
+  const handleSubmit = async (data: Record<string, unknown>) => {
+    const productData = {
       title: String(data.title ?? ""),
       imageSrc: normalizeImageValue(data.imageSrc),
       price: String(data.price ?? ""),
       deliveryTime: String(data.deliveryTime ?? ""),
       serviceCategory: String(data.serviceCategory ?? ""),
-      status:
-        String(data.status ?? "active") === "inactive" ? "inactive" : "active",
+      status: String(data.status ?? "active") === "inactive" ? "inactive" : "active",
     };
 
     try {
-      setItems((prev) => {
-        if (editingItem) {
-          return prev.map((x) => (x.id === editingItem.id ? next : x));
-        }
-        return [next, ...prev];
+      const url = editingItem 
+        ? `http://localhost:5000/api/shop-products/${editingItem.id}`
+        : 'http://localhost:5000/api/shop-products';
+      
+      const method = editingItem ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
       });
-
-      setSelectedId(next.id);
-      setIsModalOpen(false);
-      setEditingId(null);
-
-      toast.success(
-        "Success",
-        editingItem ? "Product updated successfully" : "Product added successfully"
-      );
-    } catch {
-      toast.error("Error", "Failed to save product changes");
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await loadProducts(); // Reload all products
+        const newProduct = result.data.product;
+        setSelectedId(newProduct.id);
+        setIsModalOpen(false);
+        setEditingId(null);
+      } else {
+        console.error('Failed to save product:', result.message);
+        alert('Failed to save product: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Error saving product: ' + error);
     }
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       <AdminSidebar
         active={activeMenu}
         onNavigate={(key) => {
           setActiveMenu(key);
-          if (key === "dashboard") {
-            navigate("/admin/dashboard");
-          } else if (key === "chat") {
+          if (key === "chat") {
             navigate("/admin/chat");
           } else if (key === "landing") {
             navigate("/admin/landing/hero");
@@ -424,7 +435,7 @@ const AdminShopPage: React.FC = () => {
         }}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
+      <div className="flex flex-1 flex-col px-6 py-6 md:px-8 overflow-hidden">
         <AdminHeader title="Shop Management" />
 
         <div className="flex-1 overflow-y-auto pr-1">
@@ -433,7 +444,7 @@ const AdminShopPage: React.FC = () => {
               <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">Products</p>
-                  <p className="mt-1 text-xs text-slate-500">Select a product, then manage it step by step.</p>
+                  <p className="mt-1 text-xs text-slate-500">Pilih produk lalu lanjutkan CRUD per langkah.</p>
                 </div>
               </div>
               <AdminTableHeader
@@ -459,29 +470,40 @@ const AdminShopPage: React.FC = () => {
                   setEditingId(id);
                   setIsModalOpen(true);
                 }}
-                onDelete={(id) => {
+                onDelete={async (id) => {
                   if (!id) return;
                   const ok = window.confirm("Delete this product?");
                   if (!ok) return;
 
                   try {
-                    setItems((prev) => prev.filter((x) => x.id !== id));
-                    setSelectedId((prev) => (prev === id ? null : prev));
-                    toast.success("Success", "Product deleted successfully");
-                  } catch {
-                    toast.error("Error", "Failed to delete product");
+                    const response = await fetch(`http://localhost:5000/api/shop-products/${id}`, {
+                      method: 'DELETE',
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                      await loadProducts(); // Reload all products
+                      setSelectedId((prev) => (prev === id ? null : prev));
+                    } else {
+                      console.error('Failed to delete product:', result.message);
+                      alert('Failed to delete product: ' + result.message);
+                    }
+                  } catch (error) {
+                    console.error('Error deleting product:', error);
+                    alert('Error deleting product: ' + error);
                   }
                 }}
               />
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-12 items-stretch max-w-full">
-              <div className="lg:col-span-4 min-w-0">
-                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs min-w-0 max-w-full overflow-hidden">
+            <section className="grid gap-6 lg:grid-cols-12 items-stretch">
+              <div className="lg:col-span-4">
+                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Selected Product</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Product metadata is edited via the product table (above).
+                      Meta produk di-edit melalui table produk (atas).
                     </p>
                   </div>
 
@@ -507,29 +529,29 @@ const AdminShopPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="p-4 min-w-0">
-                          <div className="grid grid-cols-2 gap-3 min-w-0">
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
+                        <div className="p-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
                               <p className="text-[11px] text-slate-500">Category</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                              <p className="mt-1 text-sm font-semibold text-slate-900">
                                 {selectedItem.serviceCategory ?? "-"}
                               </p>
                             </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
                               <p className="text-[11px] text-slate-500">Status</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                              <p className="mt-1 text-sm font-semibold text-slate-900">
                                 {selectedItem.status === "active" ? "Active" : "Inactive"}
                               </p>
                             </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
                               <p className="text-[11px] text-slate-500">Price</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                              <p className="mt-1 text-sm font-semibold text-slate-900">
                                 {selectedItem.price ?? "-"}
                               </p>
                             </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
                               <p className="text-[11px] text-slate-500">Delivery</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
+                              <p className="mt-1 text-sm font-semibold text-slate-900">
                                 {selectedItem.deliveryTime ?? "-"}
                               </p>
                             </div>
@@ -538,22 +560,22 @@ const AdminShopPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="bg-slate-50 px-4 py-10 text-center">
-                        <p className="text-sm text-slate-600">Select a product from the table above.</p>
+                        <p className="text-sm text-slate-600">Pilih produk dari table di atas.</p>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="lg:col-span-8 min-w-0">
-                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs min-w-0 max-w-full overflow-hidden">
+              <div className="lg:col-span-8">
+                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs">
                   {!selectedProductId ? (
                     <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                      <p className="text-sm font-semibold text-slate-900">No product selected</p>
-                      <p className="mt-2 text-sm text-slate-600">Select a product from the table, then start filling in the data step by step.</p>
+                      <p className="text-sm font-semibold text-slate-900">Belum ada produk dipilih</p>
+                      <p className="mt-2 text-sm text-slate-600">Pilih produk dari tabel, lalu mulai isi data step-by-step.</p>
                     </div>
                   ) : (
-                    <div className="space-y-4 min-w-0 max-w-full">
+                    <div className="space-y-4">
                       <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                         <div className="relative">
                           <div className="absolute left-0 right-0 top-[18px] h-0.5 bg-slate-200" />
@@ -562,7 +584,7 @@ const AdminShopPage: React.FC = () => {
                             style={{ width: `${((activeStep - 1) / 2) * 100}%` }}
                           />
 
-                          <div className="relative grid gap-3 md:grid-cols-3 min-w-0">
+                          <div className="relative grid gap-3 md:grid-cols-3">
                             <button
                               type="button"
                               onClick={() => setActiveStep(1)}
@@ -583,8 +605,8 @@ const AdminShopPage: React.FC = () => {
                                   1
                                 </div>
                               </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Product Details</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage the full product description.</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900">Product Details</p>
+                              <p className="mt-1 text-xs text-slate-500">Kelola deskripsi lengkap produk.</p>
                             </button>
 
                             <button
@@ -623,8 +645,8 @@ const AdminShopPage: React.FC = () => {
                                   )}
                                 </div>
                               </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Advantages</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage product advantages.</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900">Advantages</p>
+                              <p className="mt-1 text-xs text-slate-500">Kelola keunggulan produk.</p>
                             </button>
 
                             <button
@@ -648,8 +670,8 @@ const AdminShopPage: React.FC = () => {
                                   3
                                 </div>
                               </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Packages</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage packages and pricing.</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900">Packages</p>
+                              <p className="mt-1 text-xs text-slate-500">Kelola paket dan harga.</p>
                             </button>
                           </div>
                         </div>
@@ -660,7 +682,7 @@ const AdminShopPage: React.FC = () => {
                           <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
                             <div>
                               <p className="text-sm font-semibold text-slate-900">Product Details</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage product description content.</p>
+                              <p className="mt-1 text-xs text-slate-500">Kelola konten deskripsi produk.</p>
                             </div>
                             <button
                               type="button"
@@ -692,18 +714,13 @@ const AdminShopPage: React.FC = () => {
                                 if (!id) return;
                                 const ok = window.confirm("Delete this details entry?");
                                 if (!ok) return;
-                                try {
-                                  setDetailsByProductId((prev) => {
-                                    const existing = prev[selectedProductId] ?? [];
-                                    return {
-                                      ...prev,
-                                      [selectedProductId]: existing.filter((x) => x.id !== id),
-                                    };
-                                  });
-                                  toast.success("Success", "Product detail deleted successfully");
-                                } catch {
-                                  toast.error("Error", "Failed to delete product detail");
-                                }
+                                setDetailsByProductId((prev) => {
+                                  const existing = prev[selectedProductId] ?? [];
+                                  return {
+                                    ...prev,
+                                    [selectedProductId]: existing.filter((x) => x.id !== id),
+                                  };
+                                });
                               }}
                             />
                           </div>
@@ -715,7 +732,7 @@ const AdminShopPage: React.FC = () => {
                           <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
                             <div>
                               <p className="text-sm font-semibold text-slate-900">Advantages</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage product advantages.</p>
+                              <p className="mt-1 text-xs text-slate-500">Kelola keunggulan produk.</p>
                             </div>
                             <button
                               type="button"
@@ -747,18 +764,13 @@ const AdminShopPage: React.FC = () => {
                                 if (!id) return;
                                 const ok = window.confirm("Delete this advantage?");
                                 if (!ok) return;
-                                try {
-                                  setAdvantagesByProductId((prev) => {
-                                    const existing = prev[selectedProductId] ?? [];
-                                    return {
-                                      ...prev,
-                                      [selectedProductId]: existing.filter((x) => x.id !== id),
-                                    };
-                                  });
-                                  toast.success("Success", "Advantage deleted successfully");
-                                } catch {
-                                  toast.error("Error", "Failed to delete advantage");
-                                }
+                                setAdvantagesByProductId((prev) => {
+                                  const existing = prev[selectedProductId] ?? [];
+                                  return {
+                                    ...prev,
+                                    [selectedProductId]: existing.filter((x) => x.id !== id),
+                                  };
+                                });
                               }}
                             />
                           </div>
@@ -770,7 +782,7 @@ const AdminShopPage: React.FC = () => {
                           <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
                             <div>
                               <p className="text-sm font-semibold text-slate-900">Packages</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage packages and pricing.</p>
+                              <p className="mt-1 text-xs text-slate-500">Kelola paket dan harga.</p>
                             </div>
                             <button
                               type="button"
@@ -802,18 +814,13 @@ const AdminShopPage: React.FC = () => {
                                 if (!id) return;
                                 const ok = window.confirm("Delete this package?");
                                 if (!ok) return;
-                                try {
-                                  setPackagesByProductId((prev) => {
-                                    const existing = prev[selectedProductId] ?? [];
-                                    return {
-                                      ...prev,
-                                      [selectedProductId]: existing.filter((x) => x.id !== id),
-                                    };
-                                  });
-                                  toast.success("Success", "Package deleted successfully");
-                                } catch {
-                                  toast.error("Error", "Failed to delete package");
-                                }
+                                setPackagesByProductId((prev) => {
+                                  const existing = prev[selectedProductId] ?? [];
+                                  return {
+                                    ...prev,
+                                    [selectedProductId]: existing.filter((x) => x.id !== id),
+                                  };
+                                });
                               }}
                             />
                           </div>
@@ -866,29 +873,21 @@ const AdminShopPage: React.FC = () => {
             id: editingDetailId ?? Date.now(),
             fullText: String(data.fullText ?? ""),
           };
-          try {
-            setDetailsByProductId((prev) => {
-              const existing = prev[selectedProductId] ?? [];
-              if (editingDetailId) {
-                return {
-                  ...prev,
-                  [selectedProductId]: existing.map((x) => (x.id === editingDetailId ? next : x)),
-                };
-              }
+          setDetailsByProductId((prev) => {
+            const existing = prev[selectedProductId] ?? [];
+            if (editingDetailId) {
               return {
                 ...prev,
-                [selectedProductId]: [next, ...existing],
+                [selectedProductId]: existing.map((x) => (x.id === editingDetailId ? next : x)),
               };
-            });
-            setDetailsModalOpen(false);
-            setEditingDetailId(null);
-            toast.success(
-              "Success",
-              editingDetailId ? "Product detail updated successfully" : "Product detail added successfully"
-            );
-          } catch {
-            toast.error("Error", "Failed to save product detail changes");
-          }
+            }
+            return {
+              ...prev,
+              [selectedProductId]: [next, ...existing],
+            };
+          });
+          setDetailsModalOpen(false);
+          setEditingDetailId(null);
         }}
       />
 
@@ -912,29 +911,21 @@ const AdminShopPage: React.FC = () => {
             title: String(data.title ?? ""),
             subtitle: String(data.subtitle ?? ""),
           };
-          try {
-            setAdvantagesByProductId((prev) => {
-              const existing = prev[selectedProductId] ?? [];
-              if (editingAdvId) {
-                return {
-                  ...prev,
-                  [selectedProductId]: existing.map((x) => (x.id === editingAdvId ? next : x)),
-                };
-              }
+          setAdvantagesByProductId((prev) => {
+            const existing = prev[selectedProductId] ?? [];
+            if (editingAdvId) {
               return {
                 ...prev,
-                [selectedProductId]: [next, ...existing],
+                [selectedProductId]: existing.map((x) => (x.id === editingAdvId ? next : x)),
               };
-            });
-            setAdvModalOpen(false);
-            setEditingAdvId(null);
-            toast.success(
-              "Success",
-              editingAdvId ? "Advantage updated successfully" : "Advantage added successfully"
-            );
-          } catch {
-            toast.error("Error", "Failed to save advantage changes");
-          }
+            }
+            return {
+              ...prev,
+              [selectedProductId]: [next, ...existing],
+            };
+          });
+          setAdvModalOpen(false);
+          setEditingAdvId(null);
         }}
       />
 
@@ -965,29 +956,21 @@ const AdminShopPage: React.FC = () => {
             defaultWords: Number(data.defaultWords ?? 0) || 0,
             basePrice: Number(data.basePrice ?? 0) || 0,
           };
-          try {
-            setPackagesByProductId((prev) => {
-              const existing = prev[selectedProductId] ?? [];
-              if (editingPkgId) {
-                return {
-                  ...prev,
-                  [selectedProductId]: existing.map((x) => (x.id === editingPkgId ? next : x)),
-                };
-              }
+          setPackagesByProductId((prev) => {
+            const existing = prev[selectedProductId] ?? [];
+            if (editingPkgId) {
               return {
                 ...prev,
-                [selectedProductId]: [next, ...existing],
+                [selectedProductId]: existing.map((x) => (x.id === editingPkgId ? next : x)),
               };
-            });
-            setPkgModalOpen(false);
-            setEditingPkgId(null);
-            toast.success(
-              "Success",
-              editingPkgId ? "Package updated successfully" : "Package added successfully"
-            );
-          } catch {
-            toast.error("Error", "Failed to save package changes");
-          }
+            }
+            return {
+              ...prev,
+              [selectedProductId]: [next, ...existing],
+            };
+          });
+          setPkgModalOpen(false);
+          setEditingPkgId(null);
         }}
       />
     </div>

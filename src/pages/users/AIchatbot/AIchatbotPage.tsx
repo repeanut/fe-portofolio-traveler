@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, MessageSquareText, Sun, Moon, Home, Plus, Settings, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { io, Socket } from 'socket.io-client';
 import ChatContainer, { type ChatContainerHandle, type Message } from '../../../components/AIchatbot/ChatContainer';
 import ChatHistory from '../../../components/AIchatbot/ChatHistory';
+import LanguageSelector from '../../../components/AIchatbot/LanguageSelector';
+import UserAdminChat from '../../../components/AIchatbot/UserAdminChat';
 import AuthModal from '../../../components/auth/AuthModal';
 
 const DEFAULT_AVATAR_URL = 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=300';
@@ -73,12 +74,6 @@ const AIChatbotPage: React.FC = () => {
     const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(() => {
         return typeof window !== 'undefined' ? readStorageValue('userAvatarUrl') : null;
     });
-    
-    // Socket.io state for admin chat
-    const [socket, setSocket] = useState<Socket | null>(null);
-    const [adminMessages, setAdminMessages] = useState<Message[]>([]);
-    const [isConnectedToAdmin, setIsConnectedToAdmin] = useState(false);
-    const [chatMode, setChatMode] = useState<'ai' | 'cs'>('ai');
 
     useEffect(() => {
         const syncAuthFromStorage = () => {
@@ -87,38 +82,6 @@ const AIChatbotPage: React.FC = () => {
             const avatarUrl = typeof window !== 'undefined' ? readStorageValue('userAvatarUrl') : null;
             setUserAvatarUrl(avatarUrl);
         };
-
-        // Check for Google OAuth callback in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const auth = urlParams.get('auth');
-        const token = urlParams.get('token');
-        
-        if (auth === 'success' && token) {
-            // Save token and set authenticated state
-            localStorage.setItem('token', token);
-            localStorage.setItem('isAuthenticated', 'true');
-            
-            // Get user info from token (basic info for now)
-            try {
-                const tokenParts = token.split('.');
-                if (tokenParts.length === 3) {
-                    const payload = JSON.parse(atob(tokenParts[1]));
-                    const userEmail = payload.email || 'user@gmail.com';
-                    const userName = userEmail.split('@')[0];
-                    
-                    localStorage.setItem('userEmail', userEmail);
-                    localStorage.setItem('userName', userName);
-                    
-                    // Clean URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    setIsAuthenticated(true);
-                    console.log('Google OAuth login successful:', { userEmail, userName });
-                }
-            } catch (error) {
-                console.error('Error parsing token:', error);
-            }
-        }
 
         syncAuthFromStorage();
 
@@ -135,70 +98,44 @@ const AIChatbotPage: React.FC = () => {
         };
     }, []);
 
-    // Socket.io connection for admin chat
+    // Handle Google OAuth callback
     useEffect(() => {
-        if (isAuthenticated && chatMode === 'cs') {
-            const newSocket = io('http://localhost:5000', {
-                auth: {
-                    token: localStorage.getItem('token'),
-                    userName: localStorage.getItem('userName') || 'User',
-                    userEmail: localStorage.getItem('userEmail') || 'user@example.com'
-                }
-            });
-
-            newSocket.on('connect', () => {
-                console.log('Connected to admin chat server');
-                setIsConnectedToAdmin(true);
+        if (typeof window === 'undefined') return;
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const userParam = urlParams.get('user');
+        const action = urlParams.get('action');
+        const auth = urlParams.get('auth');
+        
+        if (auth === 'success' && token && userParam) {
+            try {
+                const user = JSON.parse(decodeURIComponent(userParam));
                 
-                // Join customer room
-                const userName = localStorage.getItem('userName') || 'User';
-                newSocket.emit('join-customer-room', userName);
-            });
-
-            newSocket.on('disconnect', () => {
-                console.log('Disconnected from admin chat server');
-                setIsConnectedToAdmin(false);
-            });
-
-            newSocket.on('admin-message', (data) => {
-                console.log('Received admin message:', data);
-                const adminMessage: Message = {
-                    id: `admin-${Date.now()}`,
-                    content: data.message,
-                    role: 'admin',
-                    name: data.adminName || 'Admin',
-                    timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-                };
-                setAdminMessages(prev => [...prev, adminMessage]);
-            });
-
-            newSocket.on('customer-typing', (data) => {
-                // Handle typing indicator if needed
-                console.log('Customer typing:', data);
-            });
-
-            setSocket(newSocket);
-
-            return () => {
-                newSocket.close();
-            };
-        } else if (socket && chatMode !== 'cs') {
-            socket.close();
-            setSocket(null);
-            setIsConnectedToAdmin(false);
+                // Store authentication data
+                localStorage.setItem('authToken', token);
+                localStorage.setItem('userEmail', user.email);
+                localStorage.setItem('userName', user.displayName || user.email);
+                localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('authProvider', user.provider || 'google');
+                
+                if (user.profilePicture) {
+                    localStorage.setItem('userAvatarUrl', user.profilePicture);
+                }
+                
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                // Dispatch auth change event
+                window.dispatchEvent(new Event('auth:changed'));
+                
+                console.log('✅ Google OAuth login successful:', user.email);
+            } catch (error) {
+                console.error('❌ Error parsing Google OAuth callback:', error);
+            }
         }
-    }, [isAuthenticated, chatMode]);
-
-    // Force re-render when auth state changes
-    useEffect(() => {
-        const handleAuthChange = () => {
-            const authed = typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
-            setIsAuthenticated(authed);
-        };
-
-        window.addEventListener('auth:changed', handleAuthChange);
-        return () => window.removeEventListener('auth:changed', handleAuthChange);
     }, []);
+
     const handleLogout = () => {
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('userEmail');
@@ -210,32 +147,6 @@ const AIChatbotPage: React.FC = () => {
         setUserAvatarUrl(null);
         window.dispatchEvent(new Event('auth:changed'));
     };
-
-    // Function to send message to admin
-    const sendMessageToAdmin = (message: string) => {
-        if (socket && isConnectedToAdmin) {
-            const userName = localStorage.getItem('userName') || 'User';
-            const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
-            
-            socket.emit('customer-message', {
-                customerName: userName,
-                email: userEmail,
-                message: message,
-                productId: '',
-                productTitle: ''
-            });
-
-            // Add message to local state
-            const userMessage: Message = {
-                id: `user-${Date.now()}`,
-                content: message,
-                role: 'user',
-                name: userName,
-                timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-            };
-            setAdminMessages(prev => [...prev, userMessage]);
-        }
-    };
     const [historyItems, setHistoryItems] = useState(() => sampleHistoryItems);
     const [activeHistoryId, setActiveHistoryId] = useState<string | undefined>(() => initialChatId);
     const [messagesByChatId, setMessagesByChatId] = useState<Record<string, Message[]>>(() => {
@@ -246,6 +157,7 @@ const AIChatbotPage: React.FC = () => {
     const [chatMode, setChatMode] = useState<'ai' | 'cs'>('ai');
     const [isMobile, setIsMobile] = useState(false);
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [selectedLanguage, setSelectedLanguage] = useState('en');
     const [theme, setTheme] = useState<'light' | 'dark'>(() => {
         const saved = typeof window !== 'undefined' ? window.localStorage.getItem('theme') : null;
         return saved === 'dark' ? 'dark' : 'light';
@@ -514,7 +426,17 @@ const AIChatbotPage: React.FC = () => {
                     </header>
 
                     <div className="flex-1 overflow-hidden">
-                        <div className="h-full">
+                        {chatMode === 'cs' ? (
+                            <UserAdminChat
+                                currentUser={{
+                                    id: readStorageValue('userEmail') || 'user-' + Date.now(),
+                                    name: readStorageValue('userName') || 'User',
+                                    email: readStorageValue('userEmail') || 'user@example.com',
+                                    role: 'user'
+                                }}
+                                theme={theme}
+                            />
+                        ) : (
                             <ChatContainer
                                 ref={chatRef}
                                 showActions={false}
@@ -522,26 +444,26 @@ const AIChatbotPage: React.FC = () => {
                                 senderRole="user"
                                 theme={theme}
                                 chatMode={chatMode}
-                                initialMessages={chatMode === 'cs' ? adminMessages : undefined}
+                                selectedLanguage={selectedLanguage}
+                                onLanguageChange={setSelectedLanguage}
                                 onMessagesChange={(msgs) => {
-                                    if (chatMode === 'cs') {
-                                        setAdminMessages(msgs);
-                                    } else {
-                                        if (msgs.length === 0) return;
-                                        if (!activeHistoryId) return;
-                                        setMessagesByChatId((prev) => ({ ...prev, [activeHistoryId]: msgs }));
-                                    }
+                                    if (!activeHistoryId) return;
+                                    setMessagesByChatId((prev) => ({ ...prev, [activeHistoryId]: msgs }));
+
+                                    const title = makeChatTitle(msgs);
+                                    if (!title) return;
+                                    setHistoryItems((prev) => {
+                                        const current = prev.find((x) => x.id === activeHistoryId);
+                                        if (!current) return prev;
+                                        if (current.title && current.title !== 'New chat') return prev;
+                                        return prev.map((x) => (x.id === activeHistoryId ? { ...x, title } : x));
+                                    });
                                 }}
                                 onChatModeChange={(m) => {
                                     if (m === 'ai' || m === 'cs') setChatMode(m);
                                 }}
-                                onSendMessage={(message) => {
-                                    if (chatMode === 'cs') {
-                                        sendMessageToAdmin(message);
-                                    }
-                                }}
                             />
-                        </div>
+                        )}
                     </div>
 
                     {chatMode === 'ai' && historyOpen ? (
@@ -672,6 +594,11 @@ const AIChatbotPage: React.FC = () => {
                                     <MessageSquareText className="w-5 h-5 text-sky-600" />
                                 </div>
                                 <h2 className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>AI Chatbot</h2>
+                                <LanguageSelector 
+                                    selectedLanguage={selectedLanguage} 
+                                    onLanguageChange={setSelectedLanguage} 
+                                    theme={theme} 
+                                />
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className={`flex items-center rounded-full p-1 mr-2 ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
@@ -721,35 +648,44 @@ const AIChatbotPage: React.FC = () => {
 
                         <div className="flex-1 overflow-hidden">
                             <div className="h-full">
-                                <ChatContainer
-                                    ref={chatRef}
-                                    showActions={false}
-                                    showHeader={false}
-                                    senderRole="user"
-                                    theme={theme}
-                                    chatMode={chatMode}
-                                    onMessagesChange={(msgs) => {
-                                        if (chatMode === 'cs') {
-                                            setAdminMessages(msgs);
-                                            return;
-                                        }
+                                {chatMode === 'cs' ? (
+                                    <UserAdminChat
+                                        currentUser={{
+                                            id: readStorageValue('userEmail') || 'user-' + Date.now(),
+                                            name: readStorageValue('userName') || 'User',
+                                            email: readStorageValue('userEmail') || 'user@example.com',
+                                            role: 'user'
+                                        }}
+                                        theme={theme}
+                                    />
+                                ) : (
+                                    <ChatContainer
+                                        ref={chatRef}
+                                        showActions={false}
+                                        showHeader={false}
+                                        senderRole="user"
+                                        theme={theme}
+                                        chatMode={chatMode}
+                                        selectedLanguage={selectedLanguage}
+                                        onLanguageChange={setSelectedLanguage}
+                                        onMessagesChange={(msgs) => {
+                                            if (!activeHistoryId) return;
+                                            setMessagesByChatId((prev) => ({ ...prev, [activeHistoryId]: msgs }));
 
-                                        if (!activeHistoryId) return;
-                                        setMessagesByChatId((prev) => ({ ...prev, [activeHistoryId]: msgs }));
-
-                                        const title = makeChatTitle(msgs);
-                                        if (!title) return;
-                                        setHistoryItems((prev) => {
-                                            const current = prev.find((x) => x.id === activeHistoryId);
-                                            if (!current) return prev;
-                                            if (current.title && current.title !== 'New chat') return prev;
-                                            return prev.map((x) => (x.id === activeHistoryId ? { ...x, title } : x));
-                                        });
-                                    }}
-                                    onChatModeChange={(m) => {
-                                        if (m === 'ai' || m === 'cs') setChatMode(m);
-                                    }}
-                                />
+                                            const title = makeChatTitle(msgs);
+                                            if (!title) return;
+                                            setHistoryItems((prev) => {
+                                                const current = prev.find((x) => x.id === activeHistoryId);
+                                                if (!current) return prev;
+                                                if (current.title && current.title !== 'New chat') return prev;
+                                                return prev.map((x) => (x.id === activeHistoryId ? { ...x, title } : x));
+                                            });
+                                        }}
+                                        onChatModeChange={(m) => {
+                                            if (m === 'ai' || m === 'cs') setChatMode(m);
+                                        }}
+                                    />
+                                )}
                             </div>
                         </div>
                     </section>

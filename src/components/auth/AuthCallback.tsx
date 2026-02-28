@@ -10,6 +10,7 @@ const AuthCallback: React.FC = () => {
             const urlParams = new URLSearchParams(location.search);
             const token = urlParams.get('token');
             const user = urlParams.get('user');
+            const action = urlParams.get('action');
             const auth = urlParams.get('auth');
             const loginPage = urlParams.get('login_page');
 
@@ -32,7 +33,12 @@ const AuthCallback: React.FC = () => {
                     // Dispatch auth change event
                     window.dispatchEvent(new Event('auth:changed'));
                     
-                    // Success message removed - no more annoying popup
+                    // Show appropriate message based on action
+                    if (action === 'signup') {
+                        alert('🎉 Welcome to Travello! Your account has been successfully created.');
+                    } else if (action === 'login') {
+                        alert('👋 Welcome back! Successfully signed in.');
+                    }
                     
                     // Redirect based on login_page parameter
                     if (loginPage === 'aichatbot') {

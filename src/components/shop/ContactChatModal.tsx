@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import ChatContainer from '../AIchatbot/ChatContainer';
 
 export type ContactChatModalProps = {
     open: boolean;
@@ -8,13 +9,11 @@ export type ContactChatModalProps = {
 
 const ContactChatModal: React.FC<ContactChatModalProps> = ({ open, onClose }) => {
     const [position, setPosition] = useState<{ top: number; right: number }>({ top: 64, right: 24 });
-    const [isMobile, setIsMobile] = useState(false);
     const dragState = useRef<{ dragging: boolean; startX: number; startY: number; startTop: number; startRight: number } | null>(
         null,
     );
 
     const handleMouseDownHeader = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (isMobile) return;
         e.preventDefault();
         dragState.current = {
             dragging: true,
@@ -44,20 +43,9 @@ const ContactChatModal: React.FC<ContactChatModalProps> = ({ open, onClose }) =>
     }, []);
 
     useEffect(() => {
-        const mql = window.matchMedia('(max-width: 767px)');
-        const apply = () => {
-            const nextMobile = mql.matches;
-            setIsMobile(nextMobile);
-            setPosition(nextMobile ? { top: 16, right: 16 } : { top: 64, right: 24 });
-        };
-
-        apply();
-        mql.addEventListener('change', apply);
-
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
         return () => {
-            mql.removeEventListener('change', apply);
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
@@ -68,13 +56,11 @@ const ContactChatModal: React.FC<ContactChatModalProps> = ({ open, onClose }) =>
     return (
         <div className="fixed inset-0 z-50 bg-black/20">
             <div
-                className="absolute w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col left-4 right-4 md:left-auto md:right-auto"
-                style={isMobile ? { top: position.top, left: 16, right: 16 } : { top: position.top, right: position.right }}
+                className="absolute w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col"
+                style={{ top: position.top, right: position.right }}
             >
                 <header
-                    className={`flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-white select-none ${
-                        isMobile ? 'cursor-default' : 'cursor-move'
-                    }`}
+                    className="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-white cursor-move select-none"
                     onMouseDown={handleMouseDownHeader}
                 >
                     <div className="flex items-center gap-3">
@@ -86,8 +72,7 @@ const ContactChatModal: React.FC<ContactChatModalProps> = ({ open, onClose }) =>
                             />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-900">Customer Support</p>
-                            <p className="text-xs text-slate-500">Real-time chat</p>
+                            <p className="text-sm font-semibold text-slate-900">Message Rizqi</p>
                         </div>
                     </div>
                     <button
@@ -100,9 +85,11 @@ const ContactChatModal: React.FC<ContactChatModalProps> = ({ open, onClose }) =>
                     </button>
                 </header>
 
-                <div className="h-[72vh] md:h-[480px] border-t border-slate-200 bg-white">
+                <div className="h-[480px] border-t border-slate-200 bg-white">
                     <ChatContainer
                         showActions={false}
+                        showHeader={false}
+                        senderRole="user"
                         chatMode="cs"
                         theme="light"
                     />

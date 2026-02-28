@@ -31,51 +31,30 @@ const AdminLandingPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Fetch landing pages from backend API
+  useEffect(() => {
+    fetchLandingPages();
+  }, []);
+
   const fetchLandingPages = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/landing-pages?includeUser=true");
-      const result = (await response.json()) as unknown;
-
-      if (typeof result !== "object" || result == null) {
-        setError("Failed to fetch landing pages");
-        return;
-      }
-
-      const payload = result as {
-        success?: boolean;
-        message?: string;
-        data?: { pages?: Record<string, unknown>[] };
-      };
-
-      if (payload.success) {
-        const raw = payload.data?.pages ?? [];
-        setLandingData(
-          raw.map((page) => {
-            const idRaw = page.id;
-            const id = typeof idRaw === "string" ? Number.parseInt(idRaw, 10) : Number(idRaw);
-            return {
-              ...(page as unknown as LandingPageItem),
-              id: Number.isFinite(id) ? id : 0,
-            };
-          })
-        );
+      const response = await fetch('http://localhost:5000/api/landing-pages?includeUser=true');
+      const result = await response.json();
+      
+      if (result.success) {
+        setLandingData(result.data.pages.map((page: any) => ({
+          ...page,
+          id: parseInt(page.id) || 0
+        })));
         setError(null);
       } else {
-        setError(payload.message || "Failed to fetch landing pages");
+        setError(result.message || 'Failed to fetch landing pages');
       }
     } catch (err) {
-      setError("Error connecting to backend API");
-      console.error("Error fetching landing pages:", err);
+      setError('Error connecting to backend API');
+      console.error('Error fetching landing pages:', err);
     }
   };
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      fetchLandingPages();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const columns: Column[] = [
     { header: "Section", accessor: "section", type: "text" },
@@ -111,15 +90,13 @@ const AdminLandingPage: React.FC = () => {
   };
 
   return (
-    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-32" rows={6} />}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
+    <InitialShimmer delayMs={850} skeleton={<AdminTablePageSkeleton titleWidthClassName="w-28" rows={6} />}>
+      <div className="flex h-screen bg-slate-50 overflow-hidden">
         <AdminSidebar
           active={activeMenu}
           onNavigate={(key) => {
             setActiveMenu(key);
-            if (key === "dashboard") {
-              navigate("/admin/dashboard");
-            } else if (key === "chat") {
+            if (key === "chat") {
               navigate("/admin/chat");
             } else if (key === "landing") {
               navigate("/admin/landing/hero");
@@ -127,8 +104,8 @@ const AdminLandingPage: React.FC = () => {
               navigate("/admin/users");
             } else if (key === "shop") {
               navigate("/admin/shop");
-            } else if (key === "transactions") {
-              navigate("/admin/transactions");
+            } else if (key === "portfolio") {
+              navigate("/admin/portfolio");
             } else if (key === "blog") {
               navigate("/admin/blog");
             }
@@ -137,23 +114,23 @@ const AdminLandingPage: React.FC = () => {
             setActiveMenu("landing");
             if (subKey === "hero") {
               navigate("/admin/landing/hero");
-            } else if (subKey === "travel") {
-              navigate("/admin/landing/travel-journal");
             } else if (subKey === "about") {
               navigate("/admin/landing/about");
+            } else if (subKey === "services") {
+              navigate("/admin/landing/services");
             } else if (subKey === "portfolio") {
               navigate("/admin/landing/portfolio");
-            } else if (subKey === "certServices") {
-              navigate("/admin/landing/cert-services");
-            } else if (subKey === "experience") {
-              navigate("/admin/landing/experience");
-            } else if (subKey === "faq") {
-              navigate("/admin/landing/faq");
+            } else if (subKey === "testimonials") {
+              navigate("/admin/landing/testimonials");
+            } else if (subKey === "contact") {
+              navigate("/admin/landing/contact");
+            } else if (subKey === "footer") {
+              navigate("/admin/landing/footer");
             }
           }}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
+        <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
           <AdminHeader title="Landing Page Management" />
 
           <div className="flex-1 overflow-y-auto space-y-10 pr-1">

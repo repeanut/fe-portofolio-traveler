@@ -1,90 +1,47 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
-export interface MidtransPaymentRequest {
+export interface PaymentRequest {
+    method: string;
     amount: number;
-    customerDetails: {
-        firstName: string;
-        lastName: string;
-        email: string;
+    currency?: string;
+    description: string;
+    bookingId?: string;
+    customerInfo?: {
+        name?: string;
+        email?: string;
         phone?: string;
-    };
-    itemDetails: {
-        id: string;
-        price: number;
-        quantity: number;
-        name: string;
-        category?: string;
-    }[];
-    orderId: string;
-    callbacks?: {
-        finish?: string;
-        error?: string;
-        pending?: string;
+        cardDetails?: {
+            cardNumber: string;
+            expiryDate: string;
+            cvv: string;
+            cardholderName: string;
+        };
     };
 }
 
-export interface MidtransPaymentResponse {
+export interface PaymentResponse {
     success: boolean;
     message: string;
     data?: {
-        token: string;
-        redirect_url: string;
-        transaction_id: string;
-        order_id: string;
+        paymentId: string;
         status: string;
         amount: number;
+        currency: string;
+        method: string;
+        gatewayResponse?: any;
+        createdAt: string;
     };
 }
 
-export interface MidtransPaymentMethod {
+export interface PaymentMethod {
     id: string;
     name: string;
     description: string;
     icon: string;
-    type: 'credit_card' | 'bank_transfer' | 'ewallet' | 'qris' | 'cstore';
+    fees: number;
     available: boolean;
-}
-
-export interface MidtransPayment {
-    id: string;
-    transaction_id: string;
-    order_id: string;
-    status: 'pending' | 'settlement' | 'deny' | 'expire' | 'cancel';
-    amount: number;
-    payment_type: string;
-    va_number?: string;
-    bill_key?: string;
-    biller_code?: string;
-    qr_code?: string;
-    created_at: string;
-    updated_at?: string;
-}
-
-
-interface CreateMidtransPaymentResponse {
-    token: string;
-    redirect_url: string;
-    transaction_id: string;
-    order_id: string;
-    status: string;
-    amount: number;
-}
-
-interface GetPaymentHistoryResponse {
-    payments: MidtransPayment[];
-}
-
-interface GetPaymentDetailsResponse {
-    payment: MidtransPayment;
-}
-
-
-interface RefundPaymentResponse {
-    success: boolean;
-    payment?: MidtransPayment;
-    error?: string;
 }
 
 class PaymentService {
@@ -96,106 +53,89 @@ class PaymentService {
         };
     }
 
-    async createMidtransPayment(paymentData: MidtransPaymentRequest): Promise<CreateMidtransPaymentResponse> {
+    async processPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
         try {
-            console.log('Creating Midtrans payment with data:', paymentData);
-            console.log('API URL:', `${API_BASE_URL}/payments/create`);
-            
-            const headers = this.getAuthHeaders();
-            console.log('Request headers:', headers);
-            
             const response = await axios.post(
-                `${API_BASE_URL}/payments/create`,
+                `${API_BASE_URL}/payments/process`,
                 paymentData,
-                { headers }
+                { headers: this.getAuthHeaders() }
             );
-            
-            console.log('Payment creation response:', response.data);
-            
-            // Handle different response formats
-            if (response.data.success && response.data.data) {
-                return response.data.data;
-            } else if (response.data.token) {
-                return response.data;
-            } else {
-                throw new Error('Invalid response format from payment API');
-            }
-        } catch (error: unknown) {
-            console.error('Create Midtrans payment error:', error);
-            
-            if ((error as any).response?.status === 401) {
-                throw new Error('Authentication required. Please login first.');
-            }
-            
-            console.error('Error response:', (error as any).response?.data);
-            throw new Error((error as any).response?.data?.message || 'Failed to create Midtrans payment');
+            return response.data;
+        } catch (error: any) {
+            console.error('Payment processing error:', error);
+            throw new Error(error.response?.data?.message || 'Failed to process payment');
         }
     }
 
-    async getMidtransPaymentMethods(): Promise<MidtransPaymentMethod[]> {
+    async getPaymentMethods(): Promise<PaymentMethod[]> {
         try {
             const response = await axios.get(
                 `${API_BASE_URL}/payments/methods`,
                 { headers: this.getAuthHeaders() }
             );
             return response.data.data;
-        } catch (error: unknown) {
-            console.error('Get Midtrans payment methods error:', error);
-            throw new Error((error as any).response?.data?.message || 'Failed to get Midtrans payment methods');
+        } catch (error: any) {
+            console.error('Get payment methods error:', error);
+            throw new Error(error.response?.data?.message || 'Failed to get payment methods');
         }
     }
 
-    async checkMidtransPaymentStatus(orderId: string): Promise<{ status: string; payment?: MidtransPayment }> {
+    async getPaymentHistory(page = 1, limit = 10, status?: string) {
         try {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: limit.toString(),
+                ...(status && { status })
+            });
+            
             const response = await axios.get(
-                `${API_BASE_URL}/payments/status/${orderId}`,
+                `${API_BASE_URL}/payments/history?${params}`,
                 { headers: this.getAuthHeaders() }
             );
-            return response.data.data;
-        } catch (error: unknown) {
-            console.error('Check Midtrans payment status error:', error);
-            throw new Error((error as any).response?.data?.message || 'Failed to check payment status');
-        }
-    }
-
-    async getPaymentHistory(): Promise<GetPaymentHistoryResponse> {
-        try {
-            const response = await axios.get(
-                `${API_BASE_URL}/payments/history`,
-                { headers: this.getAuthHeaders() }
-            );
-            return response.data.data;
-        } catch (error: unknown) {
+            return response.data;
+        } catch (error: any) {
             console.error('Get payment history error:', error);
-            throw new Error((error as any).response?.data?.message || 'Failed to get payment history');
+            throw new Error(error.response?.data?.message || 'Failed to get payment history');
         }
     }
 
-    async getPaymentDetails(paymentId: string): Promise<GetPaymentDetailsResponse> {
+    async getPaymentDetails(paymentId: string) {
         try {
             const response = await axios.get(
                 `${API_BASE_URL}/payments/details/${paymentId}`,
                 { headers: this.getAuthHeaders() }
             );
-            return response.data.data;
-        } catch (error: unknown) {
+            return response.data;
+        } catch (error: any) {
             console.error('Get payment details error:', error);
-            throw new Error((error as any).response?.data?.message || 'Failed to get payment details');
+            throw new Error(error.response?.data?.message || 'Failed to get payment details');
         }
     }
 
+    async verifyPayment(paymentId: string) {
+        try {
+            const response = await axios.get(
+                `${API_BASE_URL}/payments/verify/${paymentId}`,
+                { headers: this.getAuthHeaders() }
+            );
+            return response.data;
+        } catch (error: any) {
+            console.error('Verify payment error:', error);
+            throw new Error(error.response?.data?.message || 'Failed to verify payment');
+        }
+    }
 
-    async refundPayment(paymentId: string, reason?: string): Promise<RefundPaymentResponse> {
+    async refundPayment(paymentId: string, reason?: string) {
         try {
             const response = await axios.post(
                 `${API_BASE_URL}/payments/refund/${paymentId}`,
                 { reason },
                 { headers: this.getAuthHeaders() }
             );
-            return response.data.data;
-        } catch (error: unknown) {
+            return response.data;
+        } catch (error: any) {
             console.error('Refund payment error:', error);
-            throw new Error((error as any).response?.data?.message || 'Failed to refund payment');
+            throw new Error(error.response?.data?.message || 'Failed to refund payment');
         }
     }
 }

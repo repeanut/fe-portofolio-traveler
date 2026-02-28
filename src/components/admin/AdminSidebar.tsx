@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import {
   LayoutDashboard,
   Layers,
@@ -10,7 +9,6 @@ import {
   Users,
   ChevronLeft,
   ChevronDown,
-  LogOut,
 } from "lucide-react";
 
 export type AdminSidebarItemKey =
@@ -55,75 +53,23 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onNavigateLandingSub,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isLandingOpen, setIsLandingOpen] = useState(active === "landing");
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 767px)");
-    const apply = () => {
-      const nextMobile = mql.matches;
-      setIsMobile(nextMobile);
-      setMobileOpen(!nextMobile);
-    };
-    apply();
-    mql.addEventListener("change", apply);
-    return () => mql.removeEventListener("change", apply);
-  }, []);
-
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem("admin_profile");
-      localStorage.removeItem("isAuthenticated");
-      localStorage.removeItem("userEmail");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userAvatarUrl");
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("authProvider");
-      window.dispatchEvent(new Event("auth:changed"));
-    } catch {
-      // ignore
-    }
-
-    navigate("/", { replace: true });
-  };
+  // Submenu Landing dianggap "terbuka" hanya ketika
+  // sedang berada di salah satu halaman Landing (active === "landing")
+  // dan ada landingActiveKey yang dikirim dari halaman tersebut.
+  const isLandingOpen = active === "landing" && !!landingActiveKey;
 
   return (
-    <>
-      {isMobile && !mobileOpen ? (
-        <button
-          type="button"
-          onClick={() => setMobileOpen(true)}
-          className="fixed left-4 top-4 z-[1001] inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-lg"
-          aria-label="Open admin menu"
-        >
-          <span className="text-lg leading-none">≡</span>
-        </button>
-      ) : null}
-
-      {isMobile && mobileOpen ? (
-        <div
-          className="fixed inset-0 z-[1000] bg-slate-900/40"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      ) : null}
-
-      <aside
-        className={`bg-white border-r border-slate-100 flex flex-col py-6 transition-all duration-300 ease-in-out ${
-          isMobile
-            ? `fixed inset-y-0 left-0 z-[1001] w-72 transform ${
-                mobileOpen ? "translate-x-0" : "-translate-x-full"
-              }`
-            : `relative h-screen ${isCollapsed ? "w-16" : "w-60"}`
-        }`}
-      >
+    <aside
+      className={`relative h-screen bg-white border-r border-slate-100 flex flex-col py-6 transition-all duration-300 ease-in-out ${
+        isCollapsed ? "w-16" : "w-60"
+      }`}
+    >
       {/* Toggle button */}
       <button
         type="button"
         onClick={() => setIsCollapsed((prev) => !prev)}
-        className="absolute -right-3 top-14 z-10 hidden md:flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-md transition-colors border border-slate-200 bg-white"
+        className="absolute -right-3 top-14 z-10 flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-md transition-colors border border-slate-200 bg-white"
       >
         <ChevronLeft
           className={`h-4 w-4 transform transition-transform duration-300 text-slate-600 ${
@@ -132,27 +78,19 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         />
       </button>
 
-      {isMobile ? (
-        <button
-          type="button"
-          onClick={() => setMobileOpen(false)}
-          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm"
-          aria-label="Close admin menu"
-        >
-          <span className="text-lg leading-none">×</span>
-        </button>
-      ) : null}
-
       {/* Header Section */}
-      <div className="px-3 flex justify-center text-center mx-auto">
+      <div className="px-3 flex justify-center">
         <div
           className={`flex w-full items-center rounded-xl ${
             isCollapsed ? "justify-center" : "gap-3"
           }`}
         >
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500 text-white text-[11px] font-semibold">
+            R
+          </div>
           {!isCollapsed && (
             <div className="min-w-0">
-              <div className="text-2xl font-bold text-blue-500 truncate">Rizwords</div>
+              <div className="text-sm font-semibold text-slate-900 truncate">Rizwords</div>
               <div className="mt-0.5 text-[11px] text-slate-500 truncate">Admin Panel</div>
             </div>
           )}
@@ -171,17 +109,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (item.key === "landing") {
-                    if (active === "landing") {
-                      setIsLandingOpen((prev) => !prev);
-                      return;
-                    }
-
-                    setIsLandingOpen(true);
-                    onNavigate?.(item.key);
-                    return;
-                  }
-
                   onNavigate?.(item.key);
                 }}
                 className={`group flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -318,27 +245,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           );
         })}
       </nav>
-
-      <div className="px-3 pt-3">
-        <div className="border-t border-slate-100 pt-3">
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="group flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-700 flex justify-center"
-          >
-            <LogOut className="h-4 w-4 flex-shrink-0 text-slate-400 group-hover:text-rose-600" />
-            <span
-              className={`ml-3 whitespace-nowrap transition-opacity duration-200 ${
-                isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-              }`}
-            >
-              Logout
-            </span>
-          </button>
-        </div>
-      </div>
     </aside>
-    </>
   );
 };
 

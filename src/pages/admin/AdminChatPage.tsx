@@ -1,340 +1,221 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Send, MessageCircle, MessageSquare, Check, CheckCheck } from "lucide-react";
-import { io, Socket } from "socket.io-client";
+import { Search, Send } from "lucide-react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
 import AdminHeader from "../../components/admin/AdminHeader";
-
-interface Message {
-  id: string;
-  senderId: string;
-  senderName: string;
-  senderEmail: string;
-  receiverId?: string;
-  receiverName?: string;
-  message: string;
-  messageType: 'user_to_admin' | 'admin_to_user' | 'system';
-  isRead: boolean;
-  roomId: string;
-  attachmentUrl?: string;
-  attachmentType?: 'image' | 'file' | 'video';
-  status: 'sent' | 'delivered' | 'read' | 'failed';
-  created_at: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  status: 'online' | 'offline';
-  lastMessage?: string;
-  unreadCount?: number;
-}
+import ChatMessage from "../../components/AIchatbot/ChatMessage";
+import chatService, { type UserInfo, type ConversationInfo } from "../../services/chatService";
+import chatApi from "../../services/chatApi";
 
 const AdminChatPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("chat");
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [messageInput, setMessageInput] = useState('');
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [activeUser, setActiveUser] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationInfo[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
-  const [isTyping, setIsTyping] = useState<{ [key: string]: boolean }>({});
-  const [currentUser, setCurrentUserData] = useState<any>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [typingUser, setTypingUser] = useState<string | null>(null);
+  const [newMessageNotification, setNewMessageNotification] = useState<string | null>(null);
+  const [currentUser] = useState<UserInfo>({
+    id: "admin-1",
+    name: "Travello Admin",
+    email: "admin@travello.com",
+    role: "admin"
+  });
 
   const navigate = useNavigate();
 
+  // Initialize socket connection
   useEffect(() => {
-    const mql = window.matchMedia("(max-width: 767px)");
-    const apply = () => {
-      const nextMobile = mql.matches;
-      setIsMobile(nextMobile);
-      setMobileView(nextMobile ? "list" : "chat");
-    };
-
-    apply();
-    mql.addEventListener("change", apply);
-    return () => mql.removeEventListener("change", apply);
-  }, []);
-
-  useEffect(() => {
-    const userData = localStorage.getItem('userName');
-    const userEmail = localStorage.getItem('userEmail');
-    const userId = localStorage.getItem('userId') || 'admin_' + Date.now();
-    
-    if (userData && userEmail) {
-      setCurrentUserData({
-        id: userId,
-        name: userData || 'Admin',
-        email: userEmail,
-        role: 'admin'
-      });
+    if (!chatService.isSocketConnected()) {
+      chatService.connect();
     }
 
-    const newSocket = io('http://localhost:5000', {
-      transports: ['websocket', 'polling']
-    });
+    // Update connection status
+    const updateConnectionStatus = () => {
+      setIsConnected(chatService.isSocketConnected());
+    };
 
-    newSocket.on('connect', () => {
-      console.log('Connected to chat server');
-      setIsConnected(true);
-      setConnectionError(null);
+    // Check connection status periodically
+    const interval = setInterval(updateConnectionStatus, 1000);
+
+    // Join admin chat
+    if (chatService.isSocketConnected()) {
+      chatService.joinChat(currentUser);
+    }
+
+    // Handle socket events
+    const handleReceiveMessage = (message: any) => {
+      console.log('📨 Admin received message:', message);
       
-      newSocket.emit('join_chat', {
-        userId: userId,
-        userName: userData || 'Admin',
-        userEmail: userEmail,
-        role: 'admin'
+      // Find the conversation that matches this message
+      const matchingConversation = conversations.find(c => 
+        c.user_email === message.senderId || c.user_id === message.senderId
+      );
+      
+      // Add to messages if this is from the active user (match by email or ID)
+      if (activeUser && (matchingConversation?.user_id === activeUser || 
+                         message.senderId === activeUser || 
+                         message.roomId === `user_${activeUser}_admin` ||
+                         message.roomId === `user_${matchingConversation?.user_email}_admin`)) {
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === message.id);
+          if (exists) return prev;
+          return [...prev, message];
+        });
+        console.log('✅ Message added to active chat');
+      } else {
+        console.log('⏸️ Message not for active user, updating conversations only');
+      }
+      
+      // Always update conversations list when new message arrives
+      loadConversations();
+      
+      // Show notification for new message from different user
+      if (!activeUser || message.senderId !== activeUser) {
+        console.log(`🔔 New message from ${message.senderName} (${message.senderId})`);
+        setNewMessageNotification(`New message from ${message.senderName}`);
+        
+        // Clear notification after 3 seconds
+        setTimeout(() => {
+          setNewMessageNotification(null);
+        }, 3000);
+      }
+    };
+
+    const handleMessageSent = (message: any) => {
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
       });
-    });
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from chat server');
-      setIsConnected(false);
-      setConnectionError('Connection lost');
-    });
+      // Update conversations list
+      loadConversations();
+    };
 
-    newSocket.on('connect_error', (error) => {
-      console.error('Connection error:', error);
-      setConnectionError(error.message);
-      setIsConnected(false);
-    });
+    const handleChatHistory = (data: { messages: any[] }) => {
+      console.log('📚 Admin received chat history:', data.messages.length, 'messages');
+      setMessages(data.messages);
+    };
 
-    newSocket.on('chat_history', (data: { messages: Message[] }) => {
-      if (selectedUser) {
-        setMessages(data.messages);
-      }
-    });
-
-    newSocket.on('receive_message', (message: Message) => {
-      setMessages(prev => [...prev, message]);
+    const handleUserUpdate = (userInfo: ConversationInfo) => {
+      console.log('👥 Admin received user update:', userInfo);
       
-      if (message.messageType === 'user_to_admin') {
-        setUsers(prev => prev.map(user => 
-          user.id === message.senderId 
-            ? { ...user, lastMessage: message.message, unreadCount: (user.unreadCount || 0) + 1 }
-            : user
-        ));
-      }
-    });
+      setConversations(prev => {
+        const existing = prev.find(c => c.user_id === userInfo.user_id);
+        if (existing) {
+          // Update existing conversation
+          return prev.map(c => c.user_id === userInfo.user_id ? { ...c, ...userInfo } : c);
+        } else {
+          // Add new conversation at the top
+          console.log('➕ Adding new conversation:', userInfo);
+          return [userInfo, ...prev];
+        }
+      });
+    };
 
-    newSocket.on('unread_count', (data: { count: number }) => {
+    const handleUnreadCount = (data: { count: number }) => {
       setUnreadCount(data.count);
-    });
+    };
 
-    newSocket.on('user_status', (data: { userId: string; userName: string; status: 'online' | 'offline'; role: string }) => {
-      if (data.role !== 'admin') {
-        setUsers(prev => prev.map(user => 
-          user.id === data.userId 
-            ? { ...user, status: data.status }
-            : user
-        ));
+    const handleUserTyping = (data: { userName: string; userId?: string; isTyping: boolean }) => {
+      if (data.isTyping) {
+        setTypingUser(data.userName);
+      } else {
+        setTypingUser(null);
       }
-    });
+    };
 
-    newSocket.on('user_joined', (data: { userId: string; userName: string; userEmail: string; status: string }) => {
-      setUsers(prev => {
-        const existingUser = prev.find(u => u.id === data.userId);
-        if (existingUser) {
-          return prev.map(user => 
-            user.id === data.userId 
-              ? { ...user, status: 'online' }
-              : user
-          );
-        } else {
-          return [...prev, {
-            id: data.userId,
-            name: data.userName,
-            email: data.userEmail,
-            status: 'online',
-            unreadCount: 0
-          }];
-        }
-      });
-    });
-
-    newSocket.on('user_left', (data: { userId: string; userName: string }) => {
-      setUsers(prev => prev.map(user => 
-        user.id === data.userId 
-          ? { ...user, status: 'offline' }
-          : user
-      ));
-    });
-
-    newSocket.on('user_update', (userInfo: any) => {
-      setUsers(prev => {
-        const existingUser = prev.find(u => u.id === userInfo.id);
-        if (existingUser) {
-          return prev.map(user => 
-            user.id === userInfo.id 
-              ? { ...user, ...userInfo }
-              : user
-          );
-        } else {
-          return [...prev, userInfo];
-        }
-      });
-    });
-
-    newSocket.on('user_typing', (data: { userName: string; userId?: string; isTyping: boolean }) => {
-      if (data.userId) {
-        setIsTyping(prev => ({ ...prev, [data.userId!]: data.isTyping }));
-      }
-    });
-
-    newSocket.on('error', (error: { message: string }) => {
-      console.error('Socket error:', error);
-      alert(`Chat error: ${error.message}`);
-    });
-
-    setSocket(newSocket);
+    chatService.onReceiveMessage(handleReceiveMessage);
+    chatService.onMessageSent(handleMessageSent);
+    chatService.onChatHistory(handleChatHistory);
+    chatService.onUserUpdate(handleUserUpdate);
+    chatService.onUnreadCount(handleUnreadCount);
+    chatService.onUserTyping(handleUserTyping);
 
     return () => {
-      newSocket.close();
+      clearInterval(interval);
+      chatService.offReceiveMessage(handleReceiveMessage);
+      chatService.offMessageSent(handleMessageSent);
+      chatService.offChatHistory(handleChatHistory);
+      chatService.offUserUpdate(handleUserUpdate);
+      chatService.offUnreadCount(handleUnreadCount);
+      chatService.offUserTyping(handleUserTyping);
     };
+  }, [currentUser]);
+
+  // Load conversations
+  const loadConversations = async () => {
+    try {
+      const convs = await chatApi.getConversations();
+      setConversations(convs);
+      console.log('📚 Loaded conversations:', convs.length);
+    } catch (error) {
+      console.error('❌ Error loading conversations:', error);
+    }
+  };
+
+  // Auto-refresh conversations every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isConnected) {
+        loadConversations();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isConnected]);
+
+  useEffect(() => {
+    loadConversations();
   }, []);
 
+  // Load chat history when active user changes
   useEffect(() => {
-    if (socket && isConnected) {
-      fetch('http://localhost:5000/api/chat/history?limit=100')
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const uniqueUsers = new Map();
-            data.data.messages.forEach((msg: Message) => {
-              if (msg.messageType === 'user_to_admin' && msg.senderId) {
-                if (!uniqueUsers.has(msg.senderId)) {
-                  uniqueUsers.set(msg.senderId, {
-                    id: msg.senderId,
-                    name: msg.senderName,
-                    email: msg.senderEmail,
-                    status: 'offline',
-                    lastMessage: msg.message,
-                    unreadCount: msg.isRead ? 0 : 1
-                  });
-                } else {
-                  const user = uniqueUsers.get(msg.senderId);
-                  if (!msg.isRead) {
-                    user.unreadCount = (user.unreadCount || 0) + 1;
-                  }
-                  user.lastMessage = msg.message;
-                }
-              }
-            });
-            
-            setUsers(Array.from(uniqueUsers.values()));
-          }
-        })
-        .catch(error => {
-          console.error('Error loading users:', error);
-        });
-    }
-  }, [socket, isConnected]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    if (selectedUser && socket) {
-      socket.emit('join_user_room', selectedUser.id);
-      socket.emit('get_chat_history', { userId: selectedUser.id });
+    if (activeUser) {
+      // Find the conversation data to get the correct user identifier
+      const activeUserData = conversations.find(c => c.user_id === activeUser);
+      const userIdentifier = activeUserData?.user_email || activeUser; // Use email as identifier
       
-      fetch(`http://localhost:5000/api/chat/history?userId=${selectedUser.id}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            setMessages(data.data.messages.reverse());
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching chat history:', error);
-        });
+      console.log('🔄 Loading chat history for user:', activeUser, 'using identifier:', userIdentifier);
       
-      const unreadMessageIds = messages
-        .filter(msg => !msg.isRead && msg.senderId === selectedUser.id)
-        .map(msg => msg.id);
-      
-      if (unreadMessageIds.length > 0) {
-        socket.emit('mark_read', unreadMessageIds);
-      }
+      chatService.joinUserRoom(userIdentifier);
+      chatService.getChatHistory(userIdentifier);
     }
-  }, [selectedUser, socket]);
+  }, [activeUser, conversations]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const handleSendMessage = () => {
+    const trimmed = newMessage.trim();
+    if (!trimmed || !activeUser) return;
 
-  const sendMessage = () => {
-    if (messageInput.trim() && selectedUser && socket) {
-      const messageData = {
-        message: messageInput.trim(),
-        receiverId: selectedUser.id,
-        receiverName: selectedUser.name,
-        messageType: 'admin_to_user'
-      };
-
-      socket.emit('send_message', messageData);
-      setMessageInput('');
-    }
-  };
-
-  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessageInput(e.target.value);
+    const activeUserData = conversations.find(c => c.user_id === activeUser);
+    const userIdentifier = activeUserData?.user_email || activeUser; // Use email as identifier
     
-    if (socket && selectedUser) {
-      socket.emit('typing_start', { receiverId: selectedUser.id });
-      
-      setTimeout(() => {
-        socket.emit('typing_stop', { receiverId: selectedUser.id });
-      }, 1000);
-    }
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit'
+    console.log('📤 Admin sending message to:', userIdentifier);
+    
+    chatService.sendMessage({
+      message: trimmed,
+      receiverId: userIdentifier,
+      receiverName: activeUserData?.user_name || 'User',
+      messageType: 'admin_to_user'
     });
+    
+    setNewMessage("");
   };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'sent':
-        return <Check className="w-4 h-4 text-gray-400" />;
-      case 'delivered':
-        return <CheckCheck className="w-4 h-4 text-gray-400" />;
-      case 'read':
-        return <CheckCheck className="w-4 h-4 text-blue-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const filteredUsers = users.filter(user => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return true;
-    return user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query);
-  });
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {/* Sidebar */}
       <AdminSidebar
         active={activeMenu}
         landingActiveKey={activeMenu === "landing" ? "hero" : undefined}
         onNavigate={(key) => {
           setActiveMenu(key);
-          if (key === "dashboard") {
-            navigate("/admin/dashboard");
-          } else if (key === "chat") {
+          if (key === "chat") {
             navigate("/admin/chat");
           } else if (key === "landing") {
             navigate("/admin/landing/hero");
@@ -356,15 +237,40 @@ const AdminChatPage: React.FC = () => {
         }}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
+      {/* Main content */}
+      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
+        {/* Header */}
         <AdminHeader title="Chat" />
 
+        {/* Connection Status */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            <span className="text-sm text-slate-600">
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {newMessageNotification && (
+              <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs animate-pulse">
+                🔔 {newMessageNotification}
+              </span>
+            )}
+            {unreadCount > 0 && (
+              <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs">
+                {unreadCount} unread messages
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Search */}
         <div className="mb-5 max-auto w-full">
           <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm border border-slate-100">
             <Search className="h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
@@ -372,176 +278,167 @@ const AdminChatPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Main chat card */}
         <div className="flex flex-1 min-h-0 gap-4">
-          <div
-            className={`flex flex-col rounded-3xl bg-white shadow-lg border border-slate-100 h-full min-w-0 ${
-              isMobile ? "w-full" : "w-72"
-            } ${isMobile && mobileView === "chat" ? "hidden" : "flex"}`}
-          >
+          {/* Recent messages */}
+          <div className="flex w-72 flex-col rounded-3xl bg-white shadow-lg border border-slate-100 h-full">
             <div className="border-b border-slate-100 px-5 py-4 flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-                <MessageCircle className="w-4 h-4" />
-                Active Users
+              <span className="text-sm font-semibold text-slate-800">
+                Recent Message
               </span>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-xs text-slate-500">
-                  {isConnected ? 'Online' : 'Offline'}
-                </span>
-              </div>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                {conversations.length}
+              </span>
             </div>
-            {unreadCount > 0 && (
-              <div className="mx-5 mb-2 bg-red-100 text-red-700 text-xs px-2 py-1 rounded">
-                {unreadCount} unread messages
-              </div>
-            )}
             <div className="flex-1 overflow-y-auto py-1">
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => {
-                    const isActive = selectedUser?.id === user.id;
-                    
-                    return (
-                      <button
-                        key={user.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          if (isMobile) setMobileView("chat");
-                        }}
-                        className={`group flex w-full items-center px-4 py-2.5 text-left text-xs transition-colors ${
+              {conversations
+                .filter((item) => {
+                  const query = searchQuery.trim().toLowerCase();
+                  if (!query) return true;
+
+                  const nameMatch = item.user_name.toLowerCase().includes(query);
+                  const textMatch = item.last_message_preview.toLowerCase().includes(query);
+
+                  return nameMatch || textMatch;
+                })
+                .map((item) => {
+                const isActive = item.user_id === activeUser;
+
+                return (
+                  <button
+                    key={item.user_id}
+                    type="button"
+                    onClick={() => setActiveUser(item.user_id)}
+                    className={`group flex w-full items-center px-4 py-2.5 text-left text-xs transition-colors ${
+                      isActive
+                        ? "bg-blue-500 text-white"
+                        : "hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div className="relative mr-3 h-9 w-9 flex-shrink-0">
+                      <div
+                        className={`h-9 w-9 rounded-full border shadow-sm overflow-hidden ${
                           isActive
-                            ? "bg-blue-500 text-white"
-                            : "hover:bg-slate-50 text-slate-700"
+                            ? "border-blue-200 bg-blue-50"
+                            : "border-slate-100 bg-slate-200"
                         }`}
                       >
-                        <div className="relative mr-3 h-9 w-9 flex-shrink-0">
-                          <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                            user.status === 'online' ? 'bg-green-500' : 'bg-slate-400'
-                          }`} />
+                        <div className="h-full w-full bg-slate-200 flex items-center justify-center">
+                          <span className="text-slate-500 text-sm font-medium">
+                            {item.user_name.charAt(0).toUpperCase()}
+                          </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className={`font-medium truncate ${
-                              isActive ? "text-white" : "text-slate-800"
-                            }`}>
-                              {user.name}
-                            </p>
-                            {user.unreadCount && user.unreadCount > 0 && (
-                              <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                                isActive ? "bg-white text-blue-500" : "bg-red-500 text-white"
-                              }`}>
-                                {user.unreadCount}
-                              </span>
-                            )}
-                          </div>
-                          <p className={`text-xs truncate mt-1 ${
-                            isActive ? "text-blue-100" : "text-slate-500"
-                          }`}>
-                            {user.lastMessage || 'No messages yet'}
-                          </p>
+                      </div>
+                      <span
+                        className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-white ${
+                          isActive ? "bg-emerald-400" : "bg-slate-300"
+                        }`}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-medium">
+                          {item.user_name}
+                        </span>
+                        {item.last_message_at && !isActive && (
+                          <span className="text-[10px] text-slate-400 group-hover:text-slate-500">
+                            {new Date(item.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className={`truncate text-[11px] mt-0.5 ${
+                          isActive ? "text-blue-50" : "text-slate-400"
+                        }`}
+                      >
+                        {item.last_message_preview}
+                      </div>
+                      {item.unread_count_for_admin > 0 && (
+                        <div className="mt-1">
+                          <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-[10px]">
+                            {item.unread_count_for_admin} unread
+                          </span>
                         </div>
-                      </button>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-slate-500 text-sm">No users found</p>
-                  </div>
-                )}
-              </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div
-            className={`flex-1 rounded-3xl bg-white shadow-lg border border-slate-100 flex flex-col min-w-0 min-h-0 ${
-              isMobile && mobileView === "list" ? "hidden" : "flex"
-            }`}
-          >
-            {selectedUser ? (
-              <>
-                <div className="border-b border-slate-100 px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                          {selectedUser.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                          selectedUser.status === 'online' ? 'bg-green-500' : 'bg-slate-400'
-                        }`} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-800 text-sm">{selectedUser.name}</p>
-                        <p className="text-xs text-slate-500">{selectedUser.email}</p>
-                      </div>
-                    </div>
-                    <div className={`w-2 h-2 rounded-full ${
-                      selectedUser.status === 'online' ? 'bg-green-500' : 'bg-slate-400'
-                    }`} />
-                  </div>
-                </div>
+          {/* Chat area */}
+          <div className="flex-1 rounded-3xl bg-white shadow-lg border border-slate-100 flex flex-col min-w-0 min-h-0">
+            {/* Chat header */}
+            <div className="border-b border-slate-100 px-6 py-4 text-sm font-semibold text-slate-800 flex items-center justify-between">
+              <span>
+                {conversations.find(c => c.user_id === activeUser)?.user_name ?? "Select a user"}
+              </span>
+              {unreadCount > 0 && (
+                <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs">
+                  {unreadCount} unread
+                </span>
+              )}
+            </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {messages.map(message => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.messageType === 'admin_to_user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${
-                        message.messageType === 'admin_to_user' 
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-slate-200 text-slate-800'
-                      } rounded-lg p-3`}>
-                        <p className="text-sm">{message.message}</p>
-                        <div className={`flex items-center justify-between mt-1 ${
-                          message.messageType === 'admin_to_user' ? 'text-blue-100' : 'text-slate-500'
-                        }`}>
-                          <span className="text-xs">{formatTime(message.created_at)}</span>
-                          {message.messageType === 'admin_to_user' && getStatusIcon(message.status)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
+            {/* Messages */}
+            <div className="flex-1 min-h-0 space-y-3 overflow-y-auto px-6 py-4 text-sm">
+              {messages.length === 0 && activeUser ? (
+                <div className="text-center text-gray-500 py-8">
+                  <p>No messages yet</p>
+                  <p className="text-sm mt-2">Start a conversation with {conversations.find(c => c.user_id === activeUser)?.user_name}</p>
                 </div>
+              ) : !activeUser ? (
+                <div className="text-center text-gray-500 py-8">
+                  <p>Select a user to start chatting</p>
+                </div>
+              ) : (
+                messages.map((msg: any) => (
+                  <ChatMessage
+                    key={msg.id}
+                    message={msg.message}
+                    role={msg.messageType === 'admin_to_user' ? 'admin' : 'user'}
+                    name={msg.senderName}
+                    timestamp={new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    avatar={msg.messageType === 'admin_to_user' ? "/rizwords-nomad.jpg" : undefined}
+                    align={msg.messageType === 'admin_to_user' ? 'right' : 'left'}
+                    theme="light"
+                  />
+                ))
+              )}
+              
+              {typingUser && (
+                <div className="text-sm text-gray-500 italic">
+                  {typingUser} is typing...
+                </div>
+              )}
+            </div>
 
-                <div className="border-t border-slate-100 p-4">
-                  <div className="flex items-center gap-2 rounded-full bg-slate-50 px-4 py-2">
-                    <input
-                      type="text"
-                      value={messageInput}
-                      onChange={handleTyping}
-                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                      placeholder="Type your message..."
-                      className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
-                    />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2 text-slate-500 hover:text-slate-700 transition-colors"
-                    >
-                      📎
-                    </button>
-                    <button
-                      onClick={sendMessage}
-                      disabled={!messageInput.trim()}
-                      className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <MessageSquare className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-800 mb-2">Select a user to chat</h3>
-                  <p className="text-slate-600 text-sm">Choose a user from the sidebar to start chatting</p>
-                </div>
+            {/* Input area */}
+            <div className="border-t border-slate-100 px-4 py-3">
+              <div className="flex items-center rounded-full bg-slate-50 px-4 py-2">
+                <input
+                  type="text"
+                  placeholder="Type here..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendMessage}
+                  className="ml-2 flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

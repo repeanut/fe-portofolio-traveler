@@ -26,7 +26,6 @@ const SummernoteEditor: React.FC<SummernoteEditorProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    const el = hostRef.current;
 
     const setup = async () => {
       (window as unknown as { $?: unknown; jQuery?: unknown }).$ = $ as unknown;
@@ -37,17 +36,16 @@ const SummernoteEditor: React.FC<SummernoteEditorProps> = ({
       }
 
       await import("summernote/dist/summernote-lite.min.js");
-      if (cancelled || !el) return;
+      if (cancelled || !hostRef.current) return;
       if (isReadyRef.current) return;
 
-      const $node = $(el) as unknown as {
+      const $node = $(hostRef.current) as unknown as {
         summernote: (arg0: unknown, arg1?: unknown) => unknown;
       };
 
       $node.summernote({
         height,
         focus: false,
-        dialogsInBody: true,
         toolbar: [
           ["style", ["style"]],
           ["font", ["bold", "italic", "underline", "strikethrough", "clear"]],
@@ -55,7 +53,7 @@ const SummernoteEditor: React.FC<SummernoteEditorProps> = ({
           ["color", ["color"]],
           ["para", ["ul", "ol", "paragraph"]],
           ["insert", ["link", "picture", "video", "table", "hr"]],
-          ["view", ["codeview", "help"]],
+          ["view", ["fullscreen", "codeview", "help"]],
         ],
         callbacks: {
           onChange: (contents: string) => {
@@ -63,24 +61,11 @@ const SummernoteEditor: React.FC<SummernoteEditorProps> = ({
             isInternalChangeRef.current = true;
             onChangeRef.current(contents);
           },
-          onImageUpload: (files: File[]) => {
-            if (!files || files.length === 0) return;
-            const file = files[0];
-            const reader = new FileReader();
-            reader.onload = () => {
-              const dataUrl = String(reader.result ?? "");
-              try {
-                $node.summernote("insertImage", dataUrl);
-              } catch {
-                // ignore
-              }
-            };
-            reader.readAsDataURL(file);
-          },
         },
       });
 
-      $node.summernote("code", lastValueRef.current ?? "");
+      $node.summernote("code", value ?? "");
+      lastValueRef.current = value ?? "";
       isReadyRef.current = true;
     };
 
@@ -88,8 +73,8 @@ const SummernoteEditor: React.FC<SummernoteEditorProps> = ({
 
     return () => {
       cancelled = true;
-      if (!el) return;
-      const $node = $(el) as unknown as {
+      if (!hostRef.current) return;
+      const $node = $(hostRef.current) as unknown as {
         summernote: (arg0: unknown, arg1?: unknown) => unknown;
       };
       try {
@@ -123,11 +108,7 @@ const SummernoteEditor: React.FC<SummernoteEditorProps> = ({
     }
   }, [value]);
 
-  return (
-    <div className="w-full max-w-full overflow-x-auto">
-      <div ref={hostRef} className="w-full" />
-    </div>
-  );
+  return <div ref={hostRef} />;
 };
 
 export default SummernoteEditor;

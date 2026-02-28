@@ -5,55 +5,39 @@ import { Button } from '../ui/button';
 import { ShopCard } from '../ui/shopCards';
 import type { ShopItem } from '../ui/shopCards';
 
-const shopItems: ShopItem[] = [
-    {
-        id: 1,
-        title: 'I will be SEO content writer for article writing or blog writing',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$20',
-        deliveryTime: '2 Days Delivery',
-    },
-    {
-        id: 2,
-        title: 'I will write human SEO blogs and articles',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '3 Days Delivery',
-    },
-    {
-        id: 3,
-        title: 'I will write SEO blog posts and articles as your content writer',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '4 Days Delivery',
-    },
-    {
-        id: 4,
-        title: 'I will be SEO content writer for article writing or blog writing',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$20',
-        deliveryTime: '2 Days Delivery',
-    },
-    {
-        id: 5,
-        title: 'I will write human SEO blogs and articles',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '5 Days Delivery',
-    },
-    {
-        id: 6,
-        title: 'I will write SEO blog posts and articles as your content writer',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '7 Days Delivery',
-    },
-];
-
 const ShopSection: React.FC = () => {
     const navigate = useNavigate();
     const sectionRef = useRef<HTMLElement | null>(null);
     const [inView, setInView] = useState(false);
+    const [shopItems, setShopItems] = useState<ShopItem[]>([]);
+
+    // Load products from API
+    useEffect(() => {
+        loadProducts();
+    }, []);
+
+    const loadProducts = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/shop-products');
+            const result = await response.json();
+            
+            if (result.success) {
+                const products = result.data.products.slice(0, 6).map((product: any) => ({
+                    id: product.id,
+                    title: product.title,
+                    imageSrc: product.imageSrc,
+                    price: typeof product.price === 'number' ? `$${product.price}` : product.price,
+                    deliveryTime: product.deliveryTime,
+                    serviceCategory: product.serviceCategory,
+                }));
+                setShopItems(products);
+            } else {
+                console.error('Failed to load products:', result.message);
+            }
+        } catch (error) {
+            console.error('Error loading products:', error);
+        }
+    };
 
     useEffect(() => {
         const node = sectionRef.current;
@@ -76,12 +60,10 @@ const ShopSection: React.FC = () => {
     }, []);
     return (
         <section ref={sectionRef} className="w-full py-16 md:py-20">
-            <div className={`mx-auto max-w-6xl px-6 lg:px-8 fade-up ${inView ? 'in-view' : ''}`}>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {shopItems.map((item, idx) => (
-                        <div key={item.id} className={idx >= 3 ? 'hidden sm:block' : undefined}>
-                            <ShopCard item={item} />
-                        </div>
+            <div className={`mx-auto max-w-6xl fade-up ${inView ? 'in-view' : ''}`}>
+                <div className="grid gap-12 md:grid-cols-3">
+                    {shopItems.map((item) => (
+                        <ShopCard key={item.id} item={item} />
                     ))}
                 </div>
 

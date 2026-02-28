@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
@@ -9,7 +9,6 @@ import type { Column } from "../../components/admin/AdminTable";
 import AdminModal, {
   type AdminModalField,
 } from "../../components/admin/AdminModal";
-import { useAdminToast } from "../../hooks/useAdminToast";
 
 interface CertificationItem extends Record<string, unknown> {
   id: number;
@@ -27,10 +26,23 @@ interface ServiceItem extends Record<string, unknown> {
 const AdminCertServicesPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("landing");
   const navigate = useNavigate();
-  const toast = useAdminToast();
 
-  const [certData, setCertData] = useState<CertificationItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [certData, setCertData] = useState<CertificationItem[]>([
+    {
+      id: 1,
+      logo: "/EF-Logo.png",
+      title: "EF SET English Certification",
+      subtitle: "C2 Proficient",
+      organization: "EF Standard English Test",
+    },
+    {
+      id: 2,
+      logo: "/Google-Logo.png",
+      title: "The Fundamentals of Digital Marketing",
+      subtitle: "",
+      organization: "Google",
+    },
+  ]);
 
   const [servicesData, setServicesData] = useState<ServiceItem[]>([
     { id: 1, name: "Video Script" },
@@ -69,19 +81,19 @@ const AdminCertServicesPage: React.FC = () => {
         name: "title",
         label: "Title",
         type: "text",
-        placeholder: "Enter certification title...",
+        placeholder: "Masukkan judul sertifikasi...",
       },
       {
         name: "subtitle",
-        label: "Subtitle (optional)",
+        label: "Subtitle (opsional)",
         type: "text",
-        placeholder: "Level or additional details...",
+        placeholder: "Level atau keterangan lain...",
       },
       {
         name: "organization",
         label: "Organization / Company",
         type: "text",
-        placeholder: "Organization / company name...",
+        placeholder: "Nama organisasi / perusahaan...",
       },
     ],
     []
@@ -93,118 +105,20 @@ const AdminCertServicesPage: React.FC = () => {
         name: "name",
         label: "Service",
         type: "text",
-        placeholder: "Enter service name...",
+        placeholder: "Masukkan nama layanan...",
       },
     ],
     []
   );
 
-  const API_BASE_URL = 'http://localhost:5000/api';
-
-  const fetchCertifications = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/certifications`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setCertData(result.data.certifications);
-      } else {
-        console.error('Failed to fetch certifications:', result.message);
-        toast.error('Gagal', 'Gagal memuat data certifications');
-      }
-    } catch (error) {
-      console.error('Error fetching certifications:', error);
-      toast.error('Gagal', 'Terjadi kesalahan saat memuat data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCertifications();
-  }, []);
-
-  const handleCertSubmit = async (data: Record<string, unknown>, editingId: number | null) => {
-    const logoList = (data.logo as string[] | undefined) ?? [];
-    const logo = logoList[0] || "";
-    const title = (data.title as string) || "";
-    const subtitle = (data.subtitle as string) || "";
-    const organization = (data.organization as string) || "";
-
-    try {
-      let response;
-      
-      if (editingId != null) {
-        response = await fetch(`${API_BASE_URL}/certifications/${editingId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ logo, title, subtitle, organization }),
-        });
-      } else {
-        response = await fetch(`${API_BASE_URL}/certifications`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ logo, title, subtitle, organization }),
-        });
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        await fetchCertifications();
-        toast.success(
-          "Berhasil",
-          editingId != null ? "Certification berhasil diperbarui" : "Certification berhasil ditambahkan"
-        );
-        return true;
-      } else {
-        toast.error("Gagal", result.message || "Perubahan certification gagal disimpan");
-        return false;
-      }
-    } catch (error) {
-      console.error('Error saving certification:', error);
-      toast.error("Gagal", "Terjadi kesalahan saat menyimpan data");
-      return false;
-    }
-  };
-
-  const handleCertDelete = async (id: number) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/certifications/${id}`, {
-        method: 'DELETE',
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        await fetchCertifications();
-        toast.success("Berhasil", "Certification berhasil dihapus");
-        return true;
-      } else {
-        toast.error("Gagal", result.message || "Certification gagal dihapus");
-        return false;
-      }
-    } catch (error) {
-      console.error('Error deleting certification:', error);
-      toast.error("Gagal", "Terjadi kesalahan saat menghapus data");
-              return false;
-    }
-  };
-
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       <AdminSidebar
         active={activeMenu}
         landingActiveKey="certServices"
         onNavigate={(key) => {
           setActiveMenu(key);
-          if (key === "dashboard") {
-            navigate("/admin/dashboard");
-          } else if (key === "chat") {
+          if (key === "chat") {
             navigate("/admin/chat");
           } else if (key === "landing") {
             navigate("/admin/landing/hero");
@@ -241,7 +155,7 @@ const AdminCertServicesPage: React.FC = () => {
         }}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
+      <div className="flex flex-1 flex-col px-8 py-6 overflow-hidden">
         <AdminHeader title="Certifications Management" />
 
         <div className="flex-1 overflow-y-auto space-y-10 pr-1">
@@ -258,7 +172,6 @@ const AdminCertServicesPage: React.FC = () => {
             <AdminTable
               columns={certColumns}
               data={certData}
-              isLoading={loading}
               currentPage={1}
               itemsPerPage={5}
               totalPages={1}
@@ -270,15 +183,9 @@ const AdminCertServicesPage: React.FC = () => {
                   setIsCertModalOpen(true);
                 }
               }}
-              onDelete={async (id) => {
+              onDelete={(id) => {
                 if (typeof id === "number") {
-                  try {
-                    setCertData((prev) => prev.filter((item) => item.id !== id));
-                    toast.success("Success", "Certification deleted successfully");
-                  } catch {
-                    toast.error("Error", "Failed to delete certification");
-                  }
-                  await handleCertDelete(id);
+                  setCertData((prev) => prev.filter((item) => item.id !== id));
                 }
               }}
             />
@@ -313,12 +220,7 @@ const AdminCertServicesPage: React.FC = () => {
               }}
               onDelete={(id) => {
                 if (typeof id === "number") {
-                  try {
-                    setServicesData((prev) => prev.filter((item) => item.id !== id));
-                    toast.success("Success", "Service deleted successfully");
-                  } catch {
-                    toast.error("Error", "Failed to delete service");
-                  }
+                  setServicesData((prev) => prev.filter((item) => item.id !== id));
                 }
               }}
             />
@@ -329,7 +231,7 @@ const AdminCertServicesPage: React.FC = () => {
       {/* Certification modal */}
       <AdminModal
         isOpen={isCertModalOpen}
-        title={editingCertId ? "Edit Certification" : "Add Certification"}
+        title={editingCertId ? "Edit Certification" : "Tambah Certification"}
         fields={certFields}
         initialData={
           editingCertId != null
@@ -342,20 +244,52 @@ const AdminCertServicesPage: React.FC = () => {
           setIsCertModalOpen(false);
           setEditingCertId(null);
         }}
-        onSubmit={async (data) => {
-          const success = await handleCertSubmit(data, editingCertId);
-          
-          if (success) {
-            setIsCertModalOpen(false);
-            setEditingCertId(null);
+        onSubmit={(data) => {
+          const logoList = (data.logo as string[] | undefined) ?? [];
+          const logo = logoList[0] || "";
+          const title = (data.title as string) || "";
+          const subtitle = (data.subtitle as string) || "";
+          const organization = (data.organization as string) || "";
+
+          if (editingCertId != null) {
+            setCertData((prev) =>
+              prev.map((item) =>
+                item.id === editingCertId
+                  ? {
+                      ...item,
+                      logo: logo || item.logo,
+                      title: title || item.title,
+                      subtitle: subtitle || item.subtitle,
+                      organization: organization || item.organization,
+                    }
+                  : item
+              )
+            );
+          } else {
+            setCertData((prev) => {
+              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+              return [
+                ...prev,
+                {
+                  id: nextId,
+                  logo,
+                  title,
+                  subtitle,
+                  organization,
+                },
+              ];
+            });
           }
+
+          setIsCertModalOpen(false);
+          setEditingCertId(null);
         }}
       />
 
       {/* Service modal */}
       <AdminModal
         isOpen={isServiceModalOpen}
-        title={editingServiceId ? "Edit Service" : "Add Service"}
+        title={editingServiceId ? "Edit Service" : "Tambah Service"}
         fields={serviceFields}
         initialData={
           editingServiceId != null
@@ -371,38 +305,32 @@ const AdminCertServicesPage: React.FC = () => {
         onSubmit={(data) => {
           const name = (data.name as string) || "";
 
-          try {
-            if (editingServiceId != null) {
-              setServicesData((prev) =>
-                prev.map((item) =>
-                  item.id === editingServiceId
-                    ? {
-                        ...item,
-                        name: name || item.name,
-                      }
-                    : item
-                )
-              );
-              toast.success("Success", "Service updated successfully");
-            } else {
-              setServicesData((prev) => {
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    name,
-                  },
-                ];
-              });
-              toast.success("Success", "Service added successfully");
-            }
-
-            setIsServiceModalOpen(false);
-            setEditingServiceId(null);
-          } catch {
-            toast.error("Error", "Failed to save service changes");
+          if (editingServiceId != null) {
+            setServicesData((prev) =>
+              prev.map((item) =>
+                item.id === editingServiceId
+                  ? {
+                      ...item,
+                      name: name || item.name,
+                    }
+                  : item
+              )
+            );
+          } else {
+            setServicesData((prev) => {
+              const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
+              return [
+                ...prev,
+                {
+                  id: nextId,
+                  name,
+                },
+              ];
+            });
           }
+
+          setIsServiceModalOpen(false);
+          setEditingServiceId(null);
         }}
       />
     </div>

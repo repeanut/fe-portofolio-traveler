@@ -5,25 +5,11 @@ import FooterSection from '../../components/ui/footer';
 import type { ShopItem } from '../../components/ui/shopCards';
 import type { OrderPackage } from '../../components/order/sidebarOrder';
 import OrderDetails from '../../components/payments/OrderDetails';
-import MidtransPaymentOptions from '../../components/payments/MidtransPaymentOptions';
+import PaymentMethods from '../../components/payments/PaymentMethods';
+import TotalPayment from '../../components/payments/TotalPayment';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
-
-declare global {
-    interface Window {
-        snap?: {
-            pay: (
-                token: string,
-                options?: {
-                    onSuccess?: (result: unknown) => void;
-                    onPending?: (result: unknown) => void;
-                    onError?: (result: unknown) => void;
-                    onClose?: () => void;
-                },
-            ) => void;
-        };
-    }
-}
+import paymentService from '../../services/payment.service';
 
 interface PaymentLocationState {
     item?: ShopItem;
@@ -38,7 +24,8 @@ const ShopPaymentPage: React.FC = () => {
 
     const fallbackItem: ShopItem = {
         id: state?.item?.id ?? 0,
-        title: state?.item?.title ?? 'I will be SEO content writer for article writing or blog writing',
+        title:
+            state?.item?.title ?? 'I will be SEO content writer for article writing or blog writing',
         imageSrc: state?.item?.imageSrc ?? '/bg-shopCards.jpg',
         price: state?.item?.price ?? '$20',
         deliveryTime: state?.item?.deliveryTime ?? '1-day delivery',
@@ -58,6 +45,9 @@ const ShopPaymentPage: React.FC = () => {
     const item = state?.item ?? fallbackItem;
     const orderPackage = state?.orderPackage ?? fallbackPackage;
     const [quantity] = useState<number>(state?.quantity && state.quantity > 0 ? state.quantity : 1);
+    const [selectedPaymentMethodLabel, setSelectedPaymentMethodLabel] = useState<string | null>(null);
+    const [paymentData, setPaymentData] = useState<any>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const unitPrice = orderPackage.price;
     const subtotal = useMemo(() => unitPrice * quantity, [unitPrice, quantity]);
@@ -69,98 +59,95 @@ const ShopPaymentPage: React.FC = () => {
 
     const total = subtotal + serviceFee;
 
-    const handleMidtransSuccess = () => {
-        navigate('/shop/payment/payment-success', {
-            state: {
-                subtotal,
-                serviceFee,
-                total,
-                itemTitle: item.title,
-                orderPackageTitle: orderPackage.title,
-                deliveryLabel: orderPackage.deliveryLabel,
-                quantity,
-                paymentMethodLabel: 'Midtrans',
-            },
-        });
+    const handlePaymentDataChange = (data: any) => {
+        setPaymentData(data);
     };
 
-    const handleMidtransError = () => {
-        console.error('Midtrans payment error');
-        navigate('/shop/payment/payment-failed', {
-            state: {
-                subtotal,
-                serviceFee,
-                total,
-                itemTitle: item.title,
-                orderPackageTitle: orderPackage.title,
-                deliveryLabel: orderPackage.deliveryLabel,
-                quantity,
-                paymentMethodLabel: 'Midtrans',
-                paymentStatus: 'failed',
-                error: 'Payment failed'
-            },
-        });
-    };
+    const handlePayment = async () => {
+        if (!paymentData?.isValid) {
+            alert('Silakan lengkapi detail pembayaran terlebih dahulu.');
+            return;
+        }
 
-    const handleMidtransPending = () => {
-        navigate('/shop/payment/payment-pending', {
-            state: {
-                subtotal,
-                serviceFee,
-                total,
-                itemTitle: item.title,
-                orderPackageTitle: orderPackage.title,
-                deliveryLabel: orderPackage.deliveryLabel,
-                quantity,
-                paymentMethodLabel: 'Midtrans',
-                paymentStatus: 'pending'
-            },
-        });
+        setIsProcessing(true);
+        try {
+            const paymentRequest = {
+                method: paymentData.method === 'paypal' ? 'credit_card' : paymentData.method,
+                amount: total,
+                currency: 'USD',
+                description: `${item.title} - ${orderPackage.title}`,
+                customerInfo: {
+                    name: paymentData.cardDetails?.cardholderName,
+                    email: 'user@example.com',
+                    phone: '+1234567890',
+                    cardDetails: paymentData.cardDetails
+                }
+            };
+
+            const response = await paymentService.processPayment(paymentRequest);
+            
+            if (response.success) {
+                navigate('/shop/payment/payment-success', {
+                    state: {
+                        subtotal,
+                        serviceFee,
+                        total,
+                        itemTitle: item.title,
+                        orderPackageTitle: orderPackage.title,
+                        deliveryLabel: orderPackage.deliveryLabel,
+                        quantity,
+                        paymentMethodLabel: selectedPaymentMethodLabel,
+                        paymentId: response.data?.paymentId
+                    },
+                });
+            } else {
+                alert('Pembayaran gagal: ' + response.message);
+            }
+        } catch (error: any) {
+            console.error('Payment error:', error);
+            alert('Terjadi kesalahan saat memproses pembayaran: ' + error.message);
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
         <InitialShimmer delayMs={850} skeleton={<ShopPaymentPageSkeleton />}>
-            <div className="min-h-screen flex flex-col bg-white overflow-x-clip">
+            <div className="min-h-screen flex flex-col bg-white">
                 <NavbarShop />
 
                 <main className="flex-1">
-                    <section className="mx-auto w-full max-w-6xl px-4 md:px-0 py-8 md:py-10">
+                    <section className="mx-auto max-w-6xl px-4 md:px-0 py-8 md:py-10">
 
-<div className="flex flex-col lg:flex-row gap-5">
-                            {/* Left Column: Order Details */}
-                            <div className="w-full lg:w-1/2">
+                        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
+                            <div className="space-y-6">
                                 <OrderDetails
                                     item={item}
                                     orderPackage={orderPackage}
                                     quantity={quantity}
                                     subtotal={subtotal}
                                 />
-                            </div>
-
-                            {/* Right Column: Midtrans Payment Options */}
-                            <div className="w-full lg:w-1/2">
-                                <MidtransPaymentOptions
-                                    amount={total}
-                                    customerDetails={{
-                                        firstName: 'User',
-                                        lastName: 'Name',
-                                        email: 'user@example.com',
-                                        phone: '+628123456789'
-                                    }}
-                                    itemDetails={[
-                                        {
-                                            id: String(item.id || 'item-1'),
-                                            price: unitPrice,
-                                            quantity: quantity,
-                                            name: `${item.title} - ${orderPackage.title}`,
-                                            category: 'travel-package'
-                                        }
-                                    ]}
-                                    onSuccess={handleMidtransSuccess}
-                                    onError={handleMidtransError}
-                                    onPending={handleMidtransPending}
+                                <PaymentMethods 
+                                    onPaymentMethodChange={setSelectedPaymentMethodLabel}
+                                    onPaymentDataChange={handlePaymentDataChange}
                                 />
                             </div>
+
+                            <aside className="space-y-4 lg:sticky lg:top-24">
+                                <TotalPayment
+                                    subtotal={subtotal}
+                                    serviceFee={serviceFee}
+                                    total={total}
+                                    itemTitle={item.title}
+                                    orderPackageTitle={orderPackage.title}
+                                    deliveryLabel={orderPackage.deliveryLabel}
+                                    quantity={quantity}
+                                    paymentMethodLabel={selectedPaymentMethodLabel}
+                                    onPayment={handlePayment}
+                                    isProcessing={isProcessing}
+                                    canPay={paymentData?.isValid || false}
+                                />
+                            </aside>
                         </div>
                     </section>
                 </main>

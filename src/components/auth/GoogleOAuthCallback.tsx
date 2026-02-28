@@ -9,6 +9,7 @@ const GoogleOAuthCallback: React.FC = () => {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const user = urlParams.get('user');
+            const action = urlParams.get('action');
             const loginPage = urlParams.get('login_page');
             const error = urlParams.get('error');
 
@@ -23,12 +24,13 @@ const GoogleOAuthCallback: React.FC = () => {
                 try {
                     const userData = JSON.parse(decodeURIComponent(user));
                     
-                    // Store authentication data
+                    // Store authentication data with extended expiration
                     localStorage.setItem('authToken', token);
                     localStorage.setItem('userEmail', userData.email);
                     localStorage.setItem('userName', userData.displayName || userData.username);
                     localStorage.setItem('isAuthenticated', 'true');
                     localStorage.setItem('authProvider', 'google');
+                    localStorage.setItem('loginTime', Date.now().toString());
                     
                     // Store Google profile photo if available
                     if (userData.photoUrl || userData.picture) {
@@ -38,7 +40,12 @@ const GoogleOAuthCallback: React.FC = () => {
                     // Dispatch auth change event
                     window.dispatchEvent(new Event('auth:changed'));
                     
-                    // Success message removed - no more annoying popup
+                    // Show appropriate message based on action
+                    if (action === 'signup') {
+                        alert('🎉 Welcome to Travello! Your Google account has been successfully registered.');
+                    } else if (action === 'login') {
+                        alert('👋 Welcome back! Successfully signed in with Google.');
+                    }
                     
                     // Redirect based on login_page parameter
                     if (loginPage === 'aichatbot') {
@@ -48,46 +55,13 @@ const GoogleOAuthCallback: React.FC = () => {
                     } else if (loginPage === 'admin') {
                         navigate('/admin/users');
                     } else {
-                        navigate('/ai-chatbot');
+                        // Default redirect to admin users page
+                        navigate('/admin/users');
                     }
+                    
                 } catch (error) {
-                    console.error('Error parsing user data:', error);
-                    alert('Authentication failed. Please try again.');
-                    navigate('/');
-                }
-            } else if (token) {
-                // Handle case where only token is provided (parse from JWT)
-                try {
-                    const tokenParts = token.split('.');
-                    if (tokenParts.length === 3) {
-                        const payload = JSON.parse(atob(tokenParts[1]));
-                        const userEmail = payload.email || 'user@gmail.com';
-                        const userName = userEmail.split('@')[0];
-                        
-                        // Store authentication data
-                        localStorage.setItem('authToken', token);
-                        localStorage.setItem('userEmail', userEmail);
-                        localStorage.setItem('userName', userName);
-                        localStorage.setItem('isAuthenticated', 'true');
-                        localStorage.setItem('authProvider', 'google');
-                        
-                        // Dispatch auth change event
-                        window.dispatchEvent(new Event('auth:changed'));
-                        
-                        // Redirect based on login_page parameter
-                        if (loginPage === 'aichatbot') {
-                            navigate('/ai-chatbot');
-                        } else if (loginPage === 'shop') {
-                            navigate('/shop');
-                        } else if (loginPage === 'admin') {
-                            navigate('/admin/users');
-                        } else {
-                            navigate('/ai-chatbot');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error parsing token:', error);
-                    alert('Authentication failed. Please try again.');
+                    console.error('User data parsing error:', error);
+                    alert('Authentication verification failed');
                     navigate('/');
                 }
             } else {

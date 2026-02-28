@@ -2,20 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import LandingPage from "./pages/guest/landingpage/landingpage";
 import AIChatbotPage from "./pages/users/AIchatbot/AIchatbotPage";
-import AIChatbotDemo from "./pages/AIChatbotDemo";
 import WorkPage from "./pages/work/workPage";
 import ShopPage from "./pages/shop/shopPage";
 import ShopDetailPage from './pages/shop/shopDetailPage';
 import ShopPaymentPage from './pages/shop/shopPaymentPage';
-import PaymentPendingPage from './pages/shop/paymentPendingPage';
 import SuccessPayment from "./components/payments/SuccessPayment";
-import PaymentSuccessPage from './pages/payment/PaymentSuccessPage';
-import PaymentErrorPage from './pages/payment/PaymentErrorPage';
-import PaymentPendingPageNew from './pages/payment/PaymentPendingPage';
 import UserProfilePage from "./pages/users/UserProfilePage";
 import BlogPage from "./pages/blog/BlogPage";
 import BlogDetailPage from "./pages/blog/BlogDetailPage";
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminChatPage from "./pages/admin/AdminChatPage";
 import AdminHeroManagementPage from "./pages/admin/AdminHeroManagementPage";
 import AdminTravelJournalPage from "./pages/admin/AdminTravelJournalPage";
@@ -29,7 +23,6 @@ import AdminBlogArticlesPage from "./pages/admin/blog-article/AdminBlogArticlesP
 import AdminShopPage from "./pages/admin/shop/AdminShopPage";
 import AdminTransactionsPage from "./pages/admin/transactions/AdminTransactionsPage";
 import AiMotionLoadingPage from "./components/ui/AiMotionLoadingPage";
-import AdminToastProvider from "./components/admin/AdminToastProvider";
 import GoogleOAuthCallback from "./components/auth/GoogleOAuthCallback";
 import AuthCallback from "./components/auth/AuthCallback";
 
@@ -44,7 +37,7 @@ export const Router = () => {
         const fromPath = displayLocation.pathname;
         const toPath = location.pathname;
         const isTransition = fromPath !== toPath;
-        const involvesAi = toPath.startsWith("/ai-chatbot");
+        const involvesAi = fromPath.startsWith("/ai-chatbot") || toPath.startsWith("/ai-chatbot");
 
         if (!isTransition || !involvesAi) return;
 
@@ -80,7 +73,7 @@ export const Router = () => {
     const routesLocation = isLoading ? displayLocation : location;
 
     return (
-        <AdminToastProvider>
+        <>
             {isLoading ? (
                 <AiMotionLoadingPage label="Preparing AI Workspace" />
             ) : (
@@ -90,29 +83,21 @@ export const Router = () => {
                 <Route path="/work/shop" element={<ShopPage />} />
                 <Route path="/work/shop/:id" element={<ShopDetailPage />} />
                 <Route path="/shop/payment" element={<ShopPaymentPage />} />
-                <Route path="/shop/payment/pending" element={<PaymentPendingPage />} />
                 <Route path="/shop/payment/payment-success" element={<SuccessPayment />} />
-                
-                {/* New Payment Pages */}
-                <Route path="/payment/success" element={<PaymentSuccessPage />} />
-                <Route path="/payment/error" element={<PaymentErrorPage />} />
-                <Route path="/payment/pending" element={<PaymentPendingPageNew />} />
                 <Route path="/ai-chatbot" element={<AIChatbotPage />} />
-                <Route path="/users/AIchatbot" element={<AIChatbotPage />} />
-                <Route path="/ai-chatbot-demo" element={<AIChatbotDemo />} />
                 <Route path="/profile" element={<UserProfilePage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/blog/:id" element={<BlogDetailPage />} />
-
-                {/* Admin Route */}
-                <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/chat" element={<AdminChatPage />} />
                 <Route path="/admin/blog" element={<AdminBlogArticlesPage />} />
                 <Route path="/admin/users" element={<AdminUserListPage />} />
                 <Route path="/admin/shop" element={<AdminShopPage />} />
                 <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
                 <Route path="/admin/landing/hero" element={<AdminHeroManagementPage />} />
-                <Route path="/admin/landing/travel-journal" element={<AdminTravelJournalPage />} />
+                <Route
+                  path="/admin/landing/travel-journal"
+                  element={<AdminTravelJournalPage />}
+                />
                 <Route path="/admin/landing/about" element={<AdminAboutPage />} />
                 <Route path="/admin/landing/portfolio" element={<AdminPortfolioPage />} />
                 <Route path="/admin/landing/cert-services" element={<AdminCertServicesPage />} />
@@ -123,6 +108,6 @@ export const Router = () => {
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 </Routes>
             )}
-        </AdminToastProvider>
+        </>
     );
 };

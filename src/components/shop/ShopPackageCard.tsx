@@ -116,7 +116,7 @@ const ShopPackageCard: React.FC<ShopPackageCardProps> = ({ basePrice = 20, deliv
                 </button>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm w-full max-w-[380px] sm:w-[380px] mx-auto">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm w-[380px] mx-auto">
                 <div className="text-center">
                     <p className="text-2xl font-semibold text-slate-900">{currentPreset.badge}</p>
                     <p className="mt-2 text-xs leading-relaxed text-slate-400 max-w-[260px] mx-auto">

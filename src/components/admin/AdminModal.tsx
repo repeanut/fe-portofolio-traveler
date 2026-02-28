@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 export interface AdminModalField {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select" | "radio";
+  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select";
   options?: Array<{ label: string; value: string }>;
   placeholder?: string;
-  // For image fields: whether multiple files can be selected or only one.
-  // Default: true (multiple allowed) to preserve existing behavior.
+  // Untuk field image: atur apakah boleh memilih banyak file atau hanya satu.
+  // Default: true (boleh multiple) supaya tidak mengubah perilaku lama.
   multiple?: boolean;
 }
 
@@ -19,7 +19,6 @@ interface AdminModalProps {
   onClose: () => void;
   onSubmit: (data: Record<string, unknown>) => void;
   isSaving?: boolean;
-  submitLabel?: string;
 }
 
 const AdminModal: React.FC<AdminModalProps> = ({
@@ -30,35 +29,10 @@ const AdminModal: React.FC<AdminModalProps> = ({
   onClose,
   onSubmit,
   isSaving = false,
-  submitLabel = "Save",
 }) => {
   const [imagePreviews, setImagePreviews] = useState<Record<string, string[]>>({});
   const [tagValues, setTagValues] = useState<Record<string, string[]>>({});
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (!initialData) return;
-
-    const t = window.setTimeout(() => {
-      setImagePreviews((prev) => {
-        const next = { ...prev };
-        fields.forEach((field) => {
-          if (field.type !== "image") return;
-          const raw = initialData[field.name];
-          const list = Array.isArray(raw)
-            ? (raw as string[])
-            : typeof raw === "string" && raw
-              ? [raw]
-              : [];
-          if (list.length > 0) next[field.name] = list;
-        });
-        return next;
-      });
-    }, 0);
-
-    return () => window.clearTimeout(t);
-  }, [fields, initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -69,7 +43,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
     const data: Record<string, unknown> = {};
     fields.forEach((field) => {
       if (field.type === "image") {
-        // Use the stored previews as the source of truth
+        // Gunakan preview yang sudah tersimpan sebagai sumber kebenaran
         data[field.name] = imagePreviews[field.name] ?? [];
       } else if (field.type === "tags") {
         data[field.name] = tagValues[field.name] ?? [];
@@ -119,23 +93,23 @@ const AdminModal: React.FC<AdminModalProps> = ({
           {fields.map((field) => {
             if (field.type === "monthYear") {
               const months = [
-                "Month",
+                "Bulan",
                 "Jan",
                 "Feb",
                 "Mar",
                 "Apr",
-                "May",
+                "Mei",
                 "Jun",
                 "Jul",
-                "Aug",
+                "Agu",
                 "Sep",
-                "Oct",
+                "Okt",
                 "Nov",
-                "Dec",
+                "Des",
               ];
 
               const currentYear = new Date().getFullYear();
-              const years: string[] = ["Year"];
+              const years: string[] = ["Tahun"];
               for (let y = currentYear; y >= currentYear - 30; y -= 1) {
                 years.push(String(y));
               }
@@ -190,34 +164,6 @@ const AdminModal: React.FC<AdminModalProps> = ({
                       </option>
                     ))}
                   </select>
-                </div>
-              );
-            }
-
-            if (field.type === "radio") {
-              const current = String((initialData?.[field.name] as string) ?? "");
-              const options = field.options ?? [];
-              const fallback = current || options[0]?.value || "";
-
-              return (
-                <div key={field.name} className="space-y-2">
-                  <label className="block text-[11px] font-medium text-slate-700">
-                    {field.label}
-                  </label>
-                  <div className="flex flex-wrap items-center gap-5">
-                    {options.map((opt) => (
-                      <label key={opt.value} className="inline-flex items-center gap-2 text-[11px] text-slate-800">
-                        <input
-                          type="radio"
-                          name={field.name}
-                          value={opt.value}
-                          defaultChecked={fallback === opt.value}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="select-none">{opt.label}</span>
-                      </label>
-                    ))}
-                  </div>
                 </div>
               );
             }
@@ -299,39 +245,24 @@ const AdminModal: React.FC<AdminModalProps> = ({
                     className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-[11px] file:font-medium file:text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     onChange={(e) => {
                       const files = e.target.files;
-                      const list = files ? Array.from(files) : [];
+                      const urls = files
+                        ? Array.from(files).map((file) => URL.createObjectURL(file))
+                        : [];
 
-                      if (list.length === 0) return;
+                      setImagePreviews((prev) => {
+                        // Default: multiple true (append). Kalau multiple === false, replace.
+                        if (field.multiple === false) {
+                          return {
+                            ...prev,
+                            [field.name]: urls,
+                          };
+                        }
 
-                      Promise.all(
-                        list.map(
-                          (file) =>
-                            new Promise<string>((resolve, reject) => {
-                              const reader = new FileReader();
-                              reader.onload = () => resolve(String(reader.result ?? ""));
-                              reader.onerror = () => reject(new Error("Failed to read file"));
-                              reader.readAsDataURL(file);
-                            })
-                        )
-                      )
-                        .then((dataUrls) => {
-                          setImagePreviews((prev) => {
-                            if (field.multiple === false) {
-                              return {
-                                ...prev,
-                                [field.name]: dataUrls,
-                              };
-                            }
-
-                            return {
-                              ...prev,
-                              [field.name]: [...(prev[field.name] ?? []), ...dataUrls],
-                            };
-                          });
-                        })
-                        .catch(() => {
-                          // ignore
-                        });
+                        return {
+                          ...prev,
+                          [field.name]: [...(prev[field.name] ?? []), ...urls],
+                        };
+                      });
                     }}
                   />
                   {imagePreviews[field.name] && imagePreviews[field.name].length > 0 && (
@@ -393,14 +324,14 @@ const AdminModal: React.FC<AdminModalProps> = ({
               onClick={onClose}
               className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               disabled={isSaving}
               className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-medium text-white shadow-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSaving ? "Saving..." : submitLabel}
+              {isSaving ? "Menyimpan..." : "Simpan"}
             </button>
           </div>
         </form>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 
 interface Certification {
     id: number
@@ -8,32 +8,31 @@ interface Certification {
     organization: string
 }
 
+const certifications: Certification[] = [
+    {
+        id: 1,
+        logo: '/EF-Logo.png',
+        title: 'EF SET English Certification',
+        subtitle: 'C2 Proficient',
+        organization: 'EF Standard English Test'
+    },
+    {
+        id: 2,
+        logo: '/Google-Logo.png',
+        title: 'The Fundamentals of Digital Marketing',
+        subtitle: '',
+        organization: 'Google'
+    },
+    {
+        id: 3,
+        logo: '/Google-Logo.png',
+        title: 'The Fundamentals of Digital Marketing',
+        subtitle: '',
+        organization: 'Google'
+    }
+]
+
 const CertificationsSection: React.FC = () => {
-    const [certifications, setCertifications] = useState<Certification[]>([])
-    const [loading, setLoading] = useState(true)
-    
-    const API_BASE_URL = 'http://localhost:5000/api';
-
-    useEffect(() => {
-        const fetchCertifications = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/certifications`)
-                const result = await response.json()
-                
-                if (result.success) {
-                    setCertifications(result.data.certifications)
-                } else {
-                    console.error('Failed to fetch certifications:', result.message)
-                }
-            } catch (error) {
-                console.error('Error fetching certifications:', error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchCertifications()
-    }, [])
     return (
         <section className="relative py-4 mt-12 overflow-hidden" id="certifications">
             {/* Background with overlay image */}
@@ -46,7 +45,7 @@ const CertificationsSection: React.FC = () => {
             <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-8">
                     {/* Title */}
-                    <div className="md:col-span-2 text-center md:text-left">
+                    <div className="md:col-span-2 text-left">
                         <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-tight">
                             Let's Have a Look at my<br />
                             <span className="text-sky-500">Professional Certifications</span>.
@@ -54,64 +53,40 @@ const CertificationsSection: React.FC = () => {
                     </div>
 
                     {/* Certification Cards */}
-                    <div className="md:col-span-4 -mx-4 md:mx-0">
-                        <div
-                            className="flex flex-row flex-nowrap gap-4 overflow-x-auto scrollbar-hide px-4 md:px-0 py-4"
-                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                        >
-                        {loading ? (
-                            // Loading skeleton
-                            Array.from({ length: 3 }).map((_, index) => (
-                                <div
-                                    key={`skeleton-${index}`}
-                                    className="bg-white rounded-2xl px-4 py-4 shadow-sm border border-gray-100 flex items-center gap-3 flex-shrink-0 w-[270px] animate-pulse"
-                                >
-                                    <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                                        <div className="h-3 bg-gray-200 rounded mb-1"></div>
-                                        <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                                    </div>
+                    <div
+                        className="md:col-span-4 flex flex-col md:flex-row gap-4 overflow-x-auto scrollbar-hide p-4"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                        {certifications.map((cert) => (
+                            <div
+                                key={cert.id}
+                                className="bg-white rounded-2xl px-4 py-4 shadow-sm border border-gray-100 flex items-center gap-3 hover:shadow-md transition-shadow duration-300 flex-shrink-0 w-[270px]"
+                            >
+                                {/* Logo */}
+                                <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-sky-50 rounded-full">
+                                    <img
+                                        src={cert.logo}
+                                        alt={cert.title}
+                                        className="w-8 h-8 object-contain"
+                                    />
                                 </div>
-                            ))
-                        ) : certifications.length === 0 ? (
-                            // Empty state
-                            <div className="flex items-center justify-center w-full py-8">
-                                <p className="text-gray-500">No certifications available yet.</p>
-                            </div>
-                        ) : (
-                            certifications.map((cert) => (
-                                <div
-                                    key={cert.id}
-                                    className="bg-white rounded-2xl px-4 py-4 shadow-sm border border-gray-100 flex items-center gap-3 hover:shadow-md transition-shadow duration-300 flex-shrink-0 w-[270px]"
-                                >
-                                    {/* Logo */}
-                                    <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-sky-50 rounded-full">
-                                        <img
-                                            src={cert.logo}
-                                            alt={cert.title}
-                                            className="w-8 h-8 object-contain"
-                                        />
-                                    </div>
 
-                                    {/* Info */}
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                        <h3 className="text-sm font-semibold text-slate-900 leading-tight truncate mb-2">
-                                            {cert.title}
-                                        </h3>
-                                        {cert.subtitle && (
-                                            <span className="text-xs text-slate-700 font-medium mt-0.5 truncate">
-                                                {cert.subtitle}
-                                            </span>
-                                        )}
-                                        <span className="text-xs text-slate-400 mt-0.5 truncate">
-                                            {cert.organization}
+                                {/* Info */}
+                                <div className="flex flex-col min-w-0 flex-1">
+                                    <h3 className="text-sm font-semibold text-slate-900 leading-tight truncate mb-2">
+                                        {cert.title}
+                                    </h3>
+                                    {cert.subtitle && (
+                                        <span className="text-xs text-slate-700 font-medium mt-0.5 truncate">
+                                            {cert.subtitle}
                                         </span>
-                                    </div>
+                                    )}
+                                    <span className="text-xs text-slate-400 mt-0.5 truncate">
+                                        {cert.organization}
+                                    </span>
                                 </div>
-                            ))
-                        )}
-                        </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
