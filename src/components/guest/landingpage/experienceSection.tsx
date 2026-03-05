@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 
 interface Experience {
     id: number
@@ -44,13 +44,6 @@ const ExperienceSection: React.FC = () => {
     const [activeIndex, setActiveIndex] = useState(0)
     const [isAnimating, setIsAnimating] = useState(false)
 
-    const getVisibleCards = useCallback(() => {
-        const total = experiences.length
-        const prev = (activeIndex - 1 + total) % total
-        const next = (activeIndex + 1) % total
-        return { prev, active: activeIndex, next }
-    }, [activeIndex])
-
     const handleCardClick = (experienceId: number) => {
         const index = experiences.findIndex(exp => exp.id === experienceId)
         if (!isAnimating && index !== activeIndex) {
@@ -80,53 +73,48 @@ const ExperienceSection: React.FC = () => {
         }
     }
 
-    const { prev, active, next } = getVisibleCards()
+    const getOffsetFromActive = (index: number) => {
+        const total = experiences.length
+        const raw = (index - activeIndex + total) % total
+        const half = Math.floor(total / 2)
+        return raw > half ? raw - total : raw
+    }
 
-    const getCardStyle = (position: 'left' | 'center' | 'right') => {
-        const baseStyle = {
-            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+    const getCardStyle = (offset: number): React.CSSProperties => {
+        const abs = Math.abs(offset)
+        const isVisible = abs <= 1
+        const baseStyle: React.CSSProperties = {
+            transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform, opacity',
         }
 
-        switch (position) {
-            case 'left':
-                return {
-                    ...baseStyle,
-                    transform: 'translateX(-10%) scale(0.90)',
-                    opacity: 1,
-                    zIndex: 1,
-                }
-            case 'center':
-                return {
-                    ...baseStyle,
-                    transform: 'translateX(0) scale(1.2)',
-                    opacity: 1,
-                    zIndex: 10,
-                }
-            case 'right':
-                return {
-                    ...baseStyle,
-                    transform: 'translateX(10%) scale(0.90)',
-                    opacity: 1,
-                    zIndex: 1,
-                }
+        const translateVw = offset * 30
+        const scale = offset === 0 ? 1.18 : 0.84
+        const opacity = isVisible ? 1 : 0
+        const zIndex = offset === 0 ? 10 : 1
+
+        return {
+            ...baseStyle,
+            transform: `translateX(calc(-50% + ${translateVw}vw)) scale(${scale})`,
+            opacity,
+            zIndex,
+            pointerEvents: isVisible ? ('auto' as const) : ('none' as const),
         }
     }
 
-    const renderCard = (experience: Experience, position: 'left' | 'center' | 'right') => {
-        const isCenter = position === 'center'
+    const renderCard = (experience: Experience, index: number) => {
+        const offset = getOffsetFromActive(index)
+        const isCenter = offset === 0
 
         return (
             <div
-                key={`${experience.id}-${position}`}
+                key={experience.id}
                 onClick={() => !isCenter && handleCardClick(experience.id)}
-                className={`absolute bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible
-                    ${isCenter ? 'w-80 md:w-96' : 'w-64 md:w-72 cursor-pointer hover:opacity-90'}
-                `}
+                className={`absolute left-1/2 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible w-80 md:w-96 ${
+                    isCenter ? '' : 'cursor-pointer hover:opacity-95'
+                }`}
                 style={{
-                    ...getCardStyle(position),
-                    left: position === 'left' ? '5%' : position === 'center' ? '50%' : 'auto',
-                    right: position === 'right' ? '5%' : 'auto',
-                    marginLeft: position === 'center' ? '-12rem' : 0,
+                    ...getCardStyle(offset),
                 }}
             >
                 {/* Logo Circle - positioned above the card */}
@@ -171,7 +159,7 @@ const ExperienceSection: React.FC = () => {
                         My Experience
                     </h2>
                     <p className="text-gray-500 text-lg">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                        A snapshot of roles and projects that shaped my skills in content, strategy, and quality.
                     </p>
                 </div>
 
@@ -204,9 +192,7 @@ const ExperienceSection: React.FC = () => {
                 <div className="hidden md:flex relative h-80 md:h-96 items-center justify-center overflow-hidden">
                     {/* Cards */}
                     <div className="relative w-full h-full flex items-center justify-center">
-                        {renderCard(experiences[prev], 'left')}
-                        {renderCard(experiences[active], 'center')}
-                        {renderCard(experiences[next], 'right')}
+                        {experiences.map((experience, index) => renderCard(experience, index))}
                     </div>
                 </div>
 

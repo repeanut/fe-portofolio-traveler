@@ -280,9 +280,7 @@ const PortfolioSection: React.FC = () => {
                 {/* Descriptions */}
                 <div className="text-center mt-10">
                     <p className="mt-4 text-gray-600 leading-relaxed max-w-2xl mx-auto">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque cursus finibus
-                        arcu sit amet tempor. Praesent consequat, dolor vestibulum euismod blandit,
-                        ligula urna blandit felis, gravida facilisis nunc enim a arcu.
+                        A curated selection of writing, campaign assets, and landing page work—organized by category so you can explore quickly.
                     </p>
                 </div>
             </div>
