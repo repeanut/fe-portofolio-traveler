@@ -17,11 +17,11 @@ const readStorageValue = (key: string) => {
 };
 
 const sampleHistoryItems = [
-    { id: '1', title: 'How to get fit without doing an...', timestamp: '2m ago' },
-    { id: '2', title: 'How can i make my hair grow fast', timestamp: '5m ago' },
-    { id: '3', title: 'Compsci SICP Tutorial course', timestamp: '2m ago' },
-    { id: '4', title: 'Proxy failure troubleshooting', timestamp: '2m ago' },
-    { id: '5', title: 'Wake me up when september e...', timestamp: '2m ago' },
+    { id: '1', title: 'Harga Copywriter TRAVELLO', timestamp: '2m ago' },
+    { id: '2', title: 'Destinasi Wisata Bali', timestamp: '5m ago' },
+    { id: '3', title: 'Layanan Content Writing', timestamp: '2m ago' },
+    { id: '4', title: 'Budget Traveling Hemat', timestamp: '2m ago' },
+    { id: '5', title: 'Hotel Murah Yogyakarta', timestamp: '2m ago' },
 ];
 
 const initialChatId = sampleHistoryItems[0]?.id;
@@ -29,38 +29,31 @@ const initialChatId = sampleHistoryItems[0]?.id;
 const initialChatMessages: Message[] = [
     {
         id: 'user-1',
-        content: 'do androids truly dream of electric sheeps or not?',
+        content: 'berapa harga copywriter untuk artikel blog?',
         role: 'user',
         name: 'Farras',
         timestamp: '02:22 AM',
     },
     {
         id: 'ai-1',
-        content:
-            'The question of whether androids dream of electric sheep is the title and central theme of the\nscience fiction novel Do Androids Dream of Electric Sheep? by Philip K. Dick.\n\n' +
-            '1. The book explores a world where androids are indistinguishable from humans except for a\n   lack of empathy. The story follows Rick Deckard, a bounty hunter who tracks down rogue\n   androids.\n\n' +
-            '2. The title refers to the empathy test used to distinguish between humans and androids. The\n   test involves administering a fictional scenario and evaluating the subject\'s emotional\n   response. Electric sheep are rare, real animals that people own as status symbols. Owning\n   one is seen as a sign of empathy and a connection to the natural world.\n\n' +
-            '3. The book never definitively answers the question of whether androids dream or not. It\n   explores the nature of reality, consciousness, and what it means to be human.\n\n' +
-            '4. The book inspired the movie Blade Runner, though there are some key differences in plot.',
+        content: '💰 **Harga Layanan Copywriter TRAVELLO:**\n\n• Content Writing: Rp 50.000 - Rp 150.000/artikel\n• SEO Content: Rp 75.000 - Rp 200.000/artikel\n• Business Content: Rp 100.000 - Rp 300.000/dokumen\n• Digital Marketing: Rp 60.000 - Rp 180.000/campaign\n• Content Strategy: Rp 500.000 - Rp 2.000.000/project\n\nSemua layanan include research, editing, dan revisi!',
         role: 'ai',
-        name: 'AI Chatbot',
+        name: 'AI Chatbot TRAVELLO',
         timestamp: '02:22 AM',
     },
     {
         id: 'user-2',
-        content: "let's say it does - what happens then?",
+        content: 'destinasi wisata terbaik untuk liburan keluarga?',
         role: 'user',
         name: 'Farras',
-        timestamp: '02:22 AM',
+        timestamp: '02:23 AM',
     },
     {
-        id: 'ai-img',
-        content: '',
+        id: 'ai-2',
+        content: '🌴 **Top 5 Destinasi Wisata Indonesia:**\n\n1. **Bali** - Pantai Kuta, Ubud, Tanah Lot (Budget: Rp 2-5jt)\n2. **Yogyakarta** - Borobudur, Prambanan, Malioboro (Budget: Rp 1.5-3.5jt)\n3. **Raja Ampat** - Diving, Pianemo, Wayag (Budget: Rp 8-15jt)\n4. **Labuan Bajo** - Komodo, Pink Beach (Budget: Rp 5-10jt)\n5. **Lombok** - Gili Islands, Rinjani (Budget: Rp 2.5-6jt)\n\n📞 Kami siap membantu perjalanan impian Anda!',
         role: 'ai',
-        name: 'AI Chatbot',
-        timestamp: '02:22 AM',
-        messageType: 'image',
-        imageUrl: 'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg?auto=compress&cs=tinysrgb&w=1600',
+        name: 'AI Chatbot TRAVELLO',
+        timestamp: '02:23 AM',
     },
 ];
 
@@ -389,6 +382,7 @@ const AIChatbotPage: React.FC = () => {
                             ref={chatRef}
                             showActions={false}
                             showHeader={false}
+                            enableSocket={true}
                             senderRole="user"
                             theme={theme}
                             chatMode={chatMode}
@@ -597,6 +591,7 @@ const AIChatbotPage: React.FC = () => {
                                     ref={chatRef}
                                     showActions={false}
                                     showHeader={false}
+                                    enableSocket={true}
                                     senderRole="user"
                                     theme={theme}
                                     chatMode={chatMode}

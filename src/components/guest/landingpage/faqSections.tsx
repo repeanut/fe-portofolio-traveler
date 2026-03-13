@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Plus, Minus } from 'lucide-react'
 
 interface FAQItem {
+    id?: number
     question: string
     answer: string
 }
@@ -41,6 +42,35 @@ const faqs: FAQItem[] = [
 
 const FAQSection: React.FC = () => {
     const [openIndex, setOpenIndex] = useState<number | null>(null)
+    const [faqData, setFaqData] = useState<FAQItem[]>(faqs)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? 'http://localhost:55435'
+        const fetchFaqs = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/api/landing-page`)
+                const result = await response.json()
+                if (result?.success && Array.isArray(result.data?.faqs) && result.data.faqs.length > 0) {
+                    setFaqData(
+                        result.data.faqs
+                            .filter((x: any) => x?.isActive !== false)
+                            .map((x: any) => ({
+                                id: Number(x.id),
+                                question: String(x.question ?? ''),
+                                answer: String(x.answer ?? '')
+                            }))
+                    )
+                }
+            } catch (e) {
+                // keep fallback
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchFaqs()
+    }, [])
 
     const toggleFAQ = (index: number) => {
         setOpenIndex(openIndex === index ? null : index)
@@ -74,9 +104,9 @@ const FAQSection: React.FC = () => {
 
                     {/* Right Column - FAQ Accordion */}
                     <div className="space-y-0 p-4 sm:p-5 rounded-xl bg-white shadow-lg">
-                        {faqs.map((faq, index) => (
+                        {(loading ? faqs : faqData).map((faq, index) => (
                             <div
-                                key={index}
+                                key={faq.id ?? index}
                                 className="border-b border-gray-200"
                             >
                                 <button

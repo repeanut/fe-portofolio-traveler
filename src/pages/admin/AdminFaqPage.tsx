@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
@@ -26,14 +26,43 @@ const AdminFaqPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useAdminToast();
 
-  const [faqData, setFaqData] = useState<FaqItem[]>([
-    {
-      id: 1,
-      question: "What copywriting services do you offer?",
-      answer:
-        "I offer a variety of copywriting services including video scripts, brand storytelling, email campaigns, content marketing, social media copy, product descriptions, landing page copy, ad copy, and SEO content.",
-    },
-  ]);
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:55435";
+
+  const [faqData, setFaqData] = useState<FaqItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchFaqs = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE}/api/landing-page/faqs`, {
+        credentials: "include",
+      });
+      const json = (await response.json().catch(() => null)) as any;
+      if (!response.ok || !json?.success) {
+        throw new Error(json?.message || "Failed to fetch FAQs");
+      }
+      const items = (Array.isArray(json.data) ? json.data : []) as any[];
+      setFaqData(
+        items.map((x) => ({
+          id: Number(x.id),
+          question: String(x.question ?? ""),
+          answer: String(x.answer ?? ""),
+        }))
+      );
+      setError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load FAQs";
+      setError(msg);
+      toast.error("Error", msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFaqs();
+  }, []);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -136,16 +165,25 @@ const AdminFaqPage: React.FC = () => {
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
+                isLoading={loading}
                 onEdit={(id) => {
                   if (typeof id === "number") {
                     setEditingId(id);
                     setIsModalOpen(true);
                   }
                 }}
-                onDelete={(id) => {
+                onDelete={async (id) => {
                   if (typeof id === "number") {
                     try {
-                      setFaqData((prev) => prev.filter((item) => item.id !== id));
+                      const response = await fetch(`${API_BASE}/api/landing-page/faqs/${id}`, {
+                        method: "DELETE",
+                        credentials: "include",
+                      });
+                      const json = (await response.json().catch(() => null)) as any;
+                      if (!response.ok || !json?.success) {
+                        throw new Error(json?.message || "Failed to delete FAQ");
+                      }
+                      await fetchFaqs();
                       toast.success("Success", "FAQ deleted successfully");
                     } catch {
                       toast.error("Error", "Failed to delete FAQ");
@@ -154,6 +192,19 @@ const AdminFaqPage: React.FC = () => {
                 }}
               />
             </section>
+
+            {error ? (
+              <div className="rounded-lg border border-rose-100 bg-rose-50 px-4 py-3 text-[11px] text-rose-700">
+                {error}
+                <button
+                  type="button"
+                  onClick={fetchFaqs}
+                  className="ml-3 rounded-md bg-rose-600 px-2 py-1 text-[11px] font-medium text-white"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -177,44 +228,51 @@ const AdminFaqPage: React.FC = () => {
           const question = (data.question as string) || "";
           const answer = (data.answer as string) || "";
 
-          try {
-            if (editingId != null) {
-              setFaqData((prev) =>
-                prev.map((item) =>
-                  item.id === editingId
-                    ? {
-                        ...item,
-                        question: question || item.question,
-                        answer: answer || item.answer,
-                      }
-                    : item
-                )
-              );
-              toast.success("Success", "FAQ updated successfully");
-            } else {
-              setFaqData((prev) => {
-                if (prev.length >= MAX_FAQ) {
-                  toast.warning("Limit reached", `FAQ can have up to ${MAX_FAQ} items`);
-                  return prev;
-                }
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    question,
-                    answer,
+          (async () => {
+            try {
+              if (editingId != null) {
+                const response = await fetch(`${API_BASE}/api/landing-page/faqs/${editingId}`, {
+                  method: "PUT",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
                   },
-                ];
-              });
-              toast.success("Success", "FAQ added successfully");
-            }
+                  body: JSON.stringify({ question, answer }),
+                });
+                const json = (await response.json().catch(() => null)) as any;
+                if (!response.ok || !json?.success) {
+                  throw new Error(json?.message || "Failed to update FAQ");
+                }
+                await fetchFaqs();
+                toast.success("Success", "FAQ updated successfully");
+              } else {
+                if (faqData.length >= MAX_FAQ) {
+                  toast.warning("Limit reached", `FAQ can have up to ${MAX_FAQ} items`);
+                  return;
+                }
+                const response = await fetch(`${API_BASE}/api/landing-page/faqs`, {
+                  method: "POST",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ question, answer, orderIndex: faqData.length }),
+                });
+                const json = (await response.json().catch(() => null)) as any;
+                if (!response.ok || !json?.success) {
+                  throw new Error(json?.message || "Failed to create FAQ");
+                }
+                await fetchFaqs();
+                toast.success("Success", "FAQ added successfully");
+              }
 
-            setIsModalOpen(false);
-            setEditingId(null);
-          } catch {
-            toast.error("Error", "Failed to save FAQ changes");
-          }
+              setIsModalOpen(false);
+              setEditingId(null);
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "Failed to save FAQ changes";
+              toast.error("Error", msg);
+            }
+          })();
         }}
       />
     </InitialShimmer>

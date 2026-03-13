@@ -8,7 +8,7 @@ import OrderDetails from '../../components/payments/OrderDetails';
 import TotalPayment from '../../components/payments/TotalPayment';
 import InitialShimmer from '../../components/ui/InitialShimmer';
 import { ShopPaymentPageSkeleton } from '../../components/ui/skeletons';
- 
+import paymentService from '../../services/payment.service';
 
 declare global {
     interface Window {
@@ -38,11 +38,12 @@ const ShopPaymentPage: React.FC = () => {
     const state = (location.state as PaymentLocationState | null) ?? null;
 
     const fallbackItem: ShopItem = {
-        id: state?.item?.id ?? 0,
+        _id: String(state?.item?.id ?? 0),
+        id: String(state?.item?.id ?? 0), // For backward compatibility
         title:
             state?.item?.title ?? 'I will be SEO content writer for article writing or blog writing',
         imageSrc: state?.item?.imageSrc ?? '/bg-shopCards.jpg',
-        price: state?.item?.price ?? '$20',
+        price: String(state?.item?.price ?? '$20'),
         deliveryTime: state?.item?.deliveryTime ?? '1-day delivery',
     };
 
@@ -61,6 +62,7 @@ const ShopPaymentPage: React.FC = () => {
     const orderPackage = state?.orderPackage ?? fallbackPackage;
     const [quantity] = useState<number>(state?.quantity && state.quantity > 0 ? state.quantity : 1);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isLoadingScript, setIsLoadingScript] = useState(false);
 
     const unitPrice = orderPackage.price;
     const subtotal = useMemo(() => unitPrice * quantity, [unitPrice, quantity]);
@@ -72,27 +74,130 @@ const ShopPaymentPage: React.FC = () => {
 
     const total = subtotal + serviceFee;
 
+    const readStorageValue = (key: string) => {
+        if (typeof window === 'undefined') return null;
+        const v = localStorage.getItem(key);
+        if (!v) return null;
+        const trimmed = v.trim();
+        if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+        return trimmed;
+    };
+
+    const getCurrentUserInfo = () => {
+        const userEmail = readStorageValue('userEmail');
+        const userName = readStorageValue('userName');
+        const userAvatar = readStorageValue('userAvatarUrl');
+        
+        return {
+            email: userEmail || 'customer@example.com',
+            name: userName || 'Customer',
+            avatar: userAvatar || null
+        };
+    };
+
     const handlePayment = async () => {
         setIsProcessing(true);
+        setIsLoadingScript(true);
+        
         try {
-            navigate('/shop/payment/payment-success', {
-                state: {
-                    subtotal,
-                    serviceFee,
-                    total,
-                    itemTitle: item.title,
-                    orderPackageTitle: orderPackage.title,
-                    deliveryLabel: orderPackage.deliveryLabel,
-                    quantity,
-                    paymentMethodLabel: 'Demo Payment',
+            console.log('🚀 Starting payment process...');
+            
+            // Get current user info
+            const userInfo = getCurrentUserInfo();
+            console.log('👤 User info for payment:', userInfo);
+            
+            // Create Midtrans transaction
+            const paymentData = {
+                itemTitle: item.title,
+                packageTitle: orderPackage.title,
+                quantity: quantity,
+                unitPrice: unitPrice,
+                subtotal: subtotal,
+                serviceFee: serviceFee,
+                total: total,
+                customerInfo: {
+                    name: userInfo.name,
+                    email: userInfo.email,
+                    phone: '',
+                    address: '',
+                    city: '',
+                    postalCode: ''
                 },
-            });
+                userId: userInfo.email !== 'customer@example.com' ? userInfo.email : null
+            };
+
+            console.log('📤 Creating payment transaction...');
+            const response = await paymentService.createShopPayment(paymentData);
+            
+            if (response.success && response.data?.token) {
+                console.log('✅ Transaction created, processing payment...');
+                setIsLoadingScript(false);
+                
+                // Process payment with Midtrans Snap
+                await paymentService.processMidtransPayment(response.data.token, {
+                    onSuccess: (result: any) => {
+                        console.log('💰 Payment success:', result);
+                        navigate('/shop/payment/payment-success', {
+                            state: {
+                                subtotal,
+                                serviceFee,
+                                total,
+                                itemTitle: item.title,
+                                orderPackageTitle: orderPackage.title,
+                                deliveryLabel: orderPackage.deliveryLabel,
+                                quantity,
+                                paymentMethodLabel: 'Midtrans',
+                                transactionResult: result
+                            },
+                        });
+                    },
+                    onPending: (result: any) => {
+                        console.log('⏳ Payment pending:', result);
+                        navigate('/shop/payment/payment-pending', {
+                            state: {
+                                subtotal,
+                                serviceFee,
+                                total,
+                                itemTitle: item.title,
+                                orderPackageTitle: orderPackage.title,
+                                deliveryLabel: orderPackage.deliveryLabel,
+                                quantity,
+                                paymentMethodLabel: 'Midtrans',
+                                transactionResult: result
+                            },
+                        });
+                    },
+                    onError: (result: any) => {
+                        console.log('❌ Payment error:', result);
+                        navigate('/shop/payment/payment-failed', {
+                            state: {
+                                subtotal,
+                                serviceFee,
+                                total,
+                                itemTitle: item.title,
+                                orderPackageTitle: orderPackage.title,
+                                deliveryLabel: orderPackage.deliveryLabel,
+                                quantity,
+                                paymentMethodLabel: 'Midtrans',
+                                transactionResult: result
+                            },
+                        });
+                    },
+                    onClose: () => {
+                        console.log('🔒 Payment popup closed by user');
+                        setIsProcessing(false);
+                        setIsLoadingScript(false);
+                    }
+                });
+            } else {
+                throw new Error(response.message || 'Failed to create payment transaction');
+            }
         } catch (error: unknown) {
-            console.error('Payment error:', error);
+            console.error('💥 Payment error:', error);
             const message = error instanceof Error ? error.message : 'Unknown error';
             alert('An error occurred while processing the payment: ' + message);
-        } finally {
             setIsProcessing(false);
+            setIsLoadingScript(false);
         }
     };
 
@@ -118,15 +223,15 @@ const ShopPaymentPage: React.FC = () => {
                                     <ol className="mt-3 space-y-2 text-xs text-gray-600">
                                         <li className="flex gap-2">
                                             <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">1</span>
-                                            <span>Click <span className="font-semibold text-gray-900">Confirm & Pay</span> to open the Midtrans popup.</span>
+                                            <span>Click <span className="font-semibold text-gray-900">Confirm & Pay</span> to open the Midtrans payment popup.</span>
                                         </li>
                                         <li className="flex gap-2">
                                             <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">2</span>
-                                            <span>Choose your payment method inside Midtrans and complete the payment.</span>
+                                            <span>Choose your payment method in the Midtrans popup (Credit Card, GoPay, Bank Transfer, etc.).</span>
                                         </li>
                                         <li className="flex gap-2">
                                             <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-50 text-sky-700 text-[11px] font-semibold">3</span>
-                                            <span>After success, you’ll see the payment success page and your order is confirmed.</span>
+                                            <span>Complete the payment and you'll be redirected to the success page.</span>
                                         </li>
                                     </ol>
                                 </section>

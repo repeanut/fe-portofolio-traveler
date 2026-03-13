@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ApexOptions } from "apexcharts";
 import AdminSidebar from "../../components/admin/AdminSidebar";
@@ -8,6 +8,8 @@ import DashboardSummaryCards from "../../components/admin/dashboard/DashboardSum
 import DashboardGrowthCard from "../../components/admin/dashboard/DashboardGrowthCard";
 import DashboardCalendarCard from "../../components/admin/dashboard/DashboardCalendarCard";
 import DashboardRecentOrdersCard from "../../components/admin/dashboard/DashboardRecentOrdersCard";
+import { dashboardService } from "../../services/dashboard.service";
+import type { DashboardStats, Transaction, CalendarOrder } from "../../services/dashboard.service";
 
 type IncomeDayPoint = { date: string; unit: number; amount: number };
 
@@ -22,14 +24,6 @@ type StoredTransaction = {
 const TRANSACTIONS_STORAGE_KEY = "admin_transactions";
 
 type OrderStatus = "paid" | "pending" | "failed";
-
-type RecentOrder = {
-  id: string;
-  customer: string;
-  date: string;
-  total: number;
-  status: OrderStatus;
-};
 
 type IncomeBucket = {
   key: string;
@@ -111,9 +105,12 @@ const parseTransactionDate = (raw: string) => {
 const AdminDashboardPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("dashboard");
   const [growthPeriod, setGrowthPeriod] = useState<"month" | "year">("year");
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const monthlyIncome = useMemo(() => {
+  const monthlyIncomeData = useMemo(() => {
     let list: StoredTransaction[] = [];
     try {
       const raw = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
@@ -237,7 +234,7 @@ const AdminDashboardPage: React.FC = () => {
     };
   }, [growthPeriod]);
 
-  const income30Days: IncomeDayPoint[] = useMemo(() => {
+  const income30DaysData = useMemo(() => {
     let list: StoredTransaction[] = [];
     try {
       const raw = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
@@ -317,20 +314,85 @@ const AdminDashboardPage: React.FC = () => {
     return days;
   }, []);
 
-  const recentOrders: RecentOrder[] = useMemo(
-    () => [
-      { id: "TRX-1024", customer: "Ayu Lestari", date: "2026-02-02", total: 350000, status: "paid" },
-      { id: "TRX-1025", customer: "Rama Putra", date: "2026-02-02", total: 120000, status: "pending" },
-      { id: "TRX-1026", customer: "Sarah N.", date: "2026-02-01", total: 890000, status: "paid" },
-      { id: "TRX-1027", customer: "Dimas B.", date: "2026-01-31", total: 200000, status: "failed" },
-    ],
-    []
-  );
-  const MULTIPLIER = 100_000;
-  const totalIncome = income30Days.reduce((acc, p) => acc + p.amount, 0);
-  const totalOrders = 128;
-  const totalUsers = 342;
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [stats, transactionsData] = await Promise.all([
+          dashboardService.getDashboardStats(),
+          dashboardService.getTransactions({ limit: 100 })
+        ]);
+        
+        setDashboardStats(stats);
+        setTransactions(transactionsData.transactions);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchDashboardData();
+  }, []);
+
+  const recentOrders: CalendarOrder[] = useMemo(
+    () => transactions ? dashboardService.getRecentOrders(transactions, 10) : [],
+    [transactions]
+  );
+
+  const calendarOrders = useMemo(
+    () => transactions ? dashboardService.getCalendarOrders(transactions) : [],
+    [transactions]
+  );
+
+  const monthlyIncome = useMemo(
+    () => transactions ? dashboardService.calculateMonthlyIncome(transactions) : monthlyIncomeData,
+    [transactions, monthlyIncomeData]
+  );
+
+  const income30Days = useMemo(() => {
+    if (!transactions.length) return income30DaysData;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+
+    const dailyIncome = new Map<string, number>();
+    
+    transactions
+      .filter(t => {
+        const transactionDate = new Date(t.createdAt);
+        return transactionDate >= thirtyDaysAgo && 
+               transactionDate <= today &&
+               (t.paymentStatus === 'paid' || t.status === 'completed');
+      })
+      .forEach(t => {
+        const dateKey = t.createdAt.split('T')[0];
+        dailyIncome.set(dateKey, (dailyIncome.get(dateKey) || 0) + t.finalAmount);
+      });
+
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateKey = date.toISOString().split('T')[0];
+      const amount = dailyIncome.get(dateKey) || 0;
+      
+      days.push({
+        date: date.toLocaleDateString('en-GB').replace(/\//g, '-'),
+        unit: Math.round(Math.min(30, Math.max(0, amount / 100000))),
+        amount
+      });
+    }
+
+    return days;
+  }, [transactions, income30DaysData]);
+  const MULTIPLIER = 100_000;
+  const totalIncome = dashboardStats?.totalIncome || income30Days.reduce((acc, p) => acc + p.amount, 0);
+  const totalOrders = dashboardStats?.totalOrders || 128;
+  const totalUsers = dashboardStats?.totalUsers || 342;
   const avgIncome = Math.round(totalIncome / Math.max(1, income30Days.length));
   const avgIncomeUnit = Math.round(Math.min(30, Math.max(0, avgIncome / MULTIPLIER)));
 
@@ -505,34 +567,45 @@ const AdminDashboardPage: React.FC = () => {
         <AdminHeader title="Dashboard" />
 
         <div className="flex-1 overflow-y-auto space-y-6 pr-1 pb-4">
-          <DashboardSummaryCards
-            totalIncome={totalIncome}
-            totalOrders={totalOrders}
-            totalUsers={totalUsers}
-            avgIncomeUnit={avgIncomeUnit}
-            formatRupiah={formatRupiah}
-          />
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <>
+              <DashboardSummaryCards
+                totalIncome={totalIncome}
+                totalOrders={totalOrders}
+                totalUsers={totalUsers}
+                avgIncomeUnit={avgIncomeUnit}
+                formatRupiah={formatRupiah}
+              />
 
-          <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr] items-stretch">
-            <DashboardGrowthCard
-              growthPeriod={growthPeriod}
-              onChangeGrowthPeriod={setGrowthPeriod}
-              chartOptions={chartOptions}
-              chartSeries={chartSeries}
-              monthlyIncome={monthlyIncome}
-              avgIncome={avgIncome}
-              formatRupiah={formatRupiah}
-            />
+              <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr] items-stretch">
+                <DashboardGrowthCard
+                  growthPeriod={growthPeriod}
+                  onChangeGrowthPeriod={setGrowthPeriod}
+                  chartOptions={chartOptions}
+                  chartSeries={chartSeries}
+                  monthlyIncome={monthlyIncome}
+                  avgIncome={avgIncome}
+                  formatRupiah={formatRupiah}
+                />
 
-            <DashboardCalendarCard recentOrders={recentOrders} formatRupiah={formatRupiah} />
-          </section>
+                <DashboardCalendarCard 
+                  recentOrders={calendarOrders} 
+                  formatRupiah={formatRupiah} 
+                />
+              </section>
 
-          <DashboardRecentOrdersCard
-            recentOrders={recentOrders}
-            statusStyles={statusStyles}
-            formatRupiah={formatRupiah}
-            onViewAll={() => navigate("/admin/transactions")}
-          />
+              <DashboardRecentOrdersCard
+                recentOrders={recentOrders}
+                statusStyles={statusStyles}
+                formatRupiah={formatRupiah}
+                onViewAll={() => navigate("/admin/transactions")}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

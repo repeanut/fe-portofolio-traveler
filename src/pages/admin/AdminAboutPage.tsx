@@ -13,8 +13,6 @@ import InitialShimmer from "../../components/ui/InitialShimmer";
 import { AdminTablePageSkeleton } from "../../components/ui/skeletons";
 import { useAdminToast } from "../../hooks/useAdminToast";
 
-const ABOUT_STORAGE_KEY = "landing_about";
-
 interface AboutContent extends Record<string, unknown> {
   id: number;
   image: string;
@@ -31,35 +29,44 @@ const AdminAboutPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useAdminToast();
 
-  const [aboutData, setAboutData] = useState<AboutContent[]>(() => {
-    const fallback: AboutContent[] = [
-      {
-        id: 1,
-        image: "/rizwords-nomad.jpg",
-        description:
-          "With over 5 years of experience and a deep understanding of copywriting psychology, marketing funnel, stages of awareness, and market sophistication I'll connect your brand with your target audience's pain points through ads and content. Then present your product as the perfect solution for their problems.",
-        experience: ["5+ Years Experience", "100+ Projects"],
-      },
-    ];
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:55435";
 
+  const [aboutData, setAboutData] = useState<AboutContent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAbout = async () => {
     try {
-      const raw = localStorage.getItem(ABOUT_STORAGE_KEY);
-      const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-      if (Array.isArray(parsed)) return parsed as AboutContent[];
-    } catch {
-      // ignore
-    }
+      setLoading(true);
+      const response = await fetch(`${API_BASE}/api/landing-page/about-items`, {
+        credentials: "include",
+      });
+      const json = (await response.json().catch(() => null)) as any;
+      if (!response.ok) throw new Error(json?.message || "Failed to fetch about");
+      if (!json?.success) throw new Error(json?.message || "Failed to fetch about");
 
-    return fallback;
-  });
+      const items = (Array.isArray(json.data) ? json.data : []) as any[];
+      setAboutData(
+        items.map((x) => ({
+          id: Number(x.id),
+          image: String(x.image ?? x.imageUrl ?? ""),
+          description: String(x.description ?? ""),
+          experience: Array.isArray(x.experience) ? (x.experience as string[]) : [],
+        }))
+      );
+      setError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load about";
+      setError(msg);
+      toast.error("Error", msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    try {
-      localStorage.setItem(ABOUT_STORAGE_KEY, JSON.stringify(aboutData));
-    } catch {
-      // ignore
-    }
-  }, [aboutData]);
+    fetchAbout();
+  }, []);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -196,16 +203,25 @@ const AdminAboutPage: React.FC = () => {
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
+                isLoading={loading}
                 onEdit={(id) => {
                   if (typeof id === "number") {
                     setEditingId(id);
                     setIsModalOpen(true);
                   }
                 }}
-                onDelete={(id) => {
+                onDelete={async (id) => {
                   if (typeof id === "number") {
                     try {
-                      setAboutData((prev) => prev.filter((item) => item.id !== id));
+                      const response = await fetch(`${API_BASE}/api/landing-page/about-items/${id}`, {
+                        method: "DELETE",
+                        credentials: "include",
+                      });
+                      const json = (await response.json().catch(() => null)) as any;
+                      if (!response.ok || !json?.success) {
+                        throw new Error(json?.message || "Failed to delete about");
+                      }
+                      await fetchAbout();
                       toast.success("Success", "About deleted successfully");
                     } catch {
                       toast.error("Error", "Failed to delete About");
@@ -214,6 +230,19 @@ const AdminAboutPage: React.FC = () => {
                 }}
               />
             </section>
+
+            {error ? (
+              <div className="rounded-lg border border-rose-100 bg-rose-50 px-4 py-3 text-[11px] text-rose-700">
+                {error}
+                <button
+                  type="button"
+                  onClick={fetchAbout}
+                  className="ml-3 rounded-md bg-rose-600 px-2 py-1 text-[11px] font-medium text-white"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -249,46 +278,51 @@ const AdminAboutPage: React.FC = () => {
           const description = (data.description as string) || "";
           const experience = ((data.experience as string[] | undefined) ?? []).map((x) => x.trim()).filter(Boolean);
 
-          try {
-            if (editingId != null) {
-              setAboutData((prev) =>
-                prev.map((item) =>
-                  item.id === editingId
-                    ? {
-                        ...item,
-                        image: image || item.image,
-                        description: description || item.description,
-                        experience: experience.length ? experience : item.experience,
-                      }
-                    : item
-                )
-              );
-              toast.success("Success", "About updated successfully");
-            } else {
-              setAboutData((prev) => {
-                if (prev.length >= 1) {
-                  toast.warning("Limit reached", "About can only have 1 item");
-                  return prev;
-                }
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    image,
-                    description,
-                    experience,
+          (async () => {
+            try {
+              if (editingId != null) {
+                const response = await fetch(`${API_BASE}/api/landing-page/about-items/${editingId}`, {
+                  method: "PUT",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
                   },
-                ];
-              });
-              toast.success("Success", "About added successfully");
-            }
+                  body: JSON.stringify({ image, description, experience }),
+                });
+                const json = (await response.json().catch(() => null)) as any;
+                if (!response.ok || !json?.success) {
+                  throw new Error(json?.message || "Failed to update about");
+                }
+                await fetchAbout();
+                toast.success("Success", "About updated successfully");
+              } else {
+                if (aboutData.length >= 1) {
+                  toast.warning("Limit reached", "About can only have 1 item");
+                  return;
+                }
+                const response = await fetch(`${API_BASE}/api/landing-page/about-items`, {
+                  method: "POST",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ image, description, experience }),
+                });
+                const json = (await response.json().catch(() => null)) as any;
+                if (!response.ok || !json?.success) {
+                  throw new Error(json?.message || "Failed to create about");
+                }
+                await fetchAbout();
+                toast.success("Success", "About added successfully");
+              }
 
-            setIsModalOpen(false);
-            setEditingId(null);
-          } catch {
-            toast.error("Error", "Failed to save About changes");
-          }
+              setIsModalOpen(false);
+              setEditingId(null);
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "Failed to save About changes";
+              toast.error("Error", msg);
+            }
+          })();
         }}
       />
     </InitialShimmer>

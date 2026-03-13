@@ -158,7 +158,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
             // Determine API endpoint
             const endpoint = isSignup ? 'register' : 'login';
-            const apiUrl = `http://localhost:5000/api/auth/${endpoint}?login_page=${loginPage}`;
+            const apiUrl = `http://localhost:55435/api/auth/${endpoint}?login_page=${loginPage}`;
 
             // Make API call
             const response = await fetch(apiUrl, {
@@ -172,19 +172,38 @@ const AuthModal: React.FC<AuthModalProps> = ({
             const result = await response.json();
 
             if (result.success) {
-                // Store authentication data
+                // Store complete authentication data
+                const userData = {
+                    id: result.data.user.id,
+                    email: result.data.user.email,
+                    username: result.data.user.username,
+                    displayName: result.data.user.displayName || result.data.user.username,
+                    role: result.data.user.role || 'user',
+                    provider: result.data.user.provider || 'local',
+                    profilePicture: result.data.user.profilePicture || null
+                };
+
                 localStorage.setItem('authToken', result.data.token);
+                localStorage.setItem('user', JSON.stringify(userData));
                 localStorage.setItem('userEmail', result.data.user.email);
                 localStorage.setItem('userName', result.data.user.displayName || result.data.user.username);
                 localStorage.setItem('isAuthenticated', 'true');
-                localStorage.setItem('authProvider', 'manual');
+
+                console.log('✅ Login successful:', userData);
+                console.log('🔑 Token stored:', result.data.token.substring(0, 50) + '...');
                 
-                const nextAvatar = result.data.user.profilePicture || avatarUrl;
-                if (nextAvatar) localStorage.setItem('userAvatarUrl', nextAvatar);
-                
-                // Dispatch auth change event
-                window.dispatchEvent(new Event('auth:changed'));
-                
+                // Dispatch auth changed event
+                window.dispatchEvent(new CustomEvent('auth:changed', {
+                    detail: {
+                        isAuthenticated: true,
+                        user: userData,
+                        token: result.data.token
+                    }
+                }));
+
+                // Close modal and redirect
+                completeAuth();
+
                 // Show success message
                 if (isSignup) {
                     alert('🎉 Welcome to Travello! Your account has been successfully created.');
@@ -232,12 +251,12 @@ const AuthModal: React.FC<AuthModalProps> = ({
             }
             
             // Redirect to Google OAuth endpoint with mode and login_page parameters
-            const googleOAuthUrl = `http://localhost:5000/api/auth/google?mode=${isSignup ? 'signup' : 'login'}&login_page=${loginPage}`;
+            const googleOAuthUrl = `http://localhost:55435/api/auth/google?mode=${isSignup ? 'signup' : 'login'}&login_page=${loginPage}`;
+            console.log('🔗 Redirecting to Google OAuth:', googleOAuthUrl);
             window.location.href = googleOAuthUrl;
         } catch (error) {
             console.error('Google OAuth error:', error);
-            // Fallback to manual auth
-            completeAuth();
+            alert('Google OAuth tidak tersedia. Silakan gunakan registrasi manual.');
         }
     };
 

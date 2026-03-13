@@ -6,6 +6,9 @@ import WorkPage from "./pages/work/workPage";
 import ShopPage from "./pages/shop/shopPage";
 import ShopDetailPage from './pages/shop/shopDetailPage';
 import ShopPaymentPage from './pages/shop/shopPaymentPage';
+import PaymentSuccessPage from './pages/shop/paymentSuccessPage';
+import PaymentPendingPage from './pages/shop/paymentPendingPage';
+import PaymentFailedPage from './pages/shop/paymentFailedPage';
 import SuccessPayment from "./components/payments/SuccessPayment";
 import UserProfilePage from "./pages/users/UserProfilePage";
 import BlogPage from "./pages/blog/BlogPage";
@@ -28,6 +31,8 @@ import AiMotionLoadingPage from "./components/ui/AiMotionLoadingPage";
 import AdminToastProvider from "./components/admin/AdminToastProvider";
 import GoogleOAuthCallback from "./components/auth/GoogleOAuthCallback";
 import AuthCallback from "./components/auth/AuthCallback";
+import AuthError from "./components/auth/AuthError";
+import AdminAuthGuard from "./components/admin/AdminAuthGuard";
 
 export const Router = () => {
     const location = useLocation();
@@ -86,7 +91,9 @@ export const Router = () => {
                 <Route path="/work/shop" element={<ShopPage />} />
                 <Route path="/work/shop/:id" element={<ShopDetailPage />} />
                 <Route path="/shop/payment" element={<ShopPaymentPage />} />
-                <Route path="/shop/payment/payment-success" element={<SuccessPayment />} />
+                <Route path="/shop/payment/payment-success" element={<PaymentSuccessPage />} />
+                <Route path="/shop/payment/payment-pending" element={<PaymentPendingPage />} />
+                <Route path="/shop/payment/payment-failed" element={<PaymentFailedPage />} />
                 <Route path="/ai-chatbot" element={<AIChatbotPage />} />
                 <Route path="/profile" element={<UserProfilePage />} />
                 <Route path="/blog" element={<BlogPage />} />
@@ -94,21 +101,74 @@ export const Router = () => {
 
                 {/* Admin Route */}
                 <Route path="/admin/login" element={<AdminLoginPage />} />
-                <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-                <Route path="/admin/chat" element={<AdminChatPage />} />
-                <Route path="/admin/blog" element={<AdminBlogArticlesPage />} />
-                <Route path="/admin/users" element={<AdminUserListPage />} />
-                <Route path="/admin/shop" element={<AdminShopPage />} />
-                <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
-                <Route path="/admin/landing/hero" element={<AdminHeroManagementPage />} />
-                <Route path="/admin/landing/travel-journal" element={<AdminTravelJournalPage />} />
-                <Route path="/admin/landing/about" element={<AdminAboutPage />} />
-                <Route path="/admin/landing/portfolio" element={<AdminPortfolioPage />} />
-                <Route path="/admin/landing/cert-services" element={<AdminCertServicesPage />} />
-                <Route path="/admin/landing/experience" element={<AdminExperiencePage />} />
-                <Route path="/admin/landing/faq" element={<AdminFaqPage />} />
+                <Route path="/admin/dashboard" element={
+                    <AdminAuthGuard>
+                        <AdminDashboardPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/chat" element={
+                    <AdminAuthGuard>
+                        <AdminChatPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/blog" element={
+                    <AdminAuthGuard>
+                        <AdminBlogArticlesPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/users" element={
+                    <AdminAuthGuard>
+                        <AdminUserListPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/shop" element={
+                    <AdminAuthGuard>
+                        <AdminShopPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/transactions" element={
+                    <AdminAuthGuard>
+                        <AdminTransactionsPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/landing/hero" element={
+                    <AdminAuthGuard>
+                        <AdminHeroManagementPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/landing/travel-journal" element={
+                    <AdminAuthGuard>
+                        <AdminTravelJournalPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/landing/about" element={
+                    <AdminAuthGuard>
+                        <AdminAboutPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/landing/portfolio" element={
+                    <AdminAuthGuard>
+                        <AdminPortfolioPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/landing/cert-services" element={
+                    <AdminAuthGuard>
+                        <AdminCertServicesPage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/landing/experience" element={
+                    <AdminAuthGuard>
+                        <AdminExperiencePage />
+                    </AdminAuthGuard>
+                } />
+                <Route path="/admin/landing/faq" element={
+                    <AdminAuthGuard>
+                        <AdminFaqPage />
+                    </AdminAuthGuard>
+                } />
                 <Route path="/auth/callback" element={<GoogleOAuthCallback />} />
                 <Route path="/auth/success" element={<AuthCallback />} />
+                <Route path="/auth/error" element={<AuthError />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 </Routes>
             )}

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 interface Certification {
     id: number
@@ -33,6 +33,36 @@ const certifications: Certification[] = [
 ]
 
 const CertificationsSection: React.FC = () => {
+    const [data, setData] = useState<Certification[]>(certifications)
+
+    useEffect(() => {
+        const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? 'http://localhost:55435'
+        const fetchCerts = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/api/landing-page`)
+                const result = await response.json()
+                const certs = result?.data?.certifications
+                if (result?.success && Array.isArray(certs) && certs.length > 0) {
+                    setData(
+                        certs
+                            .filter((x: any) => x?.isActive !== false)
+                            .map((x: any) => ({
+                                id: Number(x.id),
+                                logo: String(x.logo ?? ''),
+                                title: String(x.title ?? ''),
+                                subtitle: String(x.subtitle ?? ''),
+                                organization: String(x.organization ?? '')
+                            }))
+                    )
+                }
+            } catch {
+                // keep fallback
+            }
+        }
+
+        fetchCerts()
+    }, [])
+
     return (
         <section className="relative py-4 mt-12 overflow-hidden" id="certifications">
             {/* Background with overlay image */}
@@ -58,7 +88,7 @@ const CertificationsSection: React.FC = () => {
                             className="flex flex-row flex-nowrap gap-4 overflow-x-auto scrollbar-hide px-4 md:px-0 py-4"
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
-                        {certifications.map((cert) => (
+                        {data.map((cert) => (
                             <div
                                 key={cert.id}
                                 className="bg-white rounded-2xl px-4 py-4 shadow-sm border border-gray-100 flex items-center gap-3 hover:shadow-md transition-shadow duration-300 flex-shrink-0 w-[270px]"

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, ShoppingCart, TrendingUp } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 
 type RecentOrderLike = {
@@ -7,6 +7,7 @@ type RecentOrderLike = {
   customer: string;
   date: string;
   total: number;
+  status?: 'paid' | 'pending' | 'failed';
 };
 
 interface DashboardCalendarCardProps {
@@ -155,6 +156,24 @@ const DashboardCalendarCard: React.FC<DashboardCalendarCardProps> = ({ recentOrd
   }, [handleWeekScroll]);
 
   const selectedDayOrders = useMemo(() => recentOrders.filter((o) => o.date === selectedDateKey), [recentOrders, selectedDateKey]);
+
+  // Calculate order statistics for selected date
+  const selectedDateStats = useMemo(() => {
+    const orders = selectedDayOrders;
+    const total = orders.reduce((sum: number, order: RecentOrderLike) => sum + order.total, 0);
+    const paidOrders = orders.filter((order: RecentOrderLike) => order.status === 'paid').length;
+    const pendingOrders = orders.filter((order: RecentOrderLike) => order.status === 'pending').length;
+    const failedOrders = orders.filter((order: RecentOrderLike) => order.status === 'failed').length;
+    
+    return {
+      totalOrders: orders.length,
+      totalRevenue: total,
+      paidOrders,
+      pendingOrders,
+      failedOrders,
+      avgOrderValue: orders.length > 0 ? total / orders.length : 0
+    };
+  }, [selectedDayOrders]);
 
   return (
     <div className="h-full">
@@ -331,25 +350,82 @@ const DashboardCalendarCard: React.FC<DashboardCalendarCardProps> = ({ recentOrd
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
-              {selectedDayOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200">
-                      <ShoppingCart className="h-5 w-5" />
+            <div className="space-y-4">
+              {/* Stats Summary */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-slate-100 bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                      <ShoppingCart className="h-3 w-3" />
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-semibold text-slate-900 truncate">{order.customer}</div>
-                      <div className="mt-0.5 text-[10px] text-slate-500 truncate">{order.id}</div>
-                    </div>
+                    <div className="text-[10px] text-slate-500">Orders</div>
                   </div>
-
-                  <div className="shrink-0 text-right">
-                    <div className="text-[10px] font-semibold text-slate-700">{order.date}</div>
-                    <div className="mt-0.5 text-[10px] text-slate-500">{formatRupiah(order.total)}</div>
+                  <div className="mt-1 text-lg font-semibold text-slate-900">{selectedDateStats.totalOrders}</div>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                      <TrendingUp className="h-3 w-3" />
+                    </div>
+                    <div className="text-[10px] text-slate-500">Revenue</div>
+                  </div>
+                  <div className="mt-1 text-lg font-semibold text-slate-900">{formatRupiah(selectedDateStats.totalRevenue)}</div>
+                </div>
+              </div>
+              
+              {/* Order Status Breakdown */}
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <div className="text-[10px] font-medium text-slate-600 mb-2">Status Breakdown</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-emerald-600">{selectedDateStats.paidOrders}</div>
+                    <div className="text-[9px] text-slate-500">Paid</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-amber-600">{selectedDateStats.pendingOrders}</div>
+                    <div className="text-[9px] text-slate-500">Pending</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-rose-600">{selectedDateStats.failedOrders}</div>
+                    <div className="text-[9px] text-slate-500">Failed</div>
                   </div>
                 </div>
-              ))}
+              </div>
+              
+              {/* Orders List */}
+              <div className="space-y-2">
+                <div className="text-[10px] font-medium text-slate-600">Recent Orders</div>
+                {selectedDayOrders.slice(0, 5).map((order) => (
+                  <div key={order.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-white p-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200">
+                        <ShoppingCart className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-semibold text-slate-900 truncate">{order.customer}</div>
+                        <div className="text-[9px] text-slate-500 truncate">{order.id}</div>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[9px] font-semibold text-slate-700">{formatRupiah(order.total)}</div>
+                      {order.status && (
+                        <div className={`mt-0.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[8px] font-semibold ${
+                          order.status === 'paid' ? 'bg-emerald-50 text-emerald-700' :
+                          order.status === 'pending' ? 'bg-amber-50 text-amber-700' :
+                          'bg-rose-50 text-rose-700'
+                        }`}>
+                          {order.status}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {selectedDayOrders.length > 5 && (
+                  <div className="text-center text-[9px] text-slate-500">
+                    +{selectedDayOrders.length - 5} more orders
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

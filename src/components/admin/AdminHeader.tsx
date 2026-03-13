@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import AdminNotificationDropdown from "./AdminNotificationDropdown";
-import { Camera } from "lucide-react";
+import AdminChatInterface from "./AdminChatInterface";
+import { Camera, MessageCircle } from "lucide-react";
 
 interface AdminHeaderProps {
   title: string;
@@ -36,6 +37,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   const [profileAvatarUrl, setProfileAvatarUrl] = useState(storedProfile?.avatarUrl || adminAvatarUrl);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [draftName, setDraftName] = useState(profileName);
   const [draftAvatarUrl, setDraftAvatarUrl] = useState<string | null>(profileAvatarUrl || null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
@@ -76,6 +78,17 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
     <header className="mb-6 mt-12 md:mt-0 flex w-full min-w-0 items-center justify-between gap-3">
       <h2 className="min-w-0 flex-1 text-xl sm:text-2xl font-semibold text-slate-900 truncate">{title}</h2>
       <div className="flex shrink-0 items-center gap-3 text-sm">
+        {/* Admin Chat Toggle Button */}
+        <button
+          type="button"
+          onClick={() => setIsChatOpen(true)}
+          className="flex items-center gap-2 rounded-lg px-3 py-2 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+          title="Admin Chat"
+        >
+          <MessageCircle className="w-4 h-4" />
+          <span className="hidden sm:inline text-sm font-medium">Chat Admin</span>
+        </button>
+        
         <AdminNotificationDropdown />
         <div className="relative">
           <button
@@ -207,6 +220,14 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Admin Chat Interface Modal */}
+      {isChatOpen && (
+        <AdminChatInterface 
+          isOpen={isChatOpen} 
+          onClose={() => setIsChatOpen(false)} 
+        />
       )}
     </header>
   );

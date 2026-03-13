@@ -1,150 +1,101 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../../components/admin/AdminSidebar";
-import AdminHeader from "../../../components/admin/AdminHeader";
-import AdminTableHeader from "../../../components/admin/AdminTableHeader";
 import AdminTable from "../../../components/admin/AdminTable";
 import type { Column } from "../../../components/admin/AdminTable";
 import AdminModal, { type AdminModalField } from "../../../components/admin/AdminModal";
-import type { ShopItem } from "../../../components/ui/shopCards";
+import { shopService, type ShopItem } from "../../../services/shopService";
 import { useAdminToast } from "../../../hooks/useAdminToast";
+import { Package, ShoppingCart, TrendingUp, Users } from "lucide-react";
 
-type AdminShopItem = ShopItem & {
-  status: "active" | "inactive";
-};
-
-type ProductDetail = {
-  id: number;
-  fullText: string;
-};
-
-type ProductAdvantage = {
-  id: number;
-  title: string;
-  subtitle: string;
-};
-
-type ProductPackage = {
-  id: number;
-  packageKey: "basic" | "standard" | "premium";
-  badge: string;
-  description: string;
-  features: string[];
-  defaultWords: number;
-  basePrice: number;
-};
+type AdminShopItem = ShopItem;
 
 const AdminShopPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("shop");
   const navigate = useNavigate();
   const toast = useAdminToast();
 
-  const [items, setItems] = useState<AdminShopItem[]>([
-    {
-      id: 1,
-      title: "I will be SEO content writer for article writing or blog writing",
-      imageSrc: "/bg-shopCards.jpg",
-      price: "$20",
-      deliveryTime: "2 Days Delivery",
-      serviceCategory: "SEO Content",
-      status: "active",
-    },
-    {
-      id: 2,
-      title: "I will write human SEO blogs and articles",
-      imageSrc: "/bg-shopCards.jpg",
-      price: "$100",
-      deliveryTime: "3 Days Delivery",
-      serviceCategory: "Blog Writing",
-      status: "active",
-    },
-    {
-      id: 3,
-      title: "I will write SEO blog posts and articles as your content writer",
-      imageSrc: "/bg-shopCards.jpg",
-      price: "$100",
-      deliveryTime: "7 Days Delivery",
-      serviceCategory: "Product Description",
-      status: "inactive",
-    },
-  ]);
-
+  const [items, setItems] = useState<AdminShopItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
 
-  const [detailsByProductId, setDetailsByProductId] = useState<Record<number, ProductDetail[]>>({
-    1: [
-      {
-        id: 1,
-        fullText:
-          "Hello, I'm Rizqi, a professional SEO content writer with 7 years of industry experience. I hold an MBA degree and specialize in creating content that not only informs but drives results.",
-      },
-    ],
-  });
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [advantagesByProductId, setAdvantagesByProductId] = useState<
-    Record<number, ProductAdvantage[]>
-  >({
-    1: [
-      { id: 1, title: "Highly Responsive", subtitle: "Known for exceptionally quick replies" },
-      { id: 2, title: "SEO Optimized", subtitle: "Content crafted to rank better on search engines" },
-    ],
-  });
+  // Calculate stats
+  const stats = useMemo(() => {
+    const totalItems = items.length;
+    const activeItems = items.filter(item => item.status === 'active').length;
+    const inactiveItems = items.filter(item => item.status === 'inactive').length;
+    const totalValue = items.reduce((sum, item) => {
+      const price = parseFloat(item.price.replace(/[^0-9.]/g, '')) || 0;
+      return sum + price;
+    }, 0);
 
-  const [packagesByProductId, setPackagesByProductId] = useState<Record<number, ProductPackage[]>>({
-    1: [
-      {
-        id: 1,
-        packageKey: "basic",
-        badge: "Starter",
-        description: "Short-form SEO content for quick tasks and smaller projects.",
-        features: ["1 Article", "SEO-optimized title", "Proofreading"],
-        defaultWords: 500,
-        basePrice: 20,
-      },
-      {
-        id: 2,
-        packageKey: "standard",
-        badge: "Advance",
-        description: "SEO-Friendly Website Content, Blog Posts, Web Pages, Product Descriptions & More.",
-        features: ["1 Article", "Plagiarism check", "References & citations", "Include keyword research"],
-        defaultWords: 1000,
-        basePrice: 20,
-      },
-      {
-        id: 3,
-        packageKey: "premium",
-        badge: "Premium Plus",
-        description: "Long-form content package with advanced research and multiple revisions.",
-        features: [
-          "2 Long-form articles",
-          "In-depth keyword research",
-          "SEO content strategy outline",
-          "2 rounds of revisions",
-        ],
-        defaultWords: 1500,
-        basePrice: 20,
-      },
-    ],
-  });
+    return {
+      totalItems,
+      activeItems,
+      inactiveItems,
+      totalValue
+    };
+  }, [items]);
 
-  const [selectedId, setSelectedId] = useState<number | null>(items[0]?.id ?? null);
-  const selectedItem = useMemo(
-    () => items.find((x) => x.id === selectedId) ?? null,
-    [items, selectedId]
-  );
-
-  const selectedProductId = selectedItem?.id ?? null;
+  // Load data from API
+  const loadShopItems = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Starting to load shop items...');
+      const result = await shopService.getShopItems({ status: 'all' }); // Get all items for admin
+      console.log('📦 Shop items loaded from API:', result);
+      console.log('📊 Data length:', result.data?.length || 0);
+      console.log('📋 Data sample:', result.data?.[0]);
+      console.log('📋 Data structure:', JSON.stringify(result.data?.[0], null, 2));
+      console.log('📋 Data keys:', result.data?.[0] ? Object.keys(result.data[0]) : 'No data');
+      setItems(result.data || []);
+      console.log('✅ Items set in state:', result.data?.length || 0);
+    } catch (error) {
+      console.error('❌ Error loading shop items:', error);
+      toast.error("Error", "Failed to load shop items");
+    } finally {
+      setLoading(false);
+      console.log('🔄 Loading completed, loading state:', false);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return items.filter((item) => {
+    const filtered = items.filter((item) => {
       if (!q) return true;
       const haystack = `${item.title} ${item.serviceCategory ?? ""} ${item.price} ${item.deliveryTime ?? ""}`.toLowerCase();
       return haystack.includes(q);
     });
+    console.log('🔍 Filtering items:', items.length, '->', filtered.length, 'for search:', q);
+    return filtered;
   }, [items, search]);
+
+  useEffect(() => {
+    console.log('🔄 useEffect triggered, calling loadShopItems...');
+    loadShopItems();
+  }, []);
+
+  useEffect(() => {
+    console.log('📊 Items state changed:', items.length, 'items');
+    console.log('📋 Items data:', items);
+    console.log('🔍 Filtered items:', filteredItems.length, 'filteredItems');
+    console.log('📋 Filtered items data:', filteredItems);
+  }, [items, filteredItems]);
+
+  useEffect(() => {
+    console.log('🔄 Loading state changed:', loading);
+  }, [loading]);
+
+  useEffect(() => {
+    console.log('🎯 About to render - filteredItems:', filteredItems.length, 'items');
+    console.log('📋 Filtered items data:', filteredItems);
+  }, [filteredItems]);
 
   const columns: Column[] = useMemo(
     () => [
@@ -160,7 +111,7 @@ const AdminShopPage: React.FC = () => {
         render: (value, row) => (
           <button
             type="button"
-            onClick={() => setSelectedId(row.id as number)}
+            onClick={() => setEditingId(row._id as string)}
             className="text-left text-[11px] text-slate-700 hover:text-blue-600"
           >
             {String(value)}
@@ -240,122 +191,9 @@ const AdminShopPage: React.FC = () => {
     []
   );
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [editingDetailId, setEditingDetailId] = useState<number | null>(null);
-
-  const [advModalOpen, setAdvModalOpen] = useState(false);
-  const [editingAdvId, setEditingAdvId] = useState<number | null>(null);
-
-  const [pkgModalOpen, setPkgModalOpen] = useState(false);
-  const [editingPkgId, setEditingPkgId] = useState<number | null>(null);
-
   const editingItem = useMemo(
-    () => (editingId === null ? null : items.find((x) => x.id === editingId) ?? null),
+    () => (editingId === null ? null : items.find((x) => x._id === editingId) ?? null),
     [editingId, items]
-  );
-
-  const detailsColumns: Column[] = useMemo(
-    () => [
-      { header: "Content", accessor: "fullText", type: "textarea" },
-      { header: "Action", accessor: "action", type: "action" },
-    ],
-    []
-  );
-
-  const advantagesColumns: Column[] = useMemo(
-    () => [
-      { header: "Title", accessor: "title", type: "text" },
-      { header: "Subtitle", accessor: "subtitle", type: "text" },
-      { header: "Action", accessor: "action", type: "action" },
-    ],
-    []
-  );
-
-  const packagesColumns: Column[] = useMemo(
-    () => [
-      { header: "Key", accessor: "packageKey", type: "text" },
-      { header: "Badge", accessor: "badge", type: "text" },
-      { header: "Description", accessor: "description", type: "textarea" },
-      {
-        header: "Features",
-        accessor: "features",
-        type: "text",
-        render: (value) => {
-          const feats = (value as string[]) ?? [];
-          return (
-            <div className="flex flex-wrap gap-1">
-              {feats.slice(0, 3).map((x) => (
-                <span
-                  key={x}
-                  className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600"
-                >
-                  {x}
-                </span>
-              ))}
-              {feats.length > 3 ? (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">
-                  +{feats.length - 3}
-                </span>
-              ) : null}
-            </div>
-          );
-        },
-      },
-      { header: "Words", accessor: "defaultWords", type: "text" },
-      { header: "Base Price", accessor: "basePrice", type: "text" },
-      { header: "Action", accessor: "action", type: "action" },
-    ],
-    []
-  );
-
-  const detailFields: AdminModalField[] = useMemo(
-    () => [
-      {
-        name: "fullText",
-        label: "Product Details",
-        type: "textarea",
-        placeholder: "Write product details here...",
-      },
-    ],
-    []
-  );
-
-  const advantageFields: AdminModalField[] = useMemo(
-    () => [
-      { name: "title", label: "Title", type: "text", placeholder: "Highly Responsive" },
-      {
-        name: "subtitle",
-        label: "Subtitle",
-        type: "text",
-        placeholder: "Known for exceptionally quick replies",
-      },
-    ],
-    []
-  );
-
-  const packageFields: AdminModalField[] = useMemo(
-    () => [
-      {
-        name: "packageKey",
-        label: "Package Key (basic / standard / premium)",
-        type: "text",
-        placeholder: "standard",
-      },
-      { name: "badge", label: "Badge", type: "text", placeholder: "Advance" },
-      { name: "description", label: "Description", type: "textarea" },
-      {
-        name: "features",
-        label: "Features",
-        type: "tags",
-        placeholder: "Type feature then press Enter",
-      },
-      { name: "defaultWords", label: "Default Words", type: "number", placeholder: "1000" },
-      { name: "basePrice", label: "Base Price", type: "number", placeholder: "20" },
-    ],
-    []
   );
 
   const normalizeImageValue = (value: unknown): string => {
@@ -367,464 +205,203 @@ const AdminShopPage: React.FC = () => {
     return "/placeholder-image.png";
   };
 
-  const handleSubmit = (data: Record<string, unknown>) => {
-    const next: AdminShopItem = {
-      id: editingItem?.id ?? Date.now(),
-      title: String(data.title ?? ""),
-      imageSrc: normalizeImageValue(data.imageSrc),
-      price: String(data.price ?? ""),
-      deliveryTime: String(data.deliveryTime ?? ""),
-      serviceCategory: String(data.serviceCategory ?? ""),
-      status:
-        String(data.status ?? "active") === "inactive" ? "inactive" : "active",
-    };
-
+  const handleSubmit = async (data: Record<string, unknown>) => {
     try {
-      setItems((prev) => {
-        if (editingItem) {
-          return prev.map((x) => (x.id === editingItem.id ? next : x));
-        }
-        return [next, ...prev];
-      });
+      setSaving(true);
+      console.log('Submitting form data:', data);
+      
+      const shopItemData: Partial<ShopItem> = {
+        title: String(data.title ?? ""),
+        imageSrc: normalizeImageValue(data.imageSrc),
+        price: String(data.price ?? ""),
+        deliveryTime: String(data.deliveryTime ?? ""),
+        serviceCategory: String(data.serviceCategory ?? ""),
+        status: (String(data.status ?? "active") === "inactive" ? "inactive" : "active") as "active" | "inactive",
+      };
 
-      setSelectedId(next.id);
+      console.log('Processed shop item data:', shopItemData);
+
+      if (editingItem) {
+        // Update existing item
+        console.log('Updating existing item:', editingItem._id);
+        const updatedItem = await shopService.updateShopItem(editingItem._id, shopItemData);
+        console.log('Item updated successfully:', updatedItem);
+        toast.success("Success", "Product updated successfully");
+      } else {
+        // Create new item
+        console.log('Creating new item');
+        const newItem = await shopService.createShopItem(shopItemData);
+        console.log('Item created successfully:', newItem);
+        toast.success("Success", "Product added successfully");
+      }
+
+      // Reload data with delay to ensure backend has processed
+      console.log('🔄 Reloading shop items after save...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Increased delay
+      console.log('🔄 Calling loadShopItems...');
+      await loadShopItems();
+      console.log('✅ LoadShopItems completed, items count:', items.length);
+      
       setIsModalOpen(false);
       setEditingId(null);
-
-      toast.success(
-        "Success",
-        editingItem ? "Product updated successfully" : "Product added successfully"
-      );
-    } catch {
+      setSaving(false);
+      
+      // Force re-render
+      console.log('🔄 Forcing re-render...');
+      setTimeout(() => {
+        console.log('🔄 Re-render triggered');
+      }, 100);
+    } catch (error) {
+      console.error('❌ Error saving shop item:', error);
+      setSaving(false);
       toast.error("Error", "Failed to save product changes");
     }
   };
 
+  const handleDelete = async (id: string) => {
+    const ok = window.confirm("Delete this product?");
+    if (!ok) return;
+
+    try {
+      console.log('Deleting product:', id);
+      setSaving(true);
+      await shopService.deleteShopItem(id);
+      toast.success("Success", "Product deleted successfully");
+      await loadShopItems();
+    } catch (error) {
+      console.error('Error deleting shop item:', error);
+      toast.error("Error", "Failed to delete product");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden overflow-x-hidden">
+    <div className="flex h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 overflow-hidden overflow-x-hidden">
       <AdminSidebar
         active={activeMenu}
         onNavigate={(key) => {
           setActiveMenu(key);
           if (key === "dashboard") {
-            navigate("/admin/dashboard");
-          } else if (key === "chat") {
-            navigate("/admin/chat");
-          } else if (key === "landing") {
-            navigate("/admin/landing/hero");
-          } else if (key === "users") {
-            navigate("/admin/users");
-          } else if (key === "transactions") {
-            navigate("/admin/transactions");
-          } else if (key === "blog") {
-            navigate("/admin/blog");
+            navigate("/admin");
           } else if (key === "shop") {
             navigate("/admin/shop");
+          } else if (key === "transactions") {
+            navigate("/admin/transactions");
+          } else if (key === "chat") {
+            navigate("/admin/chat");
+          } else if (key === "users") {
+            navigate("/admin/users");
+          } else {
+            navigate("/");
           }
         }}
       />
-
-      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 md:px-8 md:py-6 overflow-hidden">
-        <AdminHeader title="Shop Management" />
-
-        <div className="flex-1 overflow-y-auto pr-1">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-            <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-xs">
-              <div className="mb-4 flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Products</p>
-                  <p className="mt-1 text-xs text-slate-500">Select a product, then manage it step by step.</p>
-                </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                <p className="text-white text-lg">Loading shop items...</p>
               </div>
-              <AdminTableHeader
-                placeholder="Search product..."
-                addLabel="Add Product"
-                onSearchChange={(value) => setSearch(value)}
-                onAddClick={() => {
-                  setEditingId(null);
-                  setIsModalOpen(true);
-                }}
-              />
-
-              <AdminTable
-                columns={columns}
-                data={filteredItems}
-                currentPage={1}
-                itemsPerPage={7}
-                totalPages={1}
-                onPageChange={() => {}}
-                onItemsPerPageChange={() => {}}
-                onEdit={(id) => {
-                  if (!id) return;
-                  setEditingId(id);
-                  setIsModalOpen(true);
-                }}
-                onDelete={(id) => {
-                  if (!id) return;
-                  const ok = window.confirm("Delete this product?");
-                  if (!ok) return;
-
-                  try {
-                    setItems((prev) => prev.filter((x) => x.id !== id));
-                    setSelectedId((prev) => (prev === id ? null : prev));
-                    toast.success("Success", "Product deleted successfully");
-                  } catch {
-                    toast.error("Error", "Failed to delete product");
-                  }
-                }}
-              />
-            </section>
-
-            <section className="grid gap-6 lg:grid-cols-12 items-stretch max-w-full">
-              <div className="lg:col-span-4 min-w-0">
-                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs min-w-0 max-w-full overflow-hidden">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Selected Product</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Product metadata is edited via the product table (above).
-                    </p>
-                  </div>
-
-                  <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs">
-                    {selectedItem ? (
-                      <div>
-                        <div className="relative">
-                          <div className="aspect-[16/9] w-full overflow-hidden bg-slate-100">
-                            <img
-                              src={selectedItem.imageSrc}
-                              alt={selectedItem.title}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                          <div className="pointer-events-none absolute inset-0">
-                            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-                            <div className="absolute inset-0 shadow-[inset_0_-90px_60px_-60px_rgba(0,0,0,0.95)]" />
-                          </div>
-                          <div className="absolute inset-x-0 bottom-0 p-4">
-                            <p className="text-sm font-semibold text-white drop-shadow line-clamp-2">
-                              {selectedItem.title}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="p-4 min-w-0">
-                          <div className="grid grid-cols-2 gap-3 min-w-0">
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
-                              <p className="text-[11px] text-slate-500">Category</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
-                                {selectedItem.serviceCategory ?? "-"}
-                              </p>
-                            </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
-                              <p className="text-[11px] text-slate-500">Status</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
-                                {selectedItem.status === "active" ? "Active" : "Inactive"}
-                              </p>
-                            </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
-                              <p className="text-[11px] text-slate-500">Price</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
-                                {selectedItem.price ?? "-"}
-                              </p>
-                            </div>
-                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 min-w-0">
-                              <p className="text-[11px] text-slate-500">Delivery</p>
-                              <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
-                                {selectedItem.deliveryTime ?? "-"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-slate-50 px-4 py-10 text-center">
-                        <p className="text-sm text-slate-600">Select a product from the table above.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+            </div>
+          ) : (
+            <div className="p-8">
+              {/* Header Section */}
+              <div className="mb-8">
+                <h1 className="text-4xl font-bold text-white mb-2">Shop Management</h1>
+                <p className="text-white text-lg">Manage your products and services</p>
               </div>
 
-              <div className="lg:col-span-8 min-w-0">
-                <div className="h-full rounded-2xl border border-slate-100 bg-white p-5 shadow-xs min-w-0 max-w-full overflow-hidden">
-                  {!selectedProductId ? (
-                    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                      <p className="text-sm font-semibold text-slate-900">No product selected</p>
-                      <p className="mt-2 text-sm text-slate-600">Select a product from the table, then start filling in the data step by step.</p>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white rounded-xl p-6 shadow-lg border border-blue-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <Package className="w-6 h-6 text-blue-600" />
                     </div>
-                  ) : (
-                    <div className="space-y-4 min-w-0 max-w-full">
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                        <div className="relative">
-                          <div className="absolute left-0 right-0 top-[18px] h-0.5 bg-slate-200" />
-                          <div
-                            className="absolute left-0 top-[18px] h-0.5 bg-blue-600 transition-all"
-                            style={{ width: `${((activeStep - 1) / 2) * 100}%` }}
-                          />
+                    <span className="text-2xl font-bold text-slate-900">{stats.totalItems}</span>
+                  </div>
+                  <p className="text-slate-600 text-sm">Total Products</p>
+                </div>
 
-                          <div className="relative grid gap-3 md:grid-cols-3 min-w-0">
-                            <button
-                              type="button"
-                              onClick={() => setActiveStep(1)}
-                              className={`group relative rounded-2xl border bg-white p-4 text-left shadow-xs transition ${
-                                activeStep === 1
-                                  ? "border-blue-600"
-                                  : "border-slate-200 hover:border-slate-300"
-                              }`}
-                            >
-                              <div className="absolute -top-3 left-4">
-                                <div
-                                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold ${
-                                    activeStep >= 1
-                                      ? "border-blue-600 bg-blue-600 text-white"
-                                      : "border-slate-300 bg-white text-slate-600"
-                                  }`}
-                                >
-                                  1
-                                </div>
-                              </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Product Details</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage the full product description.</p>
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={!selectedItem}
-                              onClick={() => setActiveStep(2)}
-                              className={`group relative rounded-2xl border bg-white p-4 text-left shadow-xs transition ${
-                                activeStep === 2
-                                  ? "border-blue-600"
-                                  : "border-slate-200 hover:border-slate-300"
-                              } disabled:cursor-not-allowed disabled:opacity-60`}
-                            >
-                              <div className="absolute -top-3 left-4">
-                                <div
-                                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold ${
-                                    activeStep > 2
-                                      ? "border-blue-600 bg-blue-600 text-white"
-                                      : activeStep === 2
-                                        ? "border-blue-600 bg-blue-600 text-white"
-                                        : "border-slate-300 bg-white text-slate-600"
-                                  }`}
-                                >
-                                  {activeStep > 2 ? (
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      className="h-4 w-4"
-                                    >
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  ) : (
-                                    2
-                                  )}
-                                </div>
-                              </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Advantages</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage product advantages.</p>
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={!selectedItem}
-                              onClick={() => setActiveStep(3)}
-                              className={`group relative rounded-2xl border bg-white p-4 text-left shadow-xs transition ${
-                                activeStep === 3
-                                  ? "border-blue-600"
-                                  : "border-slate-200 hover:border-slate-300"
-                              } disabled:cursor-not-allowed disabled:opacity-60`}
-                            >
-                              <div className="absolute -top-3 left-4">
-                                <div
-                                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold ${
-                                    activeStep === 3
-                                      ? "border-blue-600 bg-blue-600 text-white"
-                                      : "border-slate-300 bg-white text-slate-600"
-                                  }`}
-                                >
-                                  3
-                                </div>
-                              </div>
-                              <p className="mt-2 text-sm font-semibold text-slate-900 truncate">Packages</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage packages and pricing.</p>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {activeStep === 1 && (
-                        <div>
-                          <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">Product Details</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage product description content.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingDetailId(null);
-                                setDetailsModalOpen(true);
-                              }}
-                              className="inline-flex items-center rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700"
-                            >
-                              Add Details
-                            </button>
-                          </div>
-
-                          <div className="mt-4">
-                            <AdminTable
-                              columns={detailsColumns}
-                              data={detailsByProductId[selectedProductId] ?? []}
-                              currentPage={1}
-                              itemsPerPage={5}
-                              totalPages={1}
-                              onPageChange={() => {}}
-                              onItemsPerPageChange={() => {}}
-                              onEdit={(id) => {
-                                if (!id) return;
-                                setEditingDetailId(id);
-                                setDetailsModalOpen(true);
-                              }}
-                              onDelete={(id) => {
-                                if (!id) return;
-                                const ok = window.confirm("Delete this details entry?");
-                                if (!ok) return;
-                                try {
-                                  setDetailsByProductId((prev) => {
-                                    const existing = prev[selectedProductId] ?? [];
-                                    return {
-                                      ...prev,
-                                      [selectedProductId]: existing.filter((x) => x.id !== id),
-                                    };
-                                  });
-                                  toast.success("Success", "Product detail deleted successfully");
-                                } catch {
-                                  toast.error("Error", "Failed to delete product detail");
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {activeStep === 2 && (
-                        <div>
-                          <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">Advantages</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage product advantages.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingAdvId(null);
-                                setAdvModalOpen(true);
-                              }}
-                              className="inline-flex items-center rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700"
-                            >
-                              Add Advantage
-                            </button>
-                          </div>
-
-                          <div className="mt-4">
-                            <AdminTable
-                              columns={advantagesColumns}
-                              data={advantagesByProductId[selectedProductId] ?? []}
-                              currentPage={1}
-                              itemsPerPage={7}
-                              totalPages={1}
-                              onPageChange={() => {}}
-                              onItemsPerPageChange={() => {}}
-                              onEdit={(id) => {
-                                if (!id) return;
-                                setEditingAdvId(id);
-                                setAdvModalOpen(true);
-                              }}
-                              onDelete={(id) => {
-                                if (!id) return;
-                                const ok = window.confirm("Delete this advantage?");
-                                if (!ok) return;
-                                try {
-                                  setAdvantagesByProductId((prev) => {
-                                    const existing = prev[selectedProductId] ?? [];
-                                    return {
-                                      ...prev,
-                                      [selectedProductId]: existing.filter((x) => x.id !== id),
-                                    };
-                                  });
-                                  toast.success("Success", "Advantage deleted successfully");
-                                } catch {
-                                  toast.error("Error", "Failed to delete advantage");
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {activeStep === 3 && (
-                        <div>
-                          <div className="flex items-start justify-between gap-3 flex-wrap border-b border-slate-100 pb-4">
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">Packages</p>
-                              <p className="mt-1 text-xs text-slate-500">Manage packages and pricing.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingPkgId(null);
-                                setPkgModalOpen(true);
-                              }}
-                              className="inline-flex items-center rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700"
-                            >
-                              Add Package
-                            </button>
-                          </div>
-
-                          <div className="mt-4">
-                            <AdminTable
-                              columns={packagesColumns}
-                              data={packagesByProductId[selectedProductId] ?? []}
-                              currentPage={1}
-                              itemsPerPage={7}
-                              totalPages={1}
-                              onPageChange={() => {}}
-                              onItemsPerPageChange={() => {}}
-                              onEdit={(id) => {
-                                if (!id) return;
-                                setEditingPkgId(id);
-                                setPkgModalOpen(true);
-                              }}
-                              onDelete={(id) => {
-                                if (!id) return;
-                                const ok = window.confirm("Delete this package?");
-                                if (!ok) return;
-                                try {
-                                  setPackagesByProductId((prev) => {
-                                    const existing = prev[selectedProductId] ?? [];
-                                    return {
-                                      ...prev,
-                                      [selectedProductId]: existing.filter((x) => x.id !== id),
-                                    };
-                                  });
-                                  toast.success("Success", "Package deleted successfully");
-                                } catch {
-                                  toast.error("Error", "Failed to delete package");
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
+                <div className="bg-white rounded-xl p-6 shadow-lg border border-blue-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <TrendingUp className="w-6 h-6 text-blue-600" />
                     </div>
-                  )}
+                    <span className="text-2xl font-bold text-slate-900">{stats.activeItems}</span>
+                  </div>
+                  <p className="text-slate-600 text-sm">Active Products</p>
+                </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-lg border border-blue-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <Users className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900">{stats.inactiveItems}</span>
+                  </div>
+                  <p className="text-slate-600 text-sm">Inactive Products</p>
+                </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-lg border border-blue-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <ShoppingCart className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-900">${stats.totalValue.toFixed(0)}</span>
+                  </div>
+                  <p className="text-slate-600 text-sm">Total Value</p>
                 </div>
               </div>
-            </section>
-          </div>
+
+              {/* Search and Actions */}
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="px-4 py-3 bg-white border border-blue-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-96 shadow-sm"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingId(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-all transform hover:scale-105 border border-blue-200"
+                >
+                  + Add Product
+                </button>
+              </div>
+
+              {/* Table */}
+              <div className="bg-white rounded-xl shadow-lg border border-blue-100">
+                <AdminTable
+                  columns={columns}
+                  data={filteredItems as unknown as Record<string, unknown>[]}
+                  currentPage={1}
+                  itemsPerPage={50}
+                  totalPages={1}
+                  onPageChange={() => {}}
+                  onItemsPerPageChange={() => {}}
+                  onEdit={(id) => {
+                    if (!id) return;
+                    setEditingId(String(id));
+                    setIsModalOpen(true);
+                  }}
+                  onDelete={(id) => {
+                    if (!id) return;
+                    handleDelete(String(id));
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -837,7 +414,7 @@ const AdminShopPage: React.FC = () => {
             ? {
                 ...editingItem,
                 imageSrc: editingItem.imageSrc,
-              }
+              } as Record<string, unknown>
             : undefined
         }
         onClose={() => {
@@ -845,150 +422,8 @@ const AdminShopPage: React.FC = () => {
           setEditingId(null);
         }}
         onSubmit={handleSubmit}
-      />
-
-      <AdminModal
-        isOpen={detailsModalOpen}
-        title={editingDetailId ? "Edit Details" : "Add Details"}
-        fields={detailFields}
-        initialData={
-          selectedProductId
-            ? (detailsByProductId[selectedProductId] ?? []).find((x) => x.id === editingDetailId) ?? undefined
-            : undefined
-        }
-        onClose={() => {
-          setDetailsModalOpen(false);
-          setEditingDetailId(null);
-        }}
-        onSubmit={(data) => {
-          if (!selectedProductId) return;
-          const next: ProductDetail = {
-            id: editingDetailId ?? Date.now(),
-            fullText: String(data.fullText ?? ""),
-          };
-          try {
-            setDetailsByProductId((prev) => {
-              const existing = prev[selectedProductId] ?? [];
-              if (editingDetailId) {
-                return {
-                  ...prev,
-                  [selectedProductId]: existing.map((x) => (x.id === editingDetailId ? next : x)),
-                };
-              }
-              return {
-                ...prev,
-                [selectedProductId]: [next, ...existing],
-              };
-            });
-            setDetailsModalOpen(false);
-            setEditingDetailId(null);
-            toast.success(
-              "Success",
-              editingDetailId ? "Product detail updated successfully" : "Product detail added successfully"
-            );
-          } catch {
-            toast.error("Error", "Failed to save product detail changes");
-          }
-        }}
-      />
-
-      <AdminModal
-        isOpen={advModalOpen}
-        title={editingAdvId ? "Edit Advantage" : "Add Advantage"}
-        fields={advantageFields}
-        initialData={
-          selectedProductId
-            ? (advantagesByProductId[selectedProductId] ?? []).find((x) => x.id === editingAdvId) ?? undefined
-            : undefined
-        }
-        onClose={() => {
-          setAdvModalOpen(false);
-          setEditingAdvId(null);
-        }}
-        onSubmit={(data) => {
-          if (!selectedProductId) return;
-          const next: ProductAdvantage = {
-            id: editingAdvId ?? Date.now(),
-            title: String(data.title ?? ""),
-            subtitle: String(data.subtitle ?? ""),
-          };
-          try {
-            setAdvantagesByProductId((prev) => {
-              const existing = prev[selectedProductId] ?? [];
-              if (editingAdvId) {
-                return {
-                  ...prev,
-                  [selectedProductId]: existing.map((x) => (x.id === editingAdvId ? next : x)),
-                };
-              }
-              return {
-                ...prev,
-                [selectedProductId]: [next, ...existing],
-              };
-            });
-            setAdvModalOpen(false);
-            setEditingAdvId(null);
-            toast.success(
-              "Success",
-              editingAdvId ? "Advantage updated successfully" : "Advantage added successfully"
-            );
-          } catch {
-            toast.error("Error", "Failed to save advantage changes");
-          }
-        }}
-      />
-
-      <AdminModal
-        isOpen={pkgModalOpen}
-        title={editingPkgId ? "Edit Package" : "Add Package"}
-        fields={packageFields}
-        initialData={
-          selectedProductId
-            ? (packagesByProductId[selectedProductId] ?? []).find((x) => x.id === editingPkgId) ?? undefined
-            : undefined
-        }
-        onClose={() => {
-          setPkgModalOpen(false);
-          setEditingPkgId(null);
-        }}
-        onSubmit={(data) => {
-          if (!selectedProductId) return;
-          const keyRaw = String(data.packageKey ?? "standard");
-          const packageKey: ProductPackage["packageKey"] =
-            keyRaw === "basic" || keyRaw === "premium" ? keyRaw : "standard";
-          const next: ProductPackage = {
-            id: editingPkgId ?? Date.now(),
-            packageKey,
-            badge: String(data.badge ?? ""),
-            description: String(data.description ?? ""),
-            features: Array.isArray(data.features) ? (data.features as string[]) : [],
-            defaultWords: Number(data.defaultWords ?? 0) || 0,
-            basePrice: Number(data.basePrice ?? 0) || 0,
-          };
-          try {
-            setPackagesByProductId((prev) => {
-              const existing = prev[selectedProductId] ?? [];
-              if (editingPkgId) {
-                return {
-                  ...prev,
-                  [selectedProductId]: existing.map((x) => (x.id === editingPkgId ? next : x)),
-                };
-              }
-              return {
-                ...prev,
-                [selectedProductId]: [next, ...existing],
-              };
-            });
-            setPkgModalOpen(false);
-            setEditingPkgId(null);
-            toast.success(
-              "Success",
-              editingPkgId ? "Package updated successfully" : "Package added successfully"
-            );
-          } catch {
-            toast.error("Error", "Failed to save package changes");
-          }
-        }}
+        isSaving={saving}
+        submitLabel={saving ? "Saving..." : "Save"}
       />
     </div>
   );

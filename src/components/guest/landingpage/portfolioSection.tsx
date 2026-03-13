@@ -2,9 +2,22 @@ import React, { useState, useRef, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, ArrowUpRight, X } from 'lucide-react'
 
 interface PortfolioItem {
-    id: number
-    image: string
-    title: string
+    _id: string;
+    title: string;
+    description: string;
+    category: string;
+    image: string;
+    client: string;
+    projectDate: string;
+    technologies: string[];
+    projectUrl: string;
+    featured: boolean;
+    isActive: boolean;
+    views: number;
+    tags: string[];
+    author: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 interface Category {
@@ -13,54 +26,66 @@ interface Category {
     items: PortfolioItem[]
 }
 
-const portfolioData: Category[] = [
+const mockCategories: Category[] = [
     {
         id: 'product-description',
         name: 'PRODUCT DESCRIPTION',
-        items: [
-            { id: 1, image: '/Williams-Sonoma-Lunar.png', title: 'Williams Sonoma Lunar Dinnerware Set' },
-            { id: 2, image: '/Dr-Bronners-Pure.png', title: 'Dr. Bronner\'s Pure Castile Peppermint' }
-        ]
+        items: []
     },
     {
         id: 'social-media',
         name: 'SOCIAL MEDIA',
-        items: [
-            { id: 3, image: '/Sudio-K2.png', title: 'Summer Vibes Collection' },
-            { id: 4, image: '/Alphalete-Elite.png', title: 'Viral Travel Series' }
-        ]
+        items: []
     },
     {
         id: 'landing-page',
         name: 'LANDING PAGE',
-        items: [
-            { id: 5, image: '/flowtrack.png', title: 'SaaS Product Launch Page' },
-            { id: 6, image: '/truebotanicals.png', title: 'Fashion Brand Homepage' }
-        ]
+        items: []
     },
     {
         id: 'ads-copy',
         name: 'ADS COPY',
-        items: [
-            { id: 7, image: '/image-ads-copy.jpg', title: 'High-Converting Ad Campaign' },
-            { id: 8, image: '/image-ads-copy2.jpg', title: 'Retargeting Campaign Copy' }
-        ]
+        items: []
     },
     {
         id: 'articles',
         name: 'ARTICLES',
-        items: [
-            { id: 9, image: '/image-article.jpg', title: 'Hidden Gems of Southeast Asia' },
-            { id: 10, image: '/image-article2.jpg', title: 'The Art of Slow Travel' }
-        ]
+        items: []
     },
     {
         id: 'email',
         name: 'EMAIL',
-        items: [
-            { id: 11, image: '/image-email.jpeg', title: 'Weekly Travel Digest' },
-            { id: 12, image: '/image-email2.jpeg', title: 'Flash Sale Campaign' }
-        ]
+        items: []
+    },
+    {
+        id: 'website',
+        name: 'WEBSITE',
+        items: []
+    },
+    {
+        id: 'mobile',
+        name: 'MOBILE',
+        items: []
+    },
+    {
+        id: 'design',
+        name: 'DESIGN',
+        items: []
+    },
+    {
+        id: 'marketing',
+        name: 'MARKETING',
+        items: []
+    },
+    {
+        id: 'content',
+        name: 'CONTENT',
+        items: []
+    },
+    {
+        id: 'other',
+        name: 'OTHER',
+        items: []
     }
 ]
 
@@ -116,10 +141,99 @@ const PortfolioSection: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState(0)
     const [currentSlide, setCurrentSlide] = useState(0)
     const [selectedImage, setSelectedImage] = useState<{ image: string; title: string } | null>(null)
+    const [portfolioData, setPortfolioData] = useState<Category[]>(mockCategories)
+    const [loading, setLoading] = useState(true)
     const sliderRef = useRef<HTMLDivElement>(null)
     const isScrolling = useRef(false)
 
     const totalSlides = portfolioData.length
+
+    // Fetch portfolio data from API
+    useEffect(() => {
+        const fetchPortfolioData = async () => {
+            try {
+                const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? 'http://localhost:55435'
+                const response = await fetch(`${API_BASE}/api/portfolio/active`)
+                const result = await response.json()
+                
+                if (result.success && result.data) {
+                    console.log('Portfolio data received:', result.data);
+                    // Group portfolio items by category
+                    const groupedData: { [key: string]: PortfolioItem[] } = {}
+                    
+                    result.data.forEach((item: PortfolioItem) => {
+                        const categoryKey = item.category.toLowerCase()
+                        if (!groupedData[categoryKey]) {
+                            groupedData[categoryKey] = []
+                        }
+                        groupedData[categoryKey].push(item)
+                    })
+
+                    console.log('Grouped data:', groupedData);
+
+                    // Map to our category structure with better matching
+                    const updatedCategories = mockCategories.map(category => {
+                        let items: PortfolioItem[] = []
+                        
+                        // Direct mapping to match admin categories exactly
+                        if (category.id === 'product-description') {
+                            items = groupedData['content'] || []
+                        } else if (category.id === 'social-media') {
+                            items = groupedData['marketing'] || []
+                        } else if (category.id === 'landing-page') {
+                            items = groupedData['website'] || []
+                        } else if (category.id === 'ads-copy') {
+                            items = groupedData['marketing'] || []
+                        } else if (category.id === 'articles') {
+                            items = groupedData['content'] || []
+                        } else if (category.id === 'email') {
+                            items = groupedData['marketing'] || []
+                        } else if (category.id === 'website') {
+                            items = groupedData['website'] || []
+                        } else if (category.id === 'mobile') {
+                            items = groupedData['mobile'] || []
+                        } else if (category.id === 'design') {
+                            items = groupedData['design'] || []
+                        } else if (category.id === 'marketing') {
+                            items = groupedData['marketing'] || []
+                        } else if (category.id === 'content') {
+                            items = groupedData['content'] || []
+                        } else if (category.id === 'other') {
+                            items = groupedData['other'] || []
+                        }
+                        
+                        // Fix image paths for fallback data
+                        const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? 'http://localhost:55435'
+                        items = items.map(item => ({
+                            ...item,
+                            image: item.image.startsWith('/images/portfolio/') 
+                                ? `${API_BASE}${item.image}`
+                                : item.image.startsWith('http') 
+                                    ? item.image 
+                                    : `${API_BASE}/images/default-portfolio.jpg`
+                        }))
+                        
+                        console.log(`Category ${category.id} has ${items.length} items`);
+                        
+                        return {
+                            ...category,
+                            items
+                        }
+                    })
+
+                    console.log('Final portfolio data:', updatedCategories);
+                    setPortfolioData(updatedCategories)
+                }
+            } catch (error) {
+                console.error('Error fetching portfolio data:', error)
+                // Keep using mock data on error
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchPortfolioData()
+    }, [])
 
     useEffect(() => {
         const slider = sliderRef.current
@@ -175,13 +289,22 @@ const PortfolioSection: React.FC = () => {
     }
 
     const handleImageClick = (image: string, title: string) => {
-        setSelectedImage({ image, title })
+        // Ensure we have a full URL for the modal
+        const fullImageUrl = image.startsWith('http') ? image : `http://localhost:55435${image}`;
+        setSelectedImage({ image: fullImageUrl, title })
     }
 
     return (
         <section className="py-12 md:py-16 bg-white" id="portfolio">
+            {/* Loading State */}
+            {loading && (
+                <div className="flex justify-center items-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
+                </div>
+            )}
+
             {/* Image Modal */}
-            {selectedImage && (
+            {!loading && selectedImage && (
                 <ImageModal
                     image={selectedImage.image}
                     title={selectedImage.title}
@@ -189,6 +312,7 @@ const PortfolioSection: React.FC = () => {
                 />
             )}
 
+            {!loading && (
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="flex sm:justify-center sm:items-center gap-4 mb-10">
@@ -226,15 +350,22 @@ const PortfolioSection: React.FC = () => {
                                     {category.items.map((item) => (
                                         <div
                                             className="relative group cursor-pointer overflow-hidden rounded-3xl border border-gray-200 border-2 bg-white transition-all duration-300 shrink-0 w-[260px] sm:w-[320px] snap-start md:w-auto"
-                                            key={item.id}
+                                            key={item._id}
                                             onClick={() => handleImageClick(item.image, item.title)}
                                         >
                                             {/* Image Container - Fixed Size */}
-                                            <div className="w-full h-72 md:h-80 overflow-hidden">
+                                            <div className="w-full h-72 md:h-80 overflow-hidden bg-gray-100">
                                                 <img
-                                                    src={item.image}
+                                                    src={item.image || 'http://localhost:55435/images/default-portfolio.jpg'}
                                                     alt={item.title}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        // Try multiple fallback options
+                                                        if (!target.src.includes('default-portfolio.jpg')) {
+                                                            target.src = 'http://localhost:55435/images/default-portfolio.jpg';
+                                                        }
+                                                    }}
                                                 />
                                             </div>
 
@@ -263,18 +394,21 @@ const PortfolioSection: React.FC = () => {
 
                 {/* Category Tags */}
                 <div className="flex justify-center gap-3 mt-10 md:mt-14 flex-wrap">
-                    {portfolioData.map((category, index) => (
-                        <button
-                            key={category.id}
-                            className={`px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === index
-                                ? 'bg-[#E0F2FE] text-[#0EA5E9]'
-                                : 'bg-gray-100 text-gray-600 hover:bg-[#E0F2FE] hover:text-[#0EA5E9]'
+                    {portfolioData.filter((category) => category.items.length > 0).map((category, index) => {
+                        return (
+                            <button
+                                key={category.id}
+                                className={`px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-300 ${
+                                    activeCategory === index
+                                        ? 'bg-[#E0F2FE] text-[#0EA5E9]'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-[#E0F2FE] hover:text-[#0EA5E9]'
                                 }`}
-                            onClick={() => handleCategoryClick(index)}
-                        >
-                            {category.name}
-                        </button>
-                    ))}
+                                onClick={() => handleCategoryClick(index)}
+                            >
+                                {category.name} ({category.items.length})
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Descriptions */}
@@ -286,6 +420,7 @@ const PortfolioSection: React.FC = () => {
                     </p>
                 </div>
             </div>
+            )}
         </section>
     )
 }

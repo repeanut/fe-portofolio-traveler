@@ -1,82 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { Home, Package, TrendingUp, Star, ShoppingCart } from 'lucide-react';
 import NavbarShop from '../../components/ui/navbarShop';
 import FooterSection from '../../components/ui/footer';
 import SignUpNotification from '../../components/ui/signUpNotification';
-import AuthModal from '../../components/auth/AuthModal';
-import { ShopCard, type ShopItem } from '../../components/ui/shopCards';
+import { ShopCard } from '../../components/ui/shopCards';
 import Pagination from '../../components/ui/pagination';
 import ShopFilters, { type BudgetState } from '../../components/shop/shopFilters';
-import InitialShimmer from '../../components/ui/InitialShimmer';
-import { ShopPageSkeleton } from '../../components/ui/skeletons';
-
-const shopItems: ShopItem[] = [
-    {
-        id: 1,
-        title: 'I will be SEO content writer for article writing or blog writing',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$20',
-        deliveryTime: '2 Days Delivery',
-        serviceCategory: 'SEO Content',
-    },
-    {
-        id: 2,
-        title: 'I will write human SEO blogs and articles',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '3 Days Delivery',
-        serviceCategory: 'Blog Writing',
-    },
-    {
-        id: 3,
-        title: 'I will write SEO blog posts and articles as your content writer',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '4 Days Delivery',
-        serviceCategory: 'Product Description',
-    },
-    {
-        id: 4,
-        title: 'I will be SEO content writer for article writing or blog writing',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$20',
-        deliveryTime: '2 Days Delivery',
-        serviceCategory: 'SEO Content',
-    },
-    {
-        id: 5,
-        title: 'I will write human SEO blogs and articles',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '5 Days Delivery',
-        serviceCategory: 'Blog Writing',
-    },
-    {
-        id: 6,
-        title: 'I will write SEO blog posts and articles as your content writer',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '7 Days Delivery',
-        serviceCategory: 'Product Description',
-    },
-    {
-        id: 7,
-        title: 'I will be SEO content writer for article writing or blog writing',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$20',
-        deliveryTime: '1 Day Delivery',
-        serviceCategory: 'SEO Content',
-    },
-    {
-        id: 8,
-        title: 'I will write human SEO blogs and articles',
-        imageSrc: '/bg-shopCards.jpg',
-        price: '$100',
-        deliveryTime: '3 Days Delivery',
-        serviceCategory: 'Blog Writing',
-    },
-];
+import { shopService, type ShopItem } from '../../services/shopService';
 
 const ShopPage: React.FC = () => {
     const location = useLocation();
@@ -90,7 +21,48 @@ const ShopPage: React.FC = () => {
     );
     const [deliveryFilter, setDeliveryFilter] = useState<string | null>(null);
     const [budgetFilter, setBudgetFilter] = useState<BudgetState>({ type: 'any' });
+    const [shopItems, setShopItems] = useState<ShopItem[]>([]);
+    const [loading, setLoading] = useState(true);
     const pageSize = 12;
+
+    // Calculate stats
+    const stats = useMemo(() => {
+        const totalItems = shopItems.length;
+        const activeItems = shopItems.filter(item => item.status === 'active').length;
+        const totalValue = shopItems.reduce((sum, item) => {
+            const price = parseFloat(item.price.replace(/[^0-9.]/g, '')) || 0;
+            return sum + price;
+        }, 0);
+        const avgRating = 4.5; // Mock rating
+
+        return {
+            totalItems,
+            activeItems,
+            totalValue,
+            avgRating
+        };
+    }, [shopItems]);
+
+    // Load shop items from API
+    useEffect(() => {
+        const loadShopItems = async () => {
+            try {
+                setLoading(true);
+                console.log('🔄 Loading user shop items...');
+                const result = await shopService.getShopItems({ status: 'active' }); // Only get active items for public
+                console.log('📦 User shop items loaded:', result.data);
+                console.log('📊 User shop items count:', result.data?.length || 0);
+                console.log('📋 User shop items sample:', result.data?.[0]);
+                setShopItems(result.data || []);
+            } catch (error) {
+                console.error('❌ Error loading shop items:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadShopItems();
+    }, []);
 
     const filteredItems = useMemo(() => {
         const parsePrice = (price: string): number => {
@@ -170,39 +142,116 @@ const ShopPage: React.FC = () => {
     const startIndex = (currentPage - 1) * pageSize;
     const paginatedItems = filteredItems.slice(startIndex, startIndex + pageSize);
 
-    const [authOpen, setAuthOpen] = useState(false);
+    // Debug logging for filtered items
+    useEffect(() => {
+        console.log('🔍 ShopPage - filteredItems:', filteredItems.length, 'items');
+        console.log('📋 ShopPage - filteredItems data:', filteredItems);
+    }, [filteredItems]);
+
+    // Debug logging for paginated items
+    useEffect(() => {
+        console.log('📄 ShopPage - paginatedItems:', paginatedItems.length, 'items');
+        console.log('📋 ShopPage - paginatedItems data:', paginatedItems);
+        console.log('🎯 ShopPage - About to render grid with:', paginatedItems.length, 'items');
+    }, [paginatedItems]);
 
     return (
-        <InitialShimmer delayMs={850} skeleton={<ShopPageSkeleton />}>
+        loading ? (
             <div className="min-h-screen flex flex-col bg-white">
-                <SignUpNotification onCtaClick={() => setAuthOpen(true)} />
+                <SignUpNotification onCtaClick={() => { }} />
                 <NavbarShop />
-
-                <AuthModal
-                    open={authOpen}
-                    mode="signup"
-                    closable
-                    onClose={() => setAuthOpen(false)}
-                    onSuccess={() => setAuthOpen(false)}
-                />
 
                 <main className="flex-1">
                     <section className="mx-auto max-w-7xl py-10 px-4 md:px-0">
+                        <div className="flex items-center justify-center h-64">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                                <p className="text-black text-lg">Loading amazing shop items...</p>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+                <FooterSection />
+            </div>
+        ) : (
+            <div className="min-h-screen flex flex-col bg-white">
+                <SignUpNotification onCtaClick={() => { }} />
+                <NavbarShop />
+
+                <main className="flex-1">
+                    <section className="mx-auto max-w-7xl py-16 px-4 md:px-0">
+                        {/* Hero Section */}
+                        <div className="text-center mb-16">
+                            <h1 className="text-5xl md:text-6xl font-bold text-black mb-6">
+                                Discover Amazing Products
+                            </h1>
+                            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                                Find perfect services for your travel and content needs
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-4">
+                                <div className="bg-gray-100 rounded-lg px-6 py-3 border border-gray-300">
+                                    <span className="text-black font-medium">{stats.totalItems} Products</span>
+                                </div>
+                                <div className="bg-gray-100 rounded-lg px-6 py-3 border border-gray-300">
+                                    <span className="text-black font-medium">{stats.activeItems} Available</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Stats Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                            <div className="bg-gray-100 rounded-xl p-6 border border-gray-300 hover:bg-gray-200 transition-colors">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="p-3 bg-blue-500/20 rounded-lg">
+                                        <Package className="w-6 h-6 text-blue-600" />
+                                    </div>
+                                    <span className="text-3xl font-bold text-black">{stats.totalItems}</span>
+                                </div>
+                                <p className="text-gray-600">Total Products</p>
+                            </div>
+
+                            <div className="bg-gray-100 rounded-xl p-6 border border-gray-300 hover:bg-gray-200 transition-colors">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="p-3 bg-green-500/20 rounded-lg">
+                                        <TrendingUp className="w-6 h-6 text-green-600" />
+                                    </div>
+                                    <span className="text-3xl font-bold text-black">{stats.activeItems}</span>
+                                </div>
+                                <p className="text-gray-600">Available Now</p>
+                            </div>
+
+                            <div className="bg-gray-100 rounded-xl p-6 border border-gray-300 hover:bg-gray-200 transition-colors">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="p-3 bg-yellow-500/20 rounded-lg">
+                                        <Star className="w-6 h-6 text-yellow-600" />
+                                    </div>
+                                    <span className="text-3xl font-bold text-black">{stats.avgRating}</span>
+                                </div>
+                                <p className="text-gray-600">Avg Rating</p>
+                            </div>
+
+                            <div className="bg-gray-100 rounded-xl p-6 border border-gray-300 hover:bg-gray-200 transition-colors">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="p-3 bg-blue-500/20 rounded-lg">
+                                        <ShoppingCart className="w-6 h-6 text-blue-600" />
+                                    </div>
+                                    <span className="text-3xl font-bold text-black">${stats.totalValue.toFixed(0)}</span>
+                                </div>
+                                <p className="text-gray-600">Total Value</p>
+                            </div>
+                        </div>
+
                         {/* Breadcrumb */}
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                            <Link to="/" className="hover:text-slate-800 transition-colors">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 mb-8">
+                            <Link to="/" className="hover:text-black transition-colors">
                                 <Home className="w-4 h-4" />
                             </Link>
                             <span>/</span>
-                            <Link to="/work/shop" className="text-slate-800">Shop</Link>
+                            <Link to="/work/shop" className="text-black">Shop</Link>
                         </div>
 
                         {/* Filter bar */}
-                        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <p className="text-xl md:text-2xl font-semibold text-slate-900 text-center md:text-left">
-                                All product for you!
-                            </p>
-
+                        <div className="mb-8">
                             <ShopFilters
                                 initialServiceLabel={serviceFilter || 'Service Options'}
                                 onServiceChange={(value) => {
@@ -221,16 +270,22 @@ const ShopPage: React.FC = () => {
                         </div>
 
                         {/* Grid products */}
-                        <div className="mt-8 grid gap-6 items-stretch grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
-                            {paginatedItems.map((item) => (
-                                <div key={item.id} className="h-full">
-                                    <ShopCard item={item} />
+                        <div className="grid gap-8 items-stretch grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            {paginatedItems.length > 0 ? (
+                                paginatedItems.map((item) => (
+                                    <div key={item._id} className="h-full">
+                                        <ShopCard item={item} />
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-12">
+                                    <p className="text-black text-lg">No products found</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
 
                         {/* Pagination */}
-                        <div className="mt-10 flex justify-center">
+                        <div className="mt-12 flex justify-center">
                             <Pagination
                                 currentPage={currentPage}
                                 totalPages={totalPages}
@@ -239,10 +294,9 @@ const ShopPage: React.FC = () => {
                         </div>
                     </section>
                 </main>
-
                 <FooterSection />
             </div>
-        </InitialShimmer>
+        )
     );
 };
 

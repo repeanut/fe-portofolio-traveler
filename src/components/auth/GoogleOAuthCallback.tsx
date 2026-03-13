@@ -29,11 +29,14 @@ const GoogleOAuthCallback: React.FC = () => {
                     localStorage.setItem('userEmail', userData.email);
                     localStorage.setItem('userName', userData.displayName || userData.username);
                     localStorage.setItem('isAuthenticated', 'true');
-                    localStorage.setItem('authProvider', 'google');
+                    localStorage.setItem('authProvider', userData.provider || 'google');
+                    
+                    // Store user data for profile
+                    localStorage.setItem('user', JSON.stringify(userData));
                     
                     // Store Google profile photo if available
-                    if (userData.photoUrl || userData.picture) {
-                        localStorage.setItem('userAvatarUrl', userData.photoUrl || userData.picture);
+                    if (userData.profilePicture) {
+                        localStorage.setItem('userAvatarUrl', userData.profilePicture);
                     }
                     
                     // Dispatch auth change event

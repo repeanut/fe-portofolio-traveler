@@ -233,6 +233,20 @@ const AdminHeroManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useAdminToast();
 
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:55435";
+
+  const resolveBackendUrl = (url: string) => {
+    if (!url) return url;
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) return url;
+    if (url.startsWith("/api/") || url.startsWith("/images/") || url.startsWith("/uploads/")) {
+      return `${API_BASE}${url}`;
+    }
+    return url;
+  };
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // State for hero text/brands table
   const [heroBrandsData, setHeroBrandsData] = useState<
     Array<{
@@ -241,20 +255,7 @@ const AdminHeroManagementPage: React.FC = () => {
       badge: string;
       brands: string[];
     }>
-  >([
-    {
-      id: 1,
-      description:
-        "Bridging the gap between global marketing strategy and authentic storytelling. Based in Bali, working globally.",
-      badge: "Digital Nomad & Creative Strategist",
-      brands: [
-        "/Amazon-Logo 1.png",
-        "/Amazon-Logo 1.png",
-        "/Amazon-Logo 1.png",
-        "/Amazon-Logo 1.png",
-      ],
-    },
-  ]);
+  >([]);
 
   // State for hero image table
   const [heroImageData, setHeroImageData] = useState<
@@ -262,16 +263,58 @@ const AdminHeroManagementPage: React.FC = () => {
       id: number;
       mainImage: string;
     }>
-  >([
-    {
-      id: 1,
-      mainImage: "/foto 2.jpg",
-    },
-    {
-      id: 2,
-      mainImage: "/foto 1.jpg",
-    },
-  ]);
+  >([]);
+
+  const fetchHero = async () => {
+    try {
+      setLoading(true);
+
+      const [contentRes, imagesRes] = await Promise.all([
+        fetch(`${API_BASE}/api/landing-page/hero-content`, { credentials: "include" }),
+        fetch(`${API_BASE}/api/landing-page/hero-images`, { credentials: "include" }),
+      ]);
+
+      const contentJson = (await contentRes.json().catch(() => null)) as any;
+      const imagesJson = (await imagesRes.json().catch(() => null)) as any;
+
+      if (!contentRes.ok || !contentJson?.success) {
+        throw new Error(contentJson?.message || "Failed to fetch hero content");
+      }
+      if (!imagesRes.ok || !imagesJson?.success) {
+        throw new Error(imagesJson?.message || "Failed to fetch hero images");
+      }
+
+      const contentItems = (Array.isArray(contentJson.data) ? contentJson.data : []) as any[];
+      setHeroBrandsData(
+        contentItems.map((x) => ({
+          id: Number(x.id),
+          description: String(x.description ?? ""),
+          badge: String(x.badge ?? ""),
+          brands: (Array.isArray(x.brands) ? (x.brands as string[]) : []).map((src) => resolveBackendUrl(String(src))),
+        }))
+      );
+
+      const imageItems = (Array.isArray(imagesJson.data) ? imagesJson.data : []) as any[];
+      setHeroImageData(
+        imageItems.map((x) => ({
+          id: Number(x.id),
+          mainImage: resolveBackendUrl(String(x.imageUrl ?? x.mainImage ?? "")),
+        }))
+      );
+
+      setError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load hero";
+      setError(msg);
+      toast.error("Error", msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHero();
+  }, []);
 
   // Modal state for hero text/brands
   const [isHeroModalOpen, setIsHeroModalOpen] = useState(false);
@@ -295,7 +338,7 @@ const AdminHeroManagementPage: React.FC = () => {
             {brands.map((src, idx) => (
               <img
                 key={idx}
-                src={src}
+                src={resolveBackendUrl(String(src))}
                 alt="Brand logo"
                 className="h-4 md:h-5 object-contain"
               />
@@ -403,16 +446,25 @@ const AdminHeroManagementPage: React.FC = () => {
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
+                isLoading={loading}
                 onEdit={(id) => {
                   if (typeof id === "number") {
                     setEditingHeroId(id);
                     setIsHeroModalOpen(true);
                   }
                 }}
-                onDelete={(id) => {
+                onDelete={async (id) => {
                   if (typeof id === "number") {
                     try {
-                      setHeroBrandsData((prev) => prev.filter((item) => item.id !== id));
+                      const response = await fetch(`${API_BASE}/api/landing-page/hero-content/${id}`, {
+                        method: "DELETE",
+                        credentials: "include",
+                      });
+                      const json = (await response.json().catch(() => null)) as any;
+                      if (!response.ok || !json?.success) {
+                        throw new Error(json?.message || "Failed to delete hero content");
+                      }
+                      await fetchHero();
                       toast.success("Success", "Hero text deleted successfully");
                     } catch {
                       toast.error("Error", "Failed to delete hero text");
@@ -448,16 +500,25 @@ const AdminHeroManagementPage: React.FC = () => {
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
+                isLoading={loading}
                 onEdit={(id) => {
                   if (typeof id === "number") {
                     setEditingImageId(id);
                     setIsImageModalOpen(true);
                   }
                 }}
-                onDelete={(id) => {
+                onDelete={async (id) => {
                   if (typeof id === "number") {
                     try {
-                      setHeroImageData((prev) => prev.filter((item) => item.id !== id));
+                      const response = await fetch(`${API_BASE}/api/landing-page/hero-images/${id}`, {
+                        method: "DELETE",
+                        credentials: "include",
+                      });
+                      const json = (await response.json().catch(() => null)) as any;
+                      if (!response.ok || !json?.success) {
+                        throw new Error(json?.message || "Failed to delete hero image");
+                      }
+                      await fetchHero();
                       toast.success("Success", "Hero image deleted successfully");
                     } catch {
                       toast.error("Error", "Failed to delete hero image");
@@ -466,6 +527,19 @@ const AdminHeroManagementPage: React.FC = () => {
                 }}
               />
             </section>
+
+            {error ? (
+              <div className="rounded-lg border border-rose-100 bg-rose-50 px-4 py-3 text-[11px] text-rose-700">
+                {error}
+                <button
+                  type="button"
+                  onClick={fetchHero}
+                  className="ml-3 rounded-md bg-rose-600 px-2 py-1 text-[11px] font-medium text-white"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -493,46 +567,51 @@ const AdminHeroManagementPage: React.FC = () => {
             setEditingHeroId(null);
           }}
           onSubmit={(data) => {
-            try {
-              if (editingHeroId != null) {
-                setHeroBrandsData((prev) =>
-                  prev.map((item) =>
-                    item.id === editingHeroId
-                      ? {
-                          ...item,
-                          description: data.description || item.description,
-                          badge: data.badge || item.badge,
-                          brands: data.brands.length > 0 ? data.brands : item.brands,
-                        }
-                      : item
-                  )
-                );
-                toast.success("Success", "Hero text updated successfully");
-              } else {
-                setHeroBrandsData((prev) => {
-                  if (prev.length >= 1) {
-                    toast.warning("Limit reached", "Hero text can only have 1 item");
-                    return prev;
-                  }
-                  const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                  return [
-                    ...prev,
-                    {
-                      id: nextId,
-                      description: data.description || "",
-                      badge: data.badge || "",
-                      brands: data.brands,
+            (async () => {
+              try {
+                if (editingHeroId != null) {
+                  const response = await fetch(`${API_BASE}/api/landing-page/hero-content/${editingHeroId}`, {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: {
+                      "Content-Type": "application/json",
                     },
-                  ];
-                });
-                toast.success("Success", "Hero text added successfully");
-              }
+                    body: JSON.stringify({ description: data.description, badge: data.badge, brands: data.brands }),
+                  });
+                  const json = (await response.json().catch(() => null)) as any;
+                  if (!response.ok || !json?.success) {
+                    throw new Error(json?.message || "Failed to update hero content");
+                  }
+                  await fetchHero();
+                  toast.success("Success", "Hero text updated successfully");
+                } else {
+                  if (heroBrandsData.length >= 1) {
+                    toast.warning("Limit reached", "Hero text can only have 1 item");
+                    return;
+                  }
+                  const response = await fetch(`${API_BASE}/api/landing-page/hero-content`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ description: data.description, badge: data.badge, brands: data.brands }),
+                  });
+                  const json = (await response.json().catch(() => null)) as any;
+                  if (!response.ok || !json?.success) {
+                    throw new Error(json?.message || "Failed to create hero content");
+                  }
+                  await fetchHero();
+                  toast.success("Success", "Hero text added successfully");
+                }
 
-              setIsHeroModalOpen(false);
-              setEditingHeroId(null);
-            } catch {
-              toast.error("Error", "Failed to save hero text changes");
-            }
+                setIsHeroModalOpen(false);
+                setEditingHeroId(null);
+              } catch (e) {
+                const msg = e instanceof Error ? e.message : "Failed to save hero text changes";
+                toast.error("Error", msg);
+              }
+            })();
           }}
         />
 
@@ -555,42 +634,51 @@ const AdminHeroManagementPage: React.FC = () => {
           onSubmit={(data) => {
             const mainImage = (data.mainImage as string) || "";
 
-            try {
-              if (editingImageId != null) {
-                setHeroImageData((prev) =>
-                  prev.map((item) =>
-                    item.id === editingImageId
-                      ? {
-                          ...item,
-                          mainImage: mainImage || item.mainImage,
-                        }
-                      : item
-                  )
-                );
-                toast.success("Success", "Hero image updated successfully");
-              } else {
-                setHeroImageData((prev) => {
-                  if (prev.length >= 7) {
-                    toast.warning("Limit reached", "Hero images can have up to 7 items");
-                    return prev;
-                  }
-                  const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                  return [
-                    ...prev,
-                    {
-                      id: nextId,
-                      mainImage,
+            (async () => {
+              try {
+                if (editingImageId != null) {
+                  const response = await fetch(`${API_BASE}/api/landing-page/hero-images/${editingImageId}`, {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: {
+                      "Content-Type": "application/json",
                     },
-                  ];
-                });
-                toast.success("Success", "Hero image added successfully");
-              }
+                    body: JSON.stringify({ imageUrl: mainImage }),
+                  });
+                  const json = (await response.json().catch(() => null)) as any;
+                  if (!response.ok || !json?.success) {
+                    throw new Error(json?.message || "Failed to update hero image");
+                  }
+                  await fetchHero();
+                  toast.success("Success", "Hero image updated successfully");
+                } else {
+                  if (heroImageData.length >= 7) {
+                    toast.warning("Limit reached", "Hero images can have up to 7 items");
+                    return;
+                  }
+                  const response = await fetch(`${API_BASE}/api/landing-page/hero-images`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ imageUrl: mainImage, orderIndex: heroImageData.length }),
+                  });
+                  const json = (await response.json().catch(() => null)) as any;
+                  if (!response.ok || !json?.success) {
+                    throw new Error(json?.message || "Failed to create hero image");
+                  }
+                  await fetchHero();
+                  toast.success("Success", "Hero image added successfully");
+                }
 
-              setIsImageModalOpen(false);
-              setEditingImageId(null);
-            } catch {
-              toast.error("Error", "Failed to save hero image changes");
-            }
+                setIsImageModalOpen(false);
+                setEditingImageId(null);
+              } catch (e) {
+                const msg = e instanceof Error ? e.message : "Failed to save hero image changes";
+                toast.error("Error", msg);
+              }
+            })();
           }}
         />
       </div>

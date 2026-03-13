@@ -33,7 +33,7 @@ const AdminLandingPage: React.FC = () => {
 
   const fetchLandingPages = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/landing-pages?includeUser=true");
+      const response = await fetch("http://localhost:55435/api/landing-page/landing-pages?includeUser=true");
       const result = (await response.json()) as unknown;
 
       if (typeof result !== "object" || result == null) {
@@ -87,13 +87,13 @@ const AdminLandingPage: React.FC = () => {
     { header: "Created", accessor: "createdAt", type: "text" },
   ];
 
-  const handleDeleteLandingPage = async (id: number) => {
+  const handleDeleteLandingPage = async (id: string) => {
     if (!confirm('Are you sure you want to delete this landing page?')) {
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/landing-pages/${id}`, {
+      const response = await fetch(`http://localhost:55435/api/landing-page/landing-pages/${id}`, {
         method: 'DELETE'
       });
       
@@ -107,6 +107,32 @@ const AdminLandingPage: React.FC = () => {
     } catch (err) {
       setError('Error deleting landing page');
       console.error('Error deleting landing page:', err);
+    }
+  };
+
+  const handleCreateLandingPage = async (newItem: Partial<LandingPageItem>) => {
+    try {
+      const response = await fetch('http://localhost:55435/api/landing-page/landing-pages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newItem),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchLandingPages(); // Refresh the list
+        return true;
+      } else {
+        setError(result.message || 'Failed to create landing page');
+        return false;
+      }
+    } catch (err) {
+      setError('Error creating landing page');
+      console.error('Error creating landing page:', err);
+      return false;
     }
   };
 
@@ -160,7 +186,6 @@ const AdminLandingPage: React.FC = () => {
             <section>
               <AdminTableHeader
                 placeholder="Search landing page..."
-                addLabel=""
               />
               
               {error && (
@@ -177,7 +202,20 @@ const AdminLandingPage: React.FC = () => {
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
-                onDelete={(id?: number) => id && handleDeleteLandingPage(id)}
+                onDelete={(id?: string) => id && handleDeleteLandingPage(id)}
+                onEdit={(id?: string) => id && console.log('Edit item:', id)}
+                onCreate={() => {
+                  // Default item creation
+                  const newItem = {
+                    section: 'Destination',
+                    title: 'New Destination',
+                    subtitle: 'Description for new destination',
+                    orderIndex: landingData.length + 1,
+                    isActive: true,
+                    createdBy: 'admin'
+                  };
+                  handleCreateLandingPage(newItem);
+                }}
               />
             </section>
           </div>

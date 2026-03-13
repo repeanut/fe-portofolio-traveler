@@ -105,6 +105,7 @@ const ContactChatModal: React.FC<ContactChatModalProps> = ({ open, onClose }) =>
                         showActions={false}
                         showHeader={false}
                         senderRole="user"
+                        enableSocket={true}
                         chatMode="cs"
                         theme="light"
                     />

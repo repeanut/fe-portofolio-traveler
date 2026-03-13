@@ -31,6 +31,33 @@ const readStorageValue = (key: string) => {
     return trimmed;
 };
 
+type UserTransaction = {
+    _id?: string; // MongoDB ID (optional)
+    id?: number; // MySQL ID (optional)
+    transactionId: string;
+    type: string;
+    serviceName: string;
+    description: string;
+    amount: number;
+    currency: string;
+    discount: number;
+    tax: number;
+    finalAmount: number;
+    paymentMethod: string;
+    paymentStatus: string;
+    paymentDate?: string;
+    status: string;
+    confirmedAt?: string;
+    startedAt?: string;
+    completedAt?: string;
+    cancelledAt?: string;
+    notes?: string;
+    adminNotes?: string;
+    serviceDetails?: string | any; // Can be string (MySQL) or object (MongoDB)
+    createdAt: string;
+    updatedAt: string;
+};
+
 type UserOrder = {
     id: string;
     status: OrderStatus;
@@ -48,6 +75,8 @@ const UserProfilePage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'general' | 'orders'>('general');
     const [cropOpen, setCropOpen] = useState(false);
     const [pendingAvatarSrc, setPendingAvatarSrc] = useState<string | null>(null);
+    const [transactions, setTransactions] = useState<UserTransaction[]>([]);
+    const [loadingTransactions, setLoadingTransactions] = useState(false);
 
     const handleLogout = () => {
         localStorage.removeItem('isAuthenticated');
@@ -118,86 +147,172 @@ const UserProfilePage: React.FC = () => {
         return () => window.removeEventListener('auth:changed', handleAuthChange);
     }, []);
 
-    const orders: UserOrder[] = useMemo(
-        () => [
-            {
-                id: '26486740765',
-                status: 'success',
-                createdAtLabel: '19 Jan 2025',
-                estimateCompleteLabel: '20 Jan 2025',
-                paymentMethod: 'Credit Card',
+    // Fetch user transactions
+    const fetchTransactions = async () => {
+        setLoadingTransactions(true);
+        try {
+            const userEmail = readStorageValue('userEmail');
+            const authToken = readStorageValue('authToken');
+            
+            if (!userEmail) {
+                setLoadingTransactions(false);
+                return;
+            }
+
+            const response = await fetch(`http://localhost:55435/api/payment/my-transactions?email=${encodeURIComponent(userEmail)}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setTransactions(data.data.transactions);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch transactions:', error);
+        } finally {
+            setLoadingTransactions(false);
+        }
+    };
+
+    // Fetch transactions when component mounts or user changes
+    useEffect(() => {
+        const userEmail = readStorageValue('userEmail');
+        if (userEmail) {
+            fetchTransactions();
+        }
+    }, [profile.email]);
+
+    // Transform transactions to UserOrder format
+    const orders: UserOrder[] = useMemo(() => {
+        return transactions.map((transaction, index) => {
+            // Handle serviceDetails from MySQL (string) or MongoDB (object)
+            let serviceDetails = null;
+            if (transaction.serviceDetails) {
+                serviceDetails = typeof transaction.serviceDetails === 'string' 
+                    ? JSON.parse(transaction.serviceDetails) 
+                    : transaction.serviceDetails;
+            }
+
+            return {
+                id: transaction.transactionId || `TXN-${index + 1}`,
+                status: mapTransactionStatusToOrderStatus(transaction.status),
+                createdAtLabel: formatDate(transaction.createdAt),
+                estimateCompleteLabel: getEstimateCompleteDate(transaction.createdAt, transaction.status),
+                paymentMethod: mapPaymentMethodToLabel(transaction.paymentMethod),
                 item: {
-                    id: 1,
-                    title: 'I will be SEO content writer for article writing or blog writing',
+                    _id: String(transaction.id || transaction._id || `item-${index + 1}`),
+                    id: String(transaction.id || transaction._id || `item-${index + 1}`),
+                    title: transaction.serviceName || 'Service',
                     imageSrc: '/bg-shopCards.jpg',
-                    price: '$100',
-                    deliveryTime: '2 Days Delivery',
-                    serviceCategory: 'SEO Content',
+                    price: transaction.currency === 'IDR' ? `Rp ${transaction.finalAmount.toLocaleString()}` : `$${transaction.finalAmount}`,
+                    deliveryTime: getDeliveryTime(serviceDetails?.copywriterPackage),
+                    serviceCategory: getServiceCategory(transaction.type)
                 },
                 orderPackage: {
-                    id: 'standard',
-                    title: 'Standard',
-                    price: 100,
-                    shortDescription: 'SEO-friendly content package for your article or blog writing needs.',
-                    packageLabel: 'Standard package',
-                    deliveryLabel: '2 Days Delivery',
+                    id: serviceDetails?.copywriterPackage || 'standard',
+                    title: getPackageTitle(serviceDetails?.copywriterPackage),
+                    price: transaction.finalAmount,
+                    shortDescription: transaction.description || 'Service package',
+                    packageLabel: getPackageTitle(serviceDetails?.copywriterPackage),
+                    deliveryLabel: getDeliveryTime(serviceDetails?.copywriterPackage)
                 },
-                quantity: 1,
-                totalAmount: 100,
-            },
-            {
-                id: '26486740766',
-                status: 'process',
-                createdAtLabel: '22 Jan 2025',
-                estimateCompleteLabel: '25 Jan 2025',
-                paymentMethod: 'PayPal',
-                item: {
-                    id: 2,
-                    title: 'I will write human SEO blogs and articles',
-                    imageSrc: '/bg-shopCards.jpg',
-                    price: '$100',
-                    deliveryTime: '3 Days Delivery',
-                    serviceCategory: 'Blog Writing',
-                },
-                orderPackage: {
-                    id: 'premium',
-                    title: 'Premium',
-                    price: 120,
-                    shortDescription: 'Long-form content package with advanced research and multiple revisions.',
-                    packageLabel: 'Premium package',
-                    deliveryLabel: '3 Days Delivery',
-                },
-                quantity: 1,
-                totalAmount: 120,
-            },
-            {
-                id: '26486740767',
-                status: 'cancel',
-                createdAtLabel: '28 Jan 2025',
-                estimateCompleteLabel: '—',
-                paymentMethod: 'Bank Transfer',
-                item: {
-                    id: 3,
-                    title: 'I will write SEO blog posts and articles as your content writer',
-                    imageSrc: '/bg-shopCards.jpg',
-                    price: '$100',
-                    deliveryTime: '4 Days Delivery',
-                    serviceCategory: 'Product Description',
-                },
-                orderPackage: {
-                    id: 'basic',
-                    title: 'Basic',
-                    price: 60,
-                    shortDescription: 'Short-form SEO content for quick tasks and smaller projects.',
-                    packageLabel: 'Basic package',
-                    deliveryLabel: '4 Days Delivery',
-                },
-                quantity: 1,
-                totalAmount: 60,
-            },
-        ],
-        [],
-    );
+                quantity: serviceDetails?.quantity || 1,
+                totalAmount: transaction.finalAmount
+            };
+        });
+    }, [transactions]);
+
+    // Helper functions to transform transaction data to order format
+    const mapTransactionStatusToOrderStatus = (status: string): OrderStatus => {
+        switch (status) {
+            case 'completed':
+            case 'paid':
+                return 'success';
+            case 'pending':
+            case 'confirmed':
+            case 'in_progress':
+                return 'process';
+            case 'cancelled':
+            case 'refunded':
+            case 'failed':
+                return 'cancel';
+            default:
+                return 'process';
+        }
+    };
+
+    const mapPaymentMethodToLabel = (method: string): string => {
+        const methodMap: Record<string, string> = {
+            'midtrans': 'Midtrans',
+            'credit_card': 'Credit Card',
+            'bank_transfer': 'Bank Transfer',
+            'ewallet': 'E-Wallet',
+            'qris': 'QRIS',
+            'paypal': 'PayPal'
+        };
+        return methodMap[method] || method;
+    };
+
+    const getDeliveryTime = (packageType?: string): string => {
+        const deliveryMap: Record<string, string> = {
+            'basic': '1 Day Delivery',
+            'standard': '2 Days Delivery',
+            'premium': '3 Days Delivery'
+        };
+        return deliveryMap[packageType || 'standard'] || '2 Days Delivery';
+    };
+
+    const getPackageTitle = (packageType?: string): string => {
+        const titleMap: Record<string, string> = {
+            'basic': 'Basic',
+            'standard': 'Standard',
+            'premium': 'Premium'
+        };
+        return titleMap[packageType || 'standard'] || 'Standard';
+    };
+
+    const getServiceCategory = (type: string): string => {
+        const categoryMap: Record<string, string> = {
+            'copywriter_service': 'SEO Content',
+            'travel_package': 'Travel Package',
+            'consultation': 'Consultation',
+            'other': 'Other'
+        };
+        return categoryMap[type] || 'Service';
+    };
+
+    const formatDate = (dateString: string): string => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch {
+            return 'Unknown';
+        }
+    };
+
+    const getEstimateCompleteDate = (createdAt: string, status: string): string => {
+        if (status === 'completed' || status === 'paid') {
+            return formatDate(createdAt);
+        }
+        
+        try {
+            const date = new Date(createdAt);
+            const daysToAdd = status === 'process' ? 3 : 7; // 3 days for processing, 7 for pending
+            date.setDate(date.getDate() + daysToAdd);
+            return formatDate(date.toISOString());
+        } catch {
+            return '—';
+        }
+    };
 
     return (
         <InitialShimmer delayMs={850} skeleton={<UserProfilePageSkeleton />}>
@@ -232,6 +347,8 @@ const UserProfilePage: React.FC = () => {
                                 profile={profile}
                                 onProfileChange={setProfile}
                                 orders={orders}
+                                transactions={transactions}
+                                loadingTransactions={loadingTransactions}
                             />
                         </div>
                     </section>

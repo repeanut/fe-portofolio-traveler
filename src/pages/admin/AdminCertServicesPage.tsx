@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
@@ -29,28 +29,73 @@ const AdminCertServicesPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useAdminToast();
 
-  const [certData, setCertData] = useState<CertificationItem[]>([
-    {
-      id: 1,
-      logo: "/EF-Logo.png",
-      title: "EF SET English Certification",
-      subtitle: "C2 Proficient",
-      organization: "EF Standard English Test",
-    },
-    {
-      id: 2,
-      logo: "/Google-Logo.png",
-      title: "The Fundamentals of Digital Marketing",
-      subtitle: "",
-      organization: "Google",
-    },
-  ]);
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:55435";
 
-  const [servicesData, setServicesData] = useState<ServiceItem[]>([
-    { id: 1, name: "Video Script" },
-    { id: 2, name: "Custom Copywriting" },
-    { id: 3, name: "Brand Storytelling" },
-  ]);
+  const [loadingCerts, setLoadingCerts] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [certData, setCertData] = useState<CertificationItem[]>([]);
+
+  const [servicesData, setServicesData] = useState<ServiceItem[]>([]);
+
+  const fetchCerts = async () => {
+    try {
+      setLoadingCerts(true);
+      const response = await fetch(`${API_BASE}/api/landing-page/certifications`, {
+        credentials: "include",
+      });
+      const json = (await response.json().catch(() => null)) as any;
+      if (!response.ok || !json?.success) throw new Error(json?.message || "Failed to fetch certifications");
+      const items = (Array.isArray(json.data) ? json.data : []) as any[];
+      setCertData(
+        items.map((x) => ({
+          id: Number(x.id),
+          logo: String(x.logo ?? x.logoUrl ?? ""),
+          title: String(x.title ?? ""),
+          subtitle: String(x.subtitle ?? ""),
+          organization: String(x.organization ?? ""),
+        }))
+      );
+      setError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load certifications";
+      setError(msg);
+      toast.error("Error", msg);
+    } finally {
+      setLoadingCerts(false);
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      setLoadingServices(true);
+      const response = await fetch(`${API_BASE}/api/landing-page/services-list`, {
+        credentials: "include",
+      });
+      const json = (await response.json().catch(() => null)) as any;
+      if (!response.ok || !json?.success) throw new Error(json?.message || "Failed to fetch services");
+      const items = (Array.isArray(json.data) ? json.data : []) as any[];
+      setServicesData(
+        items.map((x) => ({
+          id: Number(x.id),
+          name: String(x.name ?? ""),
+        }))
+      );
+      setError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load services";
+      setError(msg);
+      toast.error("Error", msg);
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCerts();
+    fetchServices();
+  }, []);
 
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [editingCertId, setEditingCertId] = useState<number | null>(null);
@@ -181,16 +226,25 @@ const AdminCertServicesPage: React.FC = () => {
               totalPages={1}
               onPageChange={() => {}}
               onItemsPerPageChange={() => {}}
+              isLoading={loadingCerts}
               onEdit={(id) => {
                 if (typeof id === "number") {
                   setEditingCertId(id);
                   setIsCertModalOpen(true);
                 }
               }}
-              onDelete={(id) => {
+              onDelete={async (id) => {
                 if (typeof id === "number") {
                   try {
-                    setCertData((prev) => prev.filter((item) => item.id !== id));
+                    const response = await fetch(`${API_BASE}/api/landing-page/certifications/${id}`, {
+                      method: "DELETE",
+                      credentials: "include",
+                    });
+                    const json = (await response.json().catch(() => null)) as any;
+                    if (!response.ok || !json?.success) {
+                      throw new Error(json?.message || "Failed to delete certification");
+                    }
+                    await fetchCerts();
                     toast.success("Success", "Certification deleted successfully");
                   } catch {
                     toast.error("Error", "Failed to delete certification");
@@ -221,16 +275,25 @@ const AdminCertServicesPage: React.FC = () => {
               totalPages={1}
               onPageChange={() => {}}
               onItemsPerPageChange={() => {}}
+              isLoading={loadingServices}
               onEdit={(id) => {
                 if (typeof id === "number") {
                   setEditingServiceId(id);
                   setIsServiceModalOpen(true);
                 }
               }}
-              onDelete={(id) => {
+              onDelete={async (id) => {
                 if (typeof id === "number") {
                   try {
-                    setServicesData((prev) => prev.filter((item) => item.id !== id));
+                    const response = await fetch(`${API_BASE}/api/landing-page/services-list/${id}`, {
+                      method: "DELETE",
+                      credentials: "include",
+                    });
+                    const json = (await response.json().catch(() => null)) as any;
+                    if (!response.ok || !json?.success) {
+                      throw new Error(json?.message || "Failed to delete service");
+                    }
+                    await fetchServices();
                     toast.success("Success", "Service deleted successfully");
                   } catch {
                     toast.error("Error", "Failed to delete service");
@@ -239,6 +302,22 @@ const AdminCertServicesPage: React.FC = () => {
               }}
             />
           </section>
+
+          {error ? (
+            <div className="rounded-lg border border-rose-100 bg-rose-50 px-4 py-3 text-[11px] text-rose-700">
+              {error}
+              <button
+                type="button"
+                onClick={() => {
+                  fetchCerts();
+                  fetchServices();
+                }}
+                className="ml-3 rounded-md bg-rose-600 px-2 py-1 text-[11px] font-medium text-white"
+              >
+                Retry
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -265,44 +344,47 @@ const AdminCertServicesPage: React.FC = () => {
           const subtitle = (data.subtitle as string) || "";
           const organization = (data.organization as string) || "";
 
-          try {
-            if (editingCertId != null) {
-              setCertData((prev) =>
-                prev.map((item) =>
-                  item.id === editingCertId
-                    ? {
-                        ...item,
-                        logo: logo || item.logo,
-                        title: title || item.title,
-                        subtitle: subtitle || item.subtitle,
-                        organization: organization || item.organization,
-                      }
-                    : item
-                )
-              );
-              toast.success("Success", "Certification updated successfully");
-            } else {
-              setCertData((prev) => {
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    logo,
-                    title,
-                    subtitle,
-                    organization,
+          (async () => {
+            try {
+              if (editingCertId != null) {
+                const response = await fetch(`${API_BASE}/api/landing-page/certifications/${editingCertId}`, {
+                  method: "PUT",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
                   },
-                ];
-              });
-              toast.success("Success", "Certification added successfully");
-            }
+                  body: JSON.stringify({ logo, title, subtitle, organization }),
+                });
+                const json = (await response.json().catch(() => null)) as any;
+                if (!response.ok || !json?.success) {
+                  throw new Error(json?.message || "Failed to update certification");
+                }
+                await fetchCerts();
+                toast.success("Success", "Certification updated successfully");
+              } else {
+                const response = await fetch(`${API_BASE}/api/landing-page/certifications`, {
+                  method: "POST",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ logo, title, subtitle, organization, orderIndex: certData.length }),
+                });
+                const json = (await response.json().catch(() => null)) as any;
+                if (!response.ok || !json?.success) {
+                  throw new Error(json?.message || "Failed to create certification");
+                }
+                await fetchCerts();
+                toast.success("Success", "Certification added successfully");
+              }
 
-            setIsCertModalOpen(false);
-            setEditingCertId(null);
-          } catch {
-            toast.error("Error", "Failed to save certification changes");
-          }
+              setIsCertModalOpen(false);
+              setEditingCertId(null);
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "Failed to save certification changes";
+              toast.error("Error", msg);
+            }
+          })();
         }}
       />
 
@@ -325,38 +407,47 @@ const AdminCertServicesPage: React.FC = () => {
         onSubmit={(data) => {
           const name = (data.name as string) || "";
 
-          try {
-            if (editingServiceId != null) {
-              setServicesData((prev) =>
-                prev.map((item) =>
-                  item.id === editingServiceId
-                    ? {
-                        ...item,
-                        name: name || item.name,
-                      }
-                    : item
-                )
-              );
-              toast.success("Success", "Service updated successfully");
-            } else {
-              setServicesData((prev) => {
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    name,
+          (async () => {
+            try {
+              if (editingServiceId != null) {
+                const response = await fetch(`${API_BASE}/api/landing-page/services-list/${editingServiceId}`, {
+                  method: "PUT",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
                   },
-                ];
-              });
-              toast.success("Success", "Service added successfully");
-            }
+                  body: JSON.stringify({ name }),
+                });
+                const json = (await response.json().catch(() => null)) as any;
+                if (!response.ok || !json?.success) {
+                  throw new Error(json?.message || "Failed to update service");
+                }
+                await fetchServices();
+                toast.success("Success", "Service updated successfully");
+              } else {
+                const response = await fetch(`${API_BASE}/api/landing-page/services-list`, {
+                  method: "POST",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ name, orderIndex: servicesData.length }),
+                });
+                const json = (await response.json().catch(() => null)) as any;
+                if (!response.ok || !json?.success) {
+                  throw new Error(json?.message || "Failed to create service");
+                }
+                await fetchServices();
+                toast.success("Success", "Service added successfully");
+              }
 
-            setIsServiceModalOpen(false);
-            setEditingServiceId(null);
-          } catch {
-            toast.error("Error", "Failed to save service changes");
-          }
+              setIsServiceModalOpen(false);
+              setEditingServiceId(null);
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "Failed to save service changes";
+              toast.error("Error", msg);
+            }
+          })();
         }}
       />
     </div>

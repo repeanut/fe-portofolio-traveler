@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import HeroSection from '../../components/work/heroSection';
 import ServicesSection from '../../components/work/servicesSection';
 import BenefitSection from '../../components/work/benefitSection';
-import ShopSection from '../../components/work/shopSection';
 import FooterSection from '../../components/ui/footer';
 import AuthModal from '../../components/auth/AuthModal';
 import InitialShimmer from '../../components/ui/InitialShimmer';
@@ -109,7 +108,6 @@ const WorkPage: React.FC = () => {
                     />
                     <ServicesSection />
                     <BenefitSection />
-                    <ShopSection />
                     <FooterSection />
                 </div>
                 <div className={`page-cursor-trail ${cursorActive ? 'active' : ''}`}>

@@ -34,6 +34,7 @@ interface ChatContainerProps {
     onChatModeChange?: (mode: ChatMode) => void;
     theme?: 'light' | 'dark';
     onMessagesChange?: (messages: Message[]) => void;
+    enableSocket?: boolean;
 }
 
 const faqOptions = [
@@ -54,7 +55,7 @@ const aiResponses: Record<string, string> = {
         'The timeline depends on the type and complexity of the project. Simple copywriting takes 2–3 days, while larger projects can take 1–2 weeks. We’ll confirm the timeline together.',
 };
 
-const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onClearChat, showActions = true, showHeader = true, senderRole = 'user', initialMessages, chatMode: chatModeProp, onChatModeChange, theme = 'light', onMessagesChange }, ref) => {
+const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onClearChat, showActions = true, showHeader = true, senderRole = 'user', initialMessages, chatMode: chatModeProp, onChatModeChange, theme = 'light', onMessagesChange, enableSocket = false }, ref) => {
     const isDark = theme === 'dark';
     const onMessagesChangeRef = useRef<ChatContainerProps['onMessagesChange']>(onMessagesChange);
     const getCurrentTime = useCallback(() => {
@@ -69,21 +70,29 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
         return 'Farras';
     }, []);
 
+    const getUserEmail = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            const storedEmail = localStorage.getItem('userEmail');
+            return storedEmail || 'farras@example.com';
+        }
+        return 'farras@example.com';
+    }, []);
+
     const createGreeting = useCallback((): Message[] => {
         if (chatModeProp === 'cs') {
             return [{
                 id: 'greeting-admin',
-                content: 'Hi, Admin is here. How can I help you?',
-                role: 'admin',
-                name: 'Rizwords',
+                content: '👋 Connecting you to our admin team. Please wait for an admin to respond...',
+                role: 'ai',
+                name: 'System',
                 timestamp: getCurrentTime(),
             }];
         }
         return [{
             id: 'greeting',
-            content: 'Hi! Welcome. How can I help you?',
+            content: '👋 Halo! Saya adalah AI Chatbot TRAVELLO. Kami fokus pada layanan Copywriter dan Travel. Ada yang bisa saya bantu?',
             role: 'ai',
-            name: 'AI Chatbot',
+            name: 'AI Chatbot TRAVELLO',
             timestamp: getCurrentTime(),
         }];
     }, [chatModeProp, getCurrentTime]);
@@ -93,6 +102,8 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
     const effectiveChatMode = chatModeProp ?? chatModeInternal;
     const [showFAQ, setShowFAQ] = useState(effectiveChatMode === 'idle');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const socketRef = useRef<any>(null);
+    const sessionIdRef = useRef<string | null>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -109,6 +120,106 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
     useEffect(() => {
         onMessagesChangeRef.current?.(messages);
     }, [messages]);
+
+    // Initialize Socket.IO connection if enabled
+    useEffect(() => {
+        if (enableSocket) {
+            const initializeSocket = async () => {
+                try {
+                    const { io } = await import('socket.io-client');
+                    const socket = io('http://localhost:55435', {
+                        transports: ['websocket', 'polling'],
+                        withCredentials: true
+                    });
+                    
+                    socketRef.current = socket;
+
+                    socket.on('connect', () => {
+                        console.log('🔗 Connected to Socket.IO server');
+                        
+                        // Request notification permission
+                        if (typeof window !== 'undefined' && 'Notification' in window) {
+                            Notification.requestPermission().then(permission => {
+                                console.log('Notification permission:', permission);
+                            });
+                        }
+                        
+                        // Join as user
+                        const userInfo = {
+                            name: getUserName(),
+                            email: getUserEmail(),
+                            isGuest: !localStorage.getItem('token')
+                        };
+                        
+                        socket.emit('user:join', {
+                            userInfo,
+                            userId: null
+                        });
+                    });
+
+                    socket.on('chat:status', (data) => {
+                        console.log('Chat status updated:', data);
+                        if (data.sessionId) {
+                            sessionIdRef.current = data.sessionId;
+                            
+                            // Join the specific chat session room to receive admin responses
+                            socket.emit('join', {
+                                room: `chat_${data.sessionId}`
+                            });
+                            
+                            // Also join user-specific room for direct messaging
+                            socket.emit('join', {
+                                room: `user_${getUserEmail()}`
+                            });
+                            
+                            console.log('🔗 Joined rooms:', [`chat_${data.sessionId}`, `user_${getUserEmail()}`]);
+                        }
+                    });
+
+                    socket.on('message:new', (data) => {
+                        console.log('New message received:', data);
+                        
+                        // Handle admin messages
+                        if (data.message.sender === 'admin') {
+                            const adminMessage: Message = {
+                                id: `admin-${Date.now()}`,
+                                content: data.message.message,
+                                role: 'admin',
+                                name: data.message.senderName,
+                                timestamp: new Date(data.message.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                            };
+                            setMessages(prev => [...prev, adminMessage]);
+                            console.log('💬 Admin response received:', data.message.message);
+                            
+                            // Show notification for admin response
+                            if (typeof window !== 'undefined' && 'Notification' in window) {
+                                new Notification('💬 New Admin Response', {
+                                    body: `${data.message.senderName}: ${data.message.message}`,
+                                    icon: '/images/default-avatar.png',
+                                    tag: 'admin-response'
+                                });
+                            }
+                        }
+                    });
+
+                    socket.on('disconnect', () => {
+                        console.log('🔌 Disconnected from Socket.IO server');
+                    });
+
+                } catch (error) {
+                    console.error('❌ Failed to initialize Socket.IO:', error);
+                }
+            };
+
+            initializeSocket();
+        }
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
+        };
+    }, [enableSocket, getUserName, getUserEmail]);
 
     const addAIResponse = (userQuestion: string, customResponse?: string) => {
         setTimeout(() => {
@@ -174,6 +285,38 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
         };
         setMessages(prev => [...prev, outgoingMessage]);
 
+        // Send user message to admin chat (both AI and CS modes)
+        if (senderRole !== 'admin' && enableSocket && socketRef.current) {
+            // Generate or use existing sessionId
+            if (!sessionIdRef.current) {
+                sessionIdRef.current = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            }
+            
+            const userInfo = {
+                name: getUserName(),
+                email: getUserEmail(),
+                isGuest: !localStorage.getItem('token')
+            };
+            
+            socketRef.current.emit('message:send', {
+                message: message,
+                sessionId: sessionIdRef.current,
+                userInfo: userInfo
+            });
+            
+            // Ensure user is in the correct rooms to receive admin responses
+            socketRef.current.emit('join', {
+                room: `chat_${sessionIdRef.current}`
+            });
+            
+            socketRef.current.emit('join', {
+                room: `user_${getUserEmail()}`
+            });
+            
+            console.log('📤 User message sent to admin chat:', message);
+            console.log('🔗 User joined rooms for session:', sessionIdRef.current);
+        }
+
         if (senderRole === 'admin') {
             return;
         }
@@ -183,16 +326,9 @@ const ChatContainer = forwardRef<ChatContainerHandle, ChatContainerProps>(({ onC
             return;
         }
 
-        setTimeout(() => {
-            const adminMessage: Message = {
-                id: `admin-${Date.now()}`,
-                content: `Hi ${getUserName()}, admin is here. How can I help you?`,
-                role: 'admin',
-                name: 'Rizwords',
-                timestamp: getCurrentTime(),
-            };
-            setMessages(prev => [...prev, adminMessage]);
-        }, 900);
+        // CS mode - wait for admin response (no auto-answer)
+        // User message is already sent via Socket.IO above
+        return;
     };
 
     const handleClearChat = useCallback(() => {

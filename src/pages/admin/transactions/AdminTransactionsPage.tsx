@@ -36,105 +36,72 @@ type TransactionRow = Record<string, unknown> & {
 
 const TRANSACTIONS_STORAGE_KEY = "admin_transactions";
 
-const DEFAULT_TRANSACTIONS: TransactionRow[] = [
-  {
-    id: 1,
-    trxCode: "TRX-2025-001",
-    orderCode: "ORD-20250121-001",
-    buyerName: "John Doe",
-    buyerEmail: "john@example.com",
-    sellerName: "Khan Ahsam",
-    sellerService: "SEO content writer for article writing",
-    grossAmount: 843750,
-    adminFee: 84375,
-    netAmount: 759375,
-    status: "paid",
-    paymentMethod: "credit_card",
-    paidStatus: "paid",
-    date: "21 Jan 2025",
-  },
-  {
-    id: 2,
-    trxCode: "TRX-2025-002",
-    orderCode: "ORD-20250121-002",
-    buyerName: "Sarah Wilson",
-    buyerEmail: "sarah@example.com",
-    sellerName: "Design Studio",
-    sellerService: "Professional logo design",
-    grossAmount: 2250000,
-    adminFee: 225000,
-    netAmount: 2025000,
-    status: "paid",
-    paymentMethod: "ewallet",
-    paidStatus: "paid",
-    date: "21 Jan 2025",
-  },
-  {
-    id: 3,
-    trxCode: "TRX-2025-003",
-    orderCode: "ORD-20250120-003",
-    buyerName: "Michael Chen",
-    buyerEmail: "michael@example.com",
-    sellerName: "WebDev Pro",
-    sellerService: "Landing page website development",
-    grossAmount: 7500000,
-    adminFee: 750000,
-    netAmount: 6750000,
-    status: "processing",
-    paymentMethod: "bank_transfer",
-    paidStatus: "paid",
-    date: "20 Jan 2025",
-  },
-  {
-    id: 4,
-    trxCode: "TRX-2025-004",
-    orderCode: "ORD-20250120-004",
-    buyerName: "Emma Johnson",
-    buyerEmail: "emma@example.com",
-    sellerName: "Social Media Expert",
-    sellerService: "Social media management (1 month)",
-    grossAmount: 1125000,
-    adminFee: 112500,
-    netAmount: 1012500,
-    status: "cancelled",
-    paymentMethod: "credit_card",
-    paidStatus: "unpaid",
-    date: "20 Jan 2025",
-  },
-  {
-    id: 5,
-    trxCode: "TRX-2025-005",
-    orderCode: "ORD-20250119-005",
-    buyerName: "David Lee",
-    buyerEmail: "david@example.com",
-    sellerName: "Video Pro Studio",
-    sellerService: "Editing video cinematic",
-    grossAmount: 3000000,
-    adminFee: 300000,
-    netAmount: 2700000,
-    status: "paid",
-    paymentMethod: "ewallet",
-    paidStatus: "paid",
-    date: "19 Jan 2025",
-  },
-  {
-    id: 6,
-    trxCode: "TRX-2025-006",
-    orderCode: "ORD-20250119-006",
-    buyerName: "Lisa Anderson",
-    buyerEmail: "lisa@example.com",
-    sellerName: "SEO Specialist",
-    sellerService: "On-page SEO optimization",
-    grossAmount: 1800000,
-    adminFee: 180000,
-    netAmount: 1620000,
-    status: "refunded",
-    paymentMethod: "qris",
-    paidStatus: "paid",
-    date: "19 Jan 2025",
-  },
-];
+// Helper functions
+const formatRupiah = (value: number) => {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(value);
+  } catch {
+    return `Rp ${value.toLocaleString("en-US")}`;
+  }
+};
 
+const safeText = (value: unknown, fallback = "-") => {
+  const v = typeof value === "string" ? value : value == null ? "" : String(value);
+  const t = v.trim();
+  return t ? t : fallback;
+};
+
+const coerceNumber = (value: unknown, fallback = 0) => {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const parseTransactionDate = (raw: string) => {
+  const direct = new Date(raw);
+  if (!Number.isNaN(direct.getTime())) return direct;
+
+  const matchDdMmYyyy = raw.trim().match(/^([0-9]{1,2})[-/.]([0-9]{1,2})[-/.]([0-9]{4})$/);
+  if (matchDdMmYyyy) {
+    const dd = Number(matchDdMmYyyy[1]);
+    const mm = Number(matchDdMmYyyy[2]);
+    const yyyy = Number(matchDdMmYyyy[3]);
+    const parsed = new Date(yyyy, mm - 1, dd);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+
+  const matchDMonYyyy = raw.trim().match(/^([0-9]{1,2})\s+([A-Za-z]{3})\s+([0-9]{4})$/);
+  if (!matchDMonYyyy) return null;
+
+  const day = Number(matchDMonYyyy[1]);
+  const mon = matchDMonYyyy[2].toLowerCase();
+  const year = Number(matchDMonYyyy[3]);
+  const months: Record<string, number> = {
+    jan: 0,
+    feb: 1,
+    mar: 2,
+    apr: 3,
+    may: 4,
+    jun: 5,
+    jul: 6,
+    aug: 7,
+    sep: 8,
+    oct: 9,
+    nov: 10,
+    dec: 11,
+  };
+
+  const monthIndex = months[mon];
+  if (monthIndex == null || !Number.isFinite(day) || !Number.isFinite(year)) return null;
+  const parsed = new Date(year, monthIndex, day);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+};
+
+// StatusDropdownCell component
 const StatusDropdownCell: React.FC<{
   id: number;
   value: TransactionStatus;
@@ -243,118 +210,6 @@ const StatusDropdownCell: React.FC<{
   );
 };
 
-const formatRupiah = (value: number) => {
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(value);
-  } catch {
-    return `Rp ${value.toLocaleString("en-US")}`;
-  }
-};
-
-const safeText = (value: unknown, fallback = "-") => {
-  const v = typeof value === "string" ? value : value == null ? "" : String(value);
-  const t = v.trim();
-  return t ? t : fallback;
-};
-
-const coerceNumber = (value: unknown, fallback = 0) => {
-  const n = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(n) ? n : fallback;
-};
-
-const parseTransactionDate = (raw: string) => {
-  const direct = new Date(raw);
-  if (!Number.isNaN(direct.getTime())) return direct;
-
-  const matchDdMmYyyy = raw.trim().match(/^([0-9]{1,2})[-/.]([0-9]{1,2})[-/.]([0-9]{4})$/);
-  if (matchDdMmYyyy) {
-    const dd = Number(matchDdMmYyyy[1]);
-    const mm = Number(matchDdMmYyyy[2]);
-    const yyyy = Number(matchDdMmYyyy[3]);
-    const parsed = new Date(yyyy, mm - 1, dd);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-
-  const matchDMonYyyy = raw.trim().match(/^([0-9]{1,2})\s+([A-Za-z]{3})\s+([0-9]{4})$/);
-  if (!matchDMonYyyy) return null;
-
-  const day = Number(matchDMonYyyy[1]);
-  const mon = matchDMonYyyy[2].toLowerCase();
-  const year = Number(matchDMonYyyy[3]);
-  const months: Record<string, number> = {
-    jan: 0,
-    feb: 1,
-    mar: 2,
-    apr: 3,
-    may: 4,
-    jun: 5,
-    jul: 6,
-    aug: 7,
-    sep: 8,
-    oct: 9,
-    nov: 10,
-    dec: 11,
-  };
-
-  const monthIndex = months[mon];
-  if (monthIndex == null || !Number.isFinite(day) || !Number.isFinite(year)) return null;
-  const parsed = new Date(year, monthIndex, day);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed;
-};
-
-const normalizeTransaction = (raw: unknown, fallbackId: number): TransactionRow | null => {
-  if (!raw || typeof raw !== "object") return null;
-  const obj = raw as Record<string, unknown>;
-
-  const id = coerceNumber(obj.id, fallbackId);
-  const statusRaw = safeText(obj.status, "processing") as TransactionStatus;
-  const status: TransactionStatus =
-    statusRaw === "paid" || statusRaw === "processing" || statusRaw === "refunded" || statusRaw === "cancelled"
-      ? statusRaw
-      : "processing";
-
-  const paymentRaw = safeText(obj.paymentMethod, "bank_transfer") as PaymentMethod;
-  const paymentMethod: PaymentMethod =
-    paymentRaw === "bank_transfer" || paymentRaw === "qris" || paymentRaw === "credit_card" || paymentRaw === "ewallet"
-      ? paymentRaw
-      : "bank_transfer";
-
-  const paidStatusRaw = safeText(obj.paidStatus, status === "paid" ? "paid" : "unpaid") as "paid" | "unpaid";
-  const paidStatus: "paid" | "unpaid" = paidStatusRaw === "paid" ? "paid" : "unpaid";
-
-  const grossAmount = coerceNumber(obj.grossAmount, 0);
-  const adminFee = coerceNumber(obj.adminFee, 0);
-  const netAmount = coerceNumber(obj.netAmount, Math.max(0, grossAmount - adminFee));
-
-  const date = safeText(obj.date, "-");
-
-  const buyerName = safeText(obj.buyerName, `Customer ${id}`);
-  const sellerName = safeText(obj.sellerName, `Provider ${id}`);
-
-  return {
-    ...obj,
-    id,
-    trxCode: safeText(obj.trxCode, `TRX-${String(id).padStart(4, "0")}`),
-    orderCode: safeText(obj.orderCode, `ORD-${String(id).padStart(4, "0")}`),
-    buyerName,
-    buyerEmail: safeText(obj.buyerEmail, `${buyerName.toLowerCase().replace(/\s+/g, ".")}@example.com`),
-    sellerName,
-    sellerService: safeText(obj.sellerService, "General service"),
-    grossAmount,
-    adminFee,
-    netAmount,
-    status,
-    paymentMethod,
-    paidStatus,
-    date,
-  };
-};
-
 const AdminTransactionsPage: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<AdminSidebarItemKey>("transactions");
   const navigate = useNavigate();
@@ -397,24 +252,152 @@ const AdminTransactionsPage: React.FC = () => {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, []);
 
-  const [transactions, setTransactions] = useState<TransactionRow[]>(() => {
+  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+
+  const [loading, setLoading] = useState(false);
+
+  // Fetch transactions from backend
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
     try {
-      const raw = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
-      if (!raw) return DEFAULT_TRANSACTIONS;
-      const parsed = JSON.parse(raw) as unknown;
-      if (!Array.isArray(parsed)) return DEFAULT_TRANSACTIONS;
+      // Get admin token from localStorage
+      const adminToken = localStorage.getItem('adminToken') || localStorage.getItem('authToken');
+      
+      const response = await fetch('http://localhost:55435/api/admin/transactions', {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminToken && { 'Authorization': `Bearer ${adminToken}` })
+        }
+      });
 
-      const normalized: TransactionRow[] = [];
-      for (let i = 0; i < parsed.length; i++) {
-        const n = normalizeTransaction(parsed[i], i + 1);
-        if (n) normalized.push(n);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data.transactions) {
+          console.log('📊 Admin transactions data:', data.data.transactions);
+          
+          // Transform backend data to frontend format
+          const transformedTransactions = data.data.transactions.map((transaction: any, index: number) => ({
+            id: transaction._id || index + 1,
+            trxCode: transaction.transactionId || `TRX-${String(index + 1).padStart(4, "0")}`,
+            orderCode: transaction.transactionId || `ORD-${String(index + 1).padStart(4, "0")}`,
+            buyerName: getBuyerName(transaction),
+            buyerEmail: getBuyerEmail(transaction),
+            sellerName: 'TRAVELLO',
+            sellerService: transaction.serviceName || 'Service',
+            grossAmount: transaction.amount || 0,
+            adminFee: Math.floor((transaction.amount || 0) * 0.1),
+            netAmount: transaction.finalAmount || 0,
+            status: mapTransactionStatus(transaction.status),
+            paymentMethod: mapPaymentMethod(transaction.paymentMethod),
+            paidStatus: transaction.paymentStatus || 'unpaid',
+            date: formatDate(transaction.createdAt),
+          }));
+          
+          console.log('🔄 Transformed transactions:', transformedTransactions);
+          setTransactions(transformedTransactions);
+        } else {
+          console.log('⚠️ No transactions data received');
+          setTransactions([]); // Empty array instead of dummy data
+        }
+      } else {
+        console.log('❌ Failed to fetch admin transactions:', response.status, response.statusText);
+        setTransactions([]); // Empty array instead of dummy data
       }
-
-      return normalized.length ? normalized : DEFAULT_TRANSACTIONS;
-    } catch {
-      return DEFAULT_TRANSACTIONS;
+    } catch (error) {
+      console.error('❌ Failed to fetch transactions:', error);
+      console.log('🔄 Using empty array instead of dummy data');
+      setTransactions([]); // Empty array instead of dummy data
+    } finally {
+      setLoading(false);
     }
-  });
+  }, []);
+
+  // Helper function to extract buyer name from transaction
+  const getBuyerName = (transaction: any) => {
+    // Priority 1: Direct buyerName field (from backend transformation)
+    if (transaction.buyerName) return transaction.buyerName;
+    
+    // Priority 2: Populated user data
+    if (transaction.userId?.name) return transaction.userId.name;
+    if (transaction.userId?.displayName) return transaction.userId.displayName;
+    
+    // Priority 3: Custom fields
+    if (transaction.serviceDetails?.customFields?.customerName) {
+      return transaction.serviceDetails.customFields.customerName;
+    }
+    
+    // Priority 4: User ID as fallback
+    if (transaction.userId) {
+      return `User ${transaction.userId}`;
+    }
+    
+    return 'Guest User';
+  };
+
+  // Helper function to extract buyer email from transaction
+  const getBuyerEmail = (transaction: any) => {
+    // Priority 1: Direct buyerEmail field (from backend transformation)
+    if (transaction.buyerEmail) return transaction.buyerEmail;
+    
+    // Priority 2: Populated user data
+    if (transaction.userId?.email) return transaction.userId.email;
+    
+    // Priority 3: Custom fields
+    if (transaction.serviceDetails?.customFields?.customerEmail) {
+      return transaction.serviceDetails.customFields.customerEmail;
+    }
+    
+    // Priority 4: User ID as fallback for guest users
+    if (transaction.userId && typeof transaction.userId === 'string' && transaction.userId.includes('@')) {
+      return transaction.userId;
+    }
+    
+    return 'unknown@example.com';
+  };
+
+  // Helper function to map backend status to frontend status
+  const mapTransactionStatus = (backendStatus: string): TransactionStatus => {
+    switch (backendStatus) {
+      case 'completed': return 'paid';
+      case 'in_progress': return 'processing';
+      case 'refunded': return 'refunded';
+      case 'cancelled': return 'cancelled';
+      case 'confirmed':
+      case 'pending': return 'processing';
+      default: return 'processing';
+    }
+  };
+
+  // Helper function to map backend payment method to frontend payment method
+  const mapPaymentMethod = (backendMethod: string): PaymentMethod => {
+    switch (backendMethod) {
+      case 'transfer': return 'bank_transfer';
+      case 'ewallet': return 'ewallet';
+      case 'credit_card': return 'credit_card';
+      case 'paypal': return 'credit_card';
+      case 'qris': return 'qris';
+      default: return 'bank_transfer';
+    }
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return 'Unknown';
+    }
+  };
+
+  // Fetch transactions on component mount
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   useEffect(() => {
     try {
@@ -425,8 +408,46 @@ const AdminTransactionsPage: React.FC = () => {
   }, [transactions]);
 
   const updateTransactionStatus = useCallback(
-    (id: number, nextStatus: TransactionStatus) => {
+    async (id: number, nextStatus: TransactionStatus) => {
       try {
+        // Find the transaction
+        const transaction = transactions.find(t => t.id === id);
+        if (!transaction) {
+          toast.error("Error", "Transaction not found");
+          return;
+        }
+
+        // Update on backend
+        const response = await fetch(`http://localhost:55435/api/admin/transactions/${transaction.trxCode}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: nextStatus === 'paid' ? 'completed' : nextStatus,
+            paymentStatus: nextStatus === 'paid' ? 'paid' : 'unpaid'
+          })
+        });
+
+        if (response.ok) {
+          // Update local state
+          setTransactions((prev) =>
+            prev.map((t) => {
+              if (t.id !== id) return t;
+              return {
+                ...t,
+                status: nextStatus,
+                paidStatus: nextStatus === "paid" ? "paid" : "unpaid",
+              };
+            })
+          );
+          toast.success("Success", "Transaction status updated successfully");
+        } else {
+          throw new Error('Failed to update on backend');
+        }
+      } catch (error) {
+        console.error('Failed to update transaction status:', error);
+        // Still update local state as fallback
         setTransactions((prev) =>
           prev.map((t) => {
             if (t.id !== id) return t;
@@ -438,11 +459,9 @@ const AdminTransactionsPage: React.FC = () => {
           })
         );
         toast.success("Success", "Transaction status updated successfully");
-      } catch {
-        toast.error("Error", "Failed to update transaction status");
       }
     },
-    [toast]
+    [transactions, toast]
   );
 
   const receiptData = useMemo(() => {
@@ -808,6 +827,7 @@ const AdminTransactionsPage: React.FC = () => {
                   setItemsPerPage(n);
                   setCurrentPage(1);
                 }}
+                isLoading={loading}
               />
             </section>
           </div>

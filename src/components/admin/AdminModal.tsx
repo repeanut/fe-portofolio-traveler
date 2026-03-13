@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 export interface AdminModalField {
   name: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "image" | "tags" | "monthYear" | "select" | "radio";
+  type?: "text" | "textarea" | "number" | "image" | "imageSelect" | "tags" | "monthYear" | "select" | "radio";
   options?: Array<{ label: string; value: string }>;
   placeholder?: string;
   // For image fields: whether multiple files can be selected or only one.
@@ -35,50 +35,60 @@ const AdminModal: React.FC<AdminModalProps> = ({
   const [imagePreviews, setImagePreviews] = useState<Record<string, string[]>>({});
   const [tagValues, setTagValues] = useState<Record<string, string[]>>({});
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     if (!isOpen) return;
     if (!initialData) return;
 
-    const t = window.setTimeout(() => {
-      setImagePreviews((prev) => {
-        const next = { ...prev };
-        fields.forEach((field) => {
-          if (field.type !== "image") return;
-          const raw = initialData[field.name];
-          const list = Array.isArray(raw)
-            ? (raw as string[])
-            : typeof raw === "string" && raw
-              ? [raw]
-              : [];
-          if (list.length > 0) next[field.name] = list;
-        });
-        return next;
-      });
-    }, 0);
+    // Initialize form data
+    const initialFormData: Record<string, unknown> = {};
+    const initialImagePreviews: Record<string, string[]> = {};
+    const initialTagValues: Record<string, string[]> = {};
+    const initialTagInputs: Record<string, string> = {};
 
-    return () => window.clearTimeout(t);
-  }, [fields, initialData, isOpen]);
+    fields.forEach((field) => {
+      if (field.type === "image") {
+        const raw = initialData[field.name];
+        const list = Array.isArray(raw)
+          ? (raw as string[])
+          : raw
+            ? [raw as string]
+            : [];
+        initialImagePreviews[field.name] = list;
+      } else if (field.type === "tags") {
+        const raw = initialData[field.name];
+        initialTagValues[field.name] = Array.isArray(raw) ? (raw as string[]) : [];
+        initialTagInputs[field.name] = "";
+      } else {
+        initialFormData[field.name] = initialData?.[field.name] ?? "";
+      }
+    });
+
+    setImagePreviews(initialImagePreviews);
+    setTagValues(initialTagValues);
+    setTagInputs(initialTagInputs);
+    setFormData(initialFormData);
+  }, [isOpen, initialData, fields]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const form = e.currentTarget as HTMLFormElement;
-    const fd = new FormData(form);
-    const data: Record<string, unknown> = {};
+    const data: Record<string, unknown> = { ...formData };
     fields.forEach((field) => {
       if (field.type === "image") {
-        // Use the stored previews as the source of truth
-        data[field.name] = imagePreviews[field.name] ?? [];
+        // Use stored previews as the source of truth - send single string for single file
+        const previews = imagePreviews[field.name] ?? [];
+        data[field.name] = previews.length > 0 ? previews[0] : null;
       } else if (field.type === "tags") {
         data[field.name] = tagValues[field.name] ?? [];
       } else if (field.type === "monthYear") {
-        const month = (fd.get(`${field.name}_month`) as string) || "";
-        const year = (fd.get(`${field.name}_year`) as string) || "";
+        const month = (formData[`${field.name}_month`] as string) || "";
+        const year = (formData[`${field.name}_year`] as string) || "";
         data[field.name] = month && year ? `${month} ${year}` : "";
       } else {
-        data[field.name] = fd.get(field.name) ?? "";
+        data[field.name] = formData[field.name] ?? "";
       }
     });
     onSubmit(data);
@@ -134,11 +144,14 @@ const AdminModal: React.FC<AdminModalProps> = ({
                 "Dec",
               ];
 
-              const currentYear = new Date().getFullYear();
+              const selectedYear = new Date().getFullYear();
               const years: string[] = ["Year"];
-              for (let y = currentYear; y >= currentYear - 30; y -= 1) {
+              for (let y = selectedYear; y >= selectedYear - 30; y -= 1) {
                 years.push(String(y));
               }
+
+              const currentValue = String(formData[field.name] ?? "");
+              const [currentMonth, currentYear] = currentValue.includes(" ") ? currentValue.split(" ") : [currentValue, ""];
 
               return (
                 <div key={field.name} className="space-y-1">
@@ -149,7 +162,12 @@ const AdminModal: React.FC<AdminModalProps> = ({
                     <select
                       name={`${field.name}_month`}
                       className="w-1/2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      defaultValue=""
+                      value={currentMonth}
+                      onChange={(e) => {
+                        const month = e.target.value;
+                        const year = currentYear;
+                        setFormData(prev => ({ ...prev, [field.name]: month && year ? `${month} ${year}` : "" }));
+                      }}
                     >
                       {months.map((m, idx) => (
                         <option key={m} value={idx === 0 ? "" : m}>
@@ -160,7 +178,12 @@ const AdminModal: React.FC<AdminModalProps> = ({
                     <select
                       name={`${field.name}_year`}
                       className="w-1/2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      defaultValue=""
+                      value={currentYear}
+                      onChange={(e) => {
+                        const year = e.target.value;
+                        const month = currentMonth;
+                        setFormData(prev => ({ ...prev, [field.name]: month && year ? `${month} ${year}` : "" }));
+                      }}
                     >
                       {years.map((y, idx) => (
                         <option key={y} value={idx === 0 ? "" : y}>
@@ -182,7 +205,8 @@ const AdminModal: React.FC<AdminModalProps> = ({
                   <select
                     name={field.name}
                     className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    defaultValue={(initialData?.[field.name] as string) ?? ""}
+                    value={String(formData[field.name] ?? "")}
+                    onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
                   >
                     {(field.options ?? []).map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -195,7 +219,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
             }
 
             if (field.type === "radio") {
-              const current = String((initialData?.[field.name] as string) ?? "");
+              const current = String((formData[field.name] as string) ?? "");
               const options = field.options ?? [];
               const fallback = current || options[0]?.value || "";
 
@@ -211,8 +235,9 @@ const AdminModal: React.FC<AdminModalProps> = ({
                           type="radio"
                           name={field.name}
                           value={opt.value}
-                          defaultChecked={fallback === opt.value}
+                          checked={fallback === opt.value}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                          onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
                         />
                         <span className="select-none">{opt.label}</span>
                       </label>
@@ -281,6 +306,41 @@ const AdminModal: React.FC<AdminModalProps> = ({
                       }
                     }}
                   />
+                </div>
+              );
+            }
+
+            if (field.type === "imageSelect") {
+              return (
+                <div key={field.name} className="space-y-1">
+                  <label className="block text-[11px] font-medium text-slate-700">
+                    {field.label}
+                  </label>
+                  <select
+                    name={field.name}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    value={String(formData[field.name] ?? "")}
+                    onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
+                  >
+                    <option value="">Select an image...</option>
+                    {(field.options ?? []).map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  {(formData[field.name] as string) && (
+                    <div className="mt-2">
+                      <img
+                        src={formData[field.name] as string}
+                        alt="Preview"
+                        className="h-16 w-16 object-cover rounded-md border border-slate-200"
+                        onError={(e) => {
+                          e.currentTarget.src = '/images/default-experience.jpg';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             }
@@ -365,7 +425,8 @@ const AdminModal: React.FC<AdminModalProps> = ({
                     className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     rows={4}
                     placeholder={field.placeholder}
-                    defaultValue={(initialData?.[field.name] as string) ?? ""}
+                    value={String(formData[field.name] ?? "")}
+                    onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
                   />
                 </div>
               );
@@ -381,7 +442,8 @@ const AdminModal: React.FC<AdminModalProps> = ({
                   name={field.name}
                   className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder={field.placeholder}
-                  defaultValue={(initialData?.[field.name] as string) ?? ""}
+                  value={String(formData[field.name] ?? "")}
+                  onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
                 />
               </div>
             );

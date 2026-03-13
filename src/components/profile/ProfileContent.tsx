@@ -24,15 +24,43 @@ type UserOrder = {
     totalAmount: number;
 };
 
+type Transaction = {
+    _id?: string; // MongoDB ID (optional)
+    id?: number; // MySQL ID (optional)
+    transactionId: string;
+    type: string;
+    serviceName: string;
+    description: string;
+    amount: number;
+    currency: string;
+    finalAmount: number;
+    paymentMethod: string;
+    paymentStatus: string;
+    status: string;
+    createdAt: string;
+    paymentDate?: string;
+    serviceDetails?: string | any; // Can be string (MySQL) or object (MongoDB)
+};
+
 export type ProfileContentProps = {
     activeTab: 'general' | 'orders';
     onTabChange: (tab: 'general' | 'orders') => void;
     profile: UserProfile;
     onProfileChange: (next: UserProfile) => void;
     orders: UserOrder[];
+    transactions?: Transaction[];
+    loadingTransactions?: boolean;
 };
 
-const ProfileContent: React.FC<ProfileContentProps> = ({ activeTab, onTabChange, profile, onProfileChange, orders }) => {
+const ProfileContent: React.FC<ProfileContentProps> = ({ 
+    activeTab, 
+    onTabChange, 
+    profile, 
+    onProfileChange, 
+    orders, 
+    transactions = [], 
+    loadingTransactions = false 
+}) => {
     const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | OrderStatus>('all');
     const [orderStatusOpen, setOrderStatusOpen] = useState(false);
     const orderStatusRef = useRef<HTMLDivElement | null>(null);
@@ -280,6 +308,63 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ activeTab, onTabChange,
                                 </div>
                             ))}
                         </div>
+
+                        {/* Show transactions */}
+                        {transactions && transactions.length > 0 && (
+                            <div className="mt-6">
+                                <h3 className="text-sm font-semibold text-slate-900 mb-4">Transaction History</h3>
+                                <div className="space-y-4">
+                                    {transactions.map((transaction) => (
+                                        <div key={transaction.transactionId} className="rounded-2xl border border-slate-200 bg-white p-5">
+                                            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                                                <div>
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <p className="text-sm font-semibold text-slate-900">Transaction #{transaction.transactionId}</p>
+                                                        <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border-blue-200">
+                                                            {transaction.type.replace('_', ' ')}
+                                                        </span>
+                                                    </div>
+                                                    <p className="mt-1 text-xs text-slate-500">
+                                                        Created: {new Date(transaction.createdAt).toLocaleDateString()}
+                                                        {transaction.paymentDate && ` · Paid: ${new Date(transaction.paymentDate).toLocaleDateString()}`}
+                                                    </p>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <p className="text-xs text-slate-500">Total</p>
+                                                    <p className="text-sm font-semibold text-slate-900">
+                                                        {transaction.currency === 'IDR' ? 'Rp ' : '$'}
+                                                        {transaction.finalAmount.toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-4">
+                                                <p className="text-sm font-medium text-slate-900">{transaction.serviceName}</p>
+                                                <p className="text-xs text-slate-500">{transaction.description}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Show empty state */}
+                        {!loadingTransactions && filteredOrders.length === 0 && (!transactions || transactions.length === 0) && (
+                            <div className="text-center py-12">
+                                <div className="inline-flex flex-col items-center gap-3">
+                                    <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center">
+                                        <svg className="h-8 w-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2v2a2 2 0 01-2 2H9a2 2 0 00-2-2V7a2 2 0 012-2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-900">No orders or transactions found</p>
+                                        <p className="text-xs text-slate-500">Your order and transaction history will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

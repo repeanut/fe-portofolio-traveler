@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import type { AdminSidebarItemKey } from "../../components/admin/AdminSidebar";
@@ -13,7 +13,15 @@ import { useAdminToast } from "../../hooks/useAdminToast";
 type TravelContentPayload = {
   name: string;
   cover: string;
-  images: string[];
+  travelImage: string;
+  description: string;
+  location: string;
+  date: string;
+  category: string;
+  tags: string[];
+  isActive: boolean;
+  featured: boolean;
+  author: string;
 };
 
 const readFilesAsDataUrls = (files: File[]) =>
@@ -38,20 +46,104 @@ const TravelContentModal: React.FC<{
 }> = ({ isOpen, title, initialData, onClose, onSubmit }) => {
   const [name, setName] = useState("");
   const [cover, setCover] = useState<string>("");
-  const [images, setImages] = useState<string[]>([]);
+  const [travelImage, setTravelImage] = useState<string>("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [date, setDate] = useState("");
+  const [category, setCategory] = useState("adventure");
+  const [tags, setTags] = useState<string[]>([]);
+  const [isActive, setIsActive] = useState(true);
+  const [featured, setFeatured] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const addInputRef = useRef<HTMLInputElement | null>(null);
-  const replaceInputRef = useRef<HTMLInputElement | null>(null);
-  const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    setName(initialData?.name ?? "");
-    setCover(initialData?.cover ?? "");
-    setImages(initialData?.images ?? []);
+    console.log('Modal opened with initialData:', initialData);
+    if (initialData && initialData._id) {
+      console.log('Loading data for edit:', initialData);
+      setName(initialData.name || "");
+      setCover(initialData.cover || "");
+      setTravelImage(initialData.travelImage || "");
+      setDescription(initialData.description || "");
+      setLocation(initialData.location || "");
+      setDate(initialData.date || "");
+      setCategory(initialData.category || "adventure");
+      setTags(initialData.tags || []);
+      setIsActive(initialData.isActive !== undefined ? initialData.isActive : true);
+      setFeatured(initialData.featured || false);
+    } else {
+      console.log('Reset form for new entry');
+      // Reset form for new entry
+      setName("");
+      setCover("");
+      setTravelImage("");
+      setDescription("");
+      setLocation("");
+      setDate("");
+      setCategory("adventure");
+      setTags([]);
+      setIsActive(true);
+      setFeatured(false);
+    }
     setIsSaving(false);
-    setReplaceIndex(null);
+    setFormErrors({});
   }, [isOpen, initialData]);
+
+  // Validate form
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!name.trim()) {
+      errors.name = 'Name is required';
+    }
+    
+    if (!cover) {
+      errors.cover = 'Cover image is required';
+    }
+    
+    if (!travelImage) {
+      errors.travelImage = 'Travel image is required';
+    }
+    
+    if (!location.trim()) {
+      errors.location = 'Location is required';
+    }
+    
+    if (!date) {
+      errors.date = 'Date is required';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      await onSubmit({ 
+        name, 
+        cover, 
+        travelImage,
+        description,
+        location,
+        date,
+        category,
+        tags,
+        isActive,
+        featured,
+        author: 'TRAVELLO Team' // Tambah author field
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -70,17 +162,7 @@ const TravelContentModal: React.FC<{
           </button>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setIsSaving(true);
-            try {
-              onSubmit({ name, cover, images });
-            } finally {
-              setIsSaving(false);
-            }
-          }}
-        >
+        <form onSubmit={handleSubmit}>
           <div className="grid gap-6 px-5 py-4 md:grid-cols-2 md:gap-0 md:divide-x md:divide-slate-200">
             <div className="space-y-4 md:pr-6">
               <div className="space-y-1">
@@ -89,11 +171,16 @@ const TravelContentModal: React.FC<{
                 </label>
                 <input
                   type="text"
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    formErrors.name ? 'border-red-300' : 'border-slate-200'
+                  }`}
                   placeholder="e.g. Bali, Tokyo, Alps"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
+                {formErrors.name && (
+                  <p className="text-red-500 text-[10px] mt-1">{formErrors.name}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -130,102 +217,151 @@ const TravelContentModal: React.FC<{
                     </button>
                   </div>
                 ) : null}
+                {formErrors.cover && (
+                  <p className="text-red-500 text-[10px] mt-1">{formErrors.cover}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-medium text-slate-700">
+                    Travel Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-[11px] file:font-medium file:text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      readFilesAsDataUrls([file])
+                        .then(([dataUrl]) => setTravelImage(dataUrl))
+                        .catch(() => {
+                        });
+                    }}
+                  />
+                </div>
+
+                {travelImage ? (
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                      <img src={travelImage} alt="Travel" className="h-full w-full object-cover" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTravelImage("")}
+                      className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
+                    >
+                      Remove travel image
+                    </button>
+                  </div>
+                ) : null}
+                {formErrors.travelImage && (
+                  <p className="text-red-500 text-[10px] mt-1">{formErrors.travelImage}</p>
+                )}
               </div>
             </div>
 
             <div className="space-y-4 md:pl-8">
-              <button
-                type="button"
-                onClick={() => addInputRef.current?.click()}
-                className="h-10 w-full rounded-lg bg-slate-100 text-[11px] font-medium text-slate-700 hover:bg-slate-200 transition-colors"
-              >
-                + Add Travel Images
-              </button>
-              <input
-                ref={addInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={async (e) => {
-                  const list = e.target.files ? Array.from(e.target.files) : [];
-                  if (list.length === 0) return;
-                  try {
-                    const dataUrls = await readFilesAsDataUrls(list);
-                    setImages((prev) => [...prev, ...dataUrls]);
-                  } catch {
-                    // ignore
-                  } finally {
-                    e.currentTarget.value = "";
-                  }
-                }}
-              />
-              <input
-                ref={replaceInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const list = e.target.files ? Array.from(e.target.files) : [];
-                  if (list.length === 0) return;
-                  if (replaceIndex == null) return;
-                  try {
-                    const dataUrls = await readFilesAsDataUrls([list[0]]);
-                    setImages((prev) => prev.map((x, idx) => (idx === replaceIndex ? dataUrls[0] : x)));
-                  } catch {
-                    // ignore
-                  } finally {
-                    setReplaceIndex(null);
-                    e.currentTarget.value = "";
-                  }
-                }}
-              />
+              <div className="space-y-1">
+                <label className="block text-[11px] font-medium text-slate-700">
+                  Description
+                </label>
+                <textarea
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Describe this travel destination..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
 
-              <div className="space-y-3">
-                {images.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-[11px] text-slate-500">
-                    No travel images yet.
-                  </div>
-                ) : (
-                  images.map((src, idx) => (
-                    <div key={`${src}-${idx}`} className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 overflow-hidden rounded-xl border border-slate-100 bg-white">
-                          <img src={src} alt="Travel" className="h-full w-full object-cover" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-semibold text-slate-900 truncate">Travel Image {idx + 1}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReplaceIndex(idx);
-                            replaceInputRef.current?.click();
-                          }}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100"
-                          aria-label="Edit"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 013.182 3.182L7.125 20.588l-4.5 1.125 1.125-4.5L16.862 4.487z" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100"
-                          aria-label="Delete"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12m-9 0V5a1 1 0 011-1h4a1 1 0 011 1v2m1 0l-1 14a2 2 0 01-2 2H9a2 2 0 01-2-2L6 7" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  ))
+              <div className="space-y-1">
+                <label className="block text-[11px] font-medium text-slate-700">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    formErrors.location ? 'border-red-300' : 'border-slate-200'
+                  }`}
+                  placeholder="e.g. Bali, Indonesia"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+                {formErrors.location && (
+                  <p className="text-red-500 text-[10px] mt-1">{formErrors.location}</p>
                 )}
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-medium text-slate-700">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    formErrors.date ? 'border-red-300' : 'border-slate-200'
+                  }`}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+                {formErrors.date && (
+                  <p className="text-red-500 text-[10px] mt-1">{formErrors.date}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-medium text-slate-700">
+                  Category
+                </label>
+                <select
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="adventure">Adventure</option>
+                  <option value="beach">Beach</option>
+                  <option value="mountain">Mountain</option>
+                  <option value="city">City</option>
+                  <option value="cultural">Cultural</option>
+                  <option value="food">Food</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-medium text-slate-700">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="e.g. beach, temple, culture"
+                  value={tags.join(', ')}
+                  onChange={(e) => setTags(e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag))}
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-[11px] font-medium text-slate-700">Active</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={featured}
+                    onChange={(e) => setFeatured(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-[11px] font-medium text-slate-700">Featured</span>
+                </label>
               </div>
             </div>
           </div>
@@ -253,10 +389,22 @@ const TravelContentModal: React.FC<{
 };
 
 interface TravelHighlight extends Record<string, unknown> {
-  id: number;
+  _id: string;
   name: string;
   cover: string;
-  images: string[];
+  travelImage: string;
+  description: string;
+  location: string;
+  date: string;
+  category: string;
+  tags: string[];
+  isActive: boolean;
+  featured: boolean;
+  views: number;
+  likes: number;
+  author: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const AdminTravelJournalPage: React.FC = () => {
@@ -264,47 +412,59 @@ const AdminTravelJournalPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useAdminToast();
 
-  const [travelData, setTravelData] = useState<TravelHighlight[]>([
-    {
-      id: 1,
-      name: "Bali",
-      cover: "/foto 2.jpg",
-      images: ["/foto 2.jpg", "/foto 5.jpg", "/foto 7.jpg"],
-    },
-    {
-      id: 2,
-      name: "Tokyo",
-      cover: "/foto 1.jpg",
-      images: ["/foto 1.jpg"],
-    },
-  ]);
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:55435";
+
+  const [travelData, setTravelData] = useState<TravelHighlight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch travel journals from backend
+  const fetchTravelJournals = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE}/api/travel-journal`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch travel journals');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setTravelData(data.data);
+        setError(null);
+      } else {
+        throw new Error(data.message || 'No data received');
+      }
+    } catch (err) {
+      console.error('Error fetching travel journals:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load travel journals');
+      toast.error('Error', 'Failed to load travel journals');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchTravelJournals();
+  }, []);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const columns: Column[] = [
     { header: "Name Highlight", accessor: "name", type: "text" },
     { header: "Cover", accessor: "cover", type: "image" },
     {
       header: "Travel Image",
-      accessor: "images",
-      type: "text",
-      render: (value) => {
-        const urls = (value as string[]) || [];
-        return (
-          <div className="flex flex-wrap gap-2">
-            {urls.map((src, idx) => (
-              <img
-                key={idx}
-                src={src}
-                alt="Travel"
-                className="h-8 w-8 rounded-lg border border-slate-200 object-cover"
-              />
-            ))}
-          </div>
-        );
-      },
+      accessor: "travelImage",
+      type: "image",
     },
+    { header: "Location", accessor: "location", type: "text" },
+    { header: "Category", accessor: "category", type: "text" },
     { header: "Action", accessor: "action", type: "action" },
   ];
 
@@ -370,6 +530,18 @@ const AdminTravelJournalPage: React.FC = () => {
                 }}
               />
 
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                  {error}
+                  <button 
+                    onClick={fetchTravelJournals}
+                    className="ml-4 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
               <AdminTable
                 columns={columns}
                 data={travelData}
@@ -378,19 +550,33 @@ const AdminTravelJournalPage: React.FC = () => {
                 totalPages={1}
                 onPageChange={() => {}}
                 onItemsPerPageChange={() => {}}
+                isLoading={loading}
                 onEdit={(id) => {
-                  if (typeof id === "number") {
+                  if (typeof id === "string") {
+                    console.log('Edit clicked for ID:', id);
+                    console.log('Available data:', travelData);
+                    const foundItem = travelData.find((item) => item._id === id);
+                    console.log('Found item:', foundItem);
                     setEditingId(id);
                     setIsModalOpen(true);
                   }
                 }}
-                onDelete={(id) => {
-                  if (typeof id === "number") {
+                onDelete={async (id) => {
+                  if (typeof id === "string") {
                     try {
-                      setTravelData((prev) => prev.filter((item) => item.id !== id));
-                      toast.success("Success", "Travel highlight deleted successfully");
+                      const response = await fetch(`${API_BASE}/api/travel-journal/${id}`, {
+                        method: 'DELETE',
+                        credentials: 'include',
+                      });
+                      
+                      if (response.ok) {
+                        setTravelData((prev) => prev.filter((item) => item._id !== id));
+                        toast.success("Success", "Travel journal deleted successfully");
+                      } else {
+                        throw new Error('Failed to delete');
+                      }
                     } catch {
-                      toast.error("Error", "Failed to delete travel highlight");
+                      toast.error("Error", "Failed to delete travel journal");
                     }
                   }
                 }}
@@ -403,51 +589,61 @@ const AdminTravelJournalPage: React.FC = () => {
       <TravelContentModal
         isOpen={isModalOpen}
         title={editingId ? "Edit Travel Highlight" : "Tambah Travel Highlight"}
-        initialData={editingId != null ? travelData.find((item) => item.id === editingId) : undefined}
+        initialData={editingId != null ? travelData.find((item) => item._id === editingId) : undefined}
         onClose={() => {
           setIsModalOpen(false);
           setEditingId(null);
         }}
-        onSubmit={(payload) => {
-          const name = payload.name || "";
-          const cover = payload.cover || "";
-          const images = payload.images ?? [];
-
+        onSubmit={async (payload) => {
           try {
+            console.log('Submitting payload:', payload);
+            
             if (editingId != null) {
-              setTravelData((prev) =>
-                prev.map((item) =>
-                  item.id === editingId
-                    ? {
-                        ...item,
-                        name: name || item.name,
-                        cover: cover || item.cover,
-                        images: images.length ? images : item.images,
-                      }
-                    : item
-                )
-              );
-              toast.success("Success", "Travel highlight updated successfully");
-            } else {
-              setTravelData((prev) => {
-                const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 1;
-                return [
-                  ...prev,
-                  {
-                    id: nextId,
-                    name,
-                    cover,
-                    images,
-                  },
-                ];
+              // Update existing journal
+              console.log('Updating journal with ID:', editingId);
+              const response = await fetch(`${API_BASE}/api/travel-journal/${editingId}`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
               });
-              toast.success("Success", "Travel highlight added successfully");
+              
+              if (response.ok) {
+                await fetchTravelJournals();
+                toast.success("Success", "Travel journal updated successfully");
+              } else {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to update travel journal');
+              }
+            } else {
+              // Create new journal
+              console.log('Creating new journal');
+              const response = await fetch(`${API_BASE}/api/travel-journal`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+              });
+              
+              if (response.ok) {
+                await fetchTravelJournals();
+                toast.success("Success", "Travel journal added successfully");
+              } else {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to create travel journal');
+              }
             }
 
             setIsModalOpen(false);
             setEditingId(null);
-          } catch {
-            toast.error("Error", "Failed to save travel highlight changes");
+          } catch (err) {
+            console.error('Save error:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+            toast.error("Error", `Failed to save travel journal: ${errorMessage}`);
           }
         }}
       />

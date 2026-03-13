@@ -1,70 +1,97 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const ABOUT_STORAGE_KEY = "landing_about";
-
 type AboutContent = {
-    id: number;
-    image: string;
+    title: string;
     description: string;
-    experience?: string[];
-    exp1Value?: string;
-    exp1Label?: string;
-    exp2Value?: string;
-    exp2Label?: string;
-}
-
-const parseExperienceTag = (raw: string) => {
-    const text = (raw ?? "").trim();
-    if (!text) return { value: "", label: "" };
-    const parts = text.split(/\s+/);
-    const value = parts[0] ?? "";
-    const label = parts.slice(1).join(" ").trim();
-    return { value, label };
+    image: string;
+    features: Array<{ title: string; description: string }>;
+    isActive: boolean;
 }
 
 const AboutSection: React.FC = () => {
     const navigate = useNavigate()
+    const [aboutData, setAboutData] = useState<AboutContent | null>(null)
+    const [loading, setLoading] = useState(true)
 
-    const about = useMemo<AboutContent>(() => {
-        const fallback: AboutContent = {
-            id: 1,
-            image: "/rizwords-nomad.jpg",
-            description:
-                "With over 5 years of experience and a deep understanding of copywriting psychology, marketing funnel, stages of awareness, and market sophistication I'll connect your brand with your target audience's pain points through ads and content. Then present your product as the perfect solution for their problems.",
-            exp1Value: "5+",
-            exp1Label: "Years Experience",
-            exp2Value: "100+",
-            exp2Label: "Projects",
-        };
-
-        try {
-            const raw = localStorage.getItem(ABOUT_STORAGE_KEY);
-            const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed[0] as AboutContent;
-        } catch {
-            // ignore
+    // Fetch about data from backend
+    useEffect(() => {
+        const fetchAboutData = async () => {
+            try {
+                const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? 'http://localhost:55435'
+                const response = await fetch(`${API_BASE}/api/landing-page`)
+                const result = await response.json()
+                
+                const about = result?.data?.about
+                if (result.success && about) {
+                    const exp = Array.isArray(about.experience) ? about.experience : []
+                    setAboutData({
+                        title: 'About TRAVELLO',
+                        description: String(about.description ?? ''),
+                        image: String(about.image ?? '/images/about-image.jpg'),
+                        features: exp.slice(0, 4).map((x: any, idx: number) => ({
+                            title: String(x ?? ''),
+                            description: idx === 0 ? 'Key highlight' : 'Experience'
+                        })),
+                        isActive: about.isActive !== false
+                    })
+                }
+            } catch (error) {
+                console.error('Error fetching about data:', error)
+                // Fallback to default data
+                setAboutData({
+                    title: 'About TRAVELLO',
+                    description: 'We are your trusted travel partner with years of experience in creating unforgettable journeys around the world.',
+                    image: '/images/about-image.jpg',
+                    features: [
+                        { title: 'Expert Guides', description: 'Professional tour guides' },
+                        { title: 'Best Price', description: 'Competitive pricing' },
+                        { title: '24/7 Support', description: 'Round the clock assistance' },
+                        { title: 'Safe Travel', description: 'Your safety is our priority' }
+                    ],
+                    isActive: true
+                })
+            } finally {
+                setLoading(false)
+            }
         }
 
-        return fallback;
-    }, []);
+        fetchAboutData()
+    }, [])
 
-    const experienceItems = useMemo(() => {
-        const fromTags = Array.isArray(about.experience) ? about.experience : [];
-        const legacy = [
-            [about.exp1Value, about.exp1Label].filter(Boolean).join(" ").trim(),
-            [about.exp2Value, about.exp2Label].filter(Boolean).join(" ").trim(),
-        ].filter((x) => x);
+    const about = useMemo<AboutContent>(() => {
+        return aboutData || {
+            title: 'About TRAVELLO',
+            description: 'We are your trusted travel partner with years of experience in creating unforgettable journeys around the world.',
+            image: '/images/about-image.jpg',
+            features: [
+                { title: 'Expert Guides', description: 'Professional tour guides' },
+                { title: 'Best Price', description: 'Competitive pricing' },
+                { title: '24/7 Support', description: 'Round the clock assistance' },
+                { title: 'Safe Travel', description: 'Your safety is our priority' }
+            ],
+            isActive: true
+        }
+    }, [aboutData])
 
-        const tags = (fromTags.length ? fromTags : legacy).filter((x) => (x ?? "").trim());
-        const list = tags.map(parseExperienceTag).filter((x) => x.value || x.label);
-        if (list.length >= 2) return list.slice(0, 2);
-
-        return [
-            { value: about.exp1Value ?? "5+", label: about.exp1Label ?? "Years Experience" },
-            { value: about.exp2Value ?? "100+", label: about.exp2Label ?? "Projects" },
-        ];
-    }, [about]);
+    if (loading) {
+        return (
+            <section id="about" className="py-14 md:py-20 bg-white overflow-hidden mt-10 md:mt-16">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex flex-col md:flex-row items-center gap-12 md:gap-20">
+                        <div className="w-full md:w-2/5 flex justify-center items-center">
+                            <div className="w-[260px] h-[260px] sm:w-[300px] sm:h-[300px] md:w-[350px] md:h-[350px] bg-gray-200 rounded-full animate-pulse"></div>
+                        </div>
+                        <div className="w-full md:w-3/5 space-y-4 animate-pulse">
+                            <div className="h-12 bg-gray-200 rounded w-3/4"></div>
+                            <div className="h-24 bg-gray-200 rounded w-full"></div>
+                            <div className="h-16 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        )
+    }
 
     return (
         <section id="about" className="py-14 md:py-20 bg-white overflow-hidden mt-10 md:mt-16">
@@ -93,8 +120,8 @@ const AboutSection: React.FC = () => {
                             {/* Layer 3 */}
                             <div className="relative w-full h-full rounded-full overflow-hidden z-10">
                                 <img
-                                    src={about.image || "/rizwords-nomad.jpg"}
-                                    alt="Working in Bali"
+                                    src={about.image || "/images/about-image.jpg"}
+                                    alt="About TRAVELLO"
                                     className="w-full h-full object-cover"
                                 />
                             </div>
@@ -105,24 +132,24 @@ const AboutSection: React.FC = () => {
                     {/* Right Column */}
                     <div className="w-full md:w-3/5 text-center md:text-left">
                         <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 leading-tight">
-                            Why You <span className="text-sky-500">Hire Me</span> for <br />
-                            Your Next Projects?
+                            {about.title || 'About TRAVELLO'}
                         </h2>
 
                         <p className="mt-6 text-slate-500 text-sm sm:text-base leading-relaxed mx-auto md:mx-0 max-w-2xl">
                             {about.description}
                         </p>
 
-                        {/* Stats Pills */}
-                        <div className="mt-8 grid grid-cols-2 gap-3 max-w-md mx-auto md:max-w-none md:mx-0 md:flex md:flex-wrap md:gap-4 md:justify-start">
-                            <div className="bg-sky-50 px-4 py-2 rounded-full flex items-center justify-center gap-2 w-full md:w-fit">
-                                <span className="text-sky-500 text-xl font-bold">{experienceItems[0]?.value ?? "5+"}</span>
-                                <span className="text-slate-700 font-medium text-sm">{experienceItems[0]?.label ?? "Years Experience"}</span>
-                            </div>
-                            <div className="bg-sky-50 px-4 py-2 rounded-full flex items-center justify-center gap-2 w-full md:w-fit">
-                                <span className="text-sky-500 text-xl font-bold">{experienceItems[1]?.value ?? "100+"}</span>
-                                <span className="text-slate-700 font-medium text-sm">{experienceItems[1]?.label ?? "Projects"}</span>
-                            </div>
+                        {/* Features Pills */}
+                        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-md mx-auto md:max-w-none md:mx-0">
+                            {about.features?.slice(0, 4).map((feature, index) => (
+                                <div key={index} className="bg-sky-50 px-4 py-3 rounded-full flex items-center gap-2">
+                                    <span className="text-sky-500 text-lg">✓</span>
+                                    <div>
+                                        <span className="text-slate-700 font-medium text-sm">{feature.title}</span>
+                                        <p className="text-slate-500 text-xs mt-1">{feature.description}</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
                         {/* CTA Button */}
@@ -131,7 +158,7 @@ const AboutSection: React.FC = () => {
                                 onClick={() => navigate('/work/shop')}
                                 className="px-8 py-3 rounded-full border-2 border-sky-500 text-sm text-sky-500 font-semibold hover:bg-sky-500 hover:text-white transition-colors duration-300"
                             >
-                                Hire Me
+                                Explore Our Services
                             </button>
                         </div>
 

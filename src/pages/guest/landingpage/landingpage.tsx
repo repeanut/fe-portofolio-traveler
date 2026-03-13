@@ -1,5 +1,6 @@
 
 import React from 'react'
+import ErrorBoundary from '../../../components/ui/ErrorBoundary'
 import Navbar from '../../../components/ui/navbar'
 import HeroSection from '../../../components/guest/landingpage/heroSection'
 import StoriesSection from '../../../components/guest/landingpage/storiesSection'
@@ -10,25 +11,43 @@ import ServicesSection from '../../../components/guest/landingpage/servicesSecti
 import ExperienceSection from '../../../components/guest/landingpage/experienceSection'
 import FAQSection from '../../../components/guest/landingpage/faqSections'
 import FooterSection from '../../../components/ui/footer'
-import InitialShimmer from '../../../components/ui/InitialShimmer'
-import { LandingPageSkeleton } from '../../../components/ui/skeletons'
 
 const LandingPage: React.FC = () => {
   return (
-    <InitialShimmer delayMs={850} skeleton={<LandingPageSkeleton />}>
+    <ErrorBoundary>
       <div id="home" className="min-h-screen bg-white">
-        <Navbar />
-        <HeroSection />
-        <StoriesSection />
-        <AboutSection />
-        <PortfolioSection />
-        <CertificationsSection />
-        <ServicesSection />
-        <ExperienceSection />
-        <FAQSection />
-        <FooterSection />
+        <ErrorBoundary>
+          <Navbar />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <HeroSection />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <StoriesSection />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <AboutSection />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <PortfolioSection />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <CertificationsSection />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <ServicesSection />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <ExperienceSection />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <FAQSection />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <FooterSection />
+        </ErrorBoundary>
       </div>
-    </InitialShimmer>
+    </ErrorBoundary>
   )
 }
 
